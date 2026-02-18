@@ -5,6 +5,7 @@ import com.my_app.schoolboard.dto.LoginRequest;
 import com.my_app.schoolboard.dto.RegisterRequest;
 import com.my_app.schoolboard.exception.InvalidCredentialsException;
 import com.my_app.schoolboard.exception.UserAlreadyExistsException;
+import com.my_app.schoolboard.model.AuthProvider;
 import com.my_app.schoolboard.model.Role;
 import com.my_app.schoolboard.model.User;
 import com.my_app.schoolboard.repository.UserRepository;
@@ -48,6 +49,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
+                .provider(AuthProvider.LOCAL)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -64,8 +66,9 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse login(LoginRequest request) {
         log.info("Attempting login for user: {}", request.getUsername());
 
-        // Find user by username
+        // Find user by username or email
         User user = userRepository.findByUsername(request.getUsername())
+                .or(() -> userRepository.findByEmail(request.getUsername()))
                 .orElseThrow(() -> {
                     log.warn("Login failed: User {} not found", request.getUsername());
                     return new InvalidCredentialsException("Invalid username or password");
