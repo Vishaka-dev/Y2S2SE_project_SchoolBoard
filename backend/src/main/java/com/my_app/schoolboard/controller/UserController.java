@@ -19,7 +19,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"}, allowCredentials = "true")
+@CrossOrigin(origins = "${app.frontend-url}", allowCredentials = "true")
 @RequiredArgsConstructor
 @Slf4j
 public class UserController {
@@ -84,7 +84,7 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
         log.info("Updating user with id: {}", id);
-        
+
         return userRepository.findById(id)
                 .map(user -> {
                     // Update only non-null fields
@@ -100,7 +100,7 @@ public class UserController {
                     if (userDetails.getImageUrl() != null) {
                         user.setImageUrl(userDetails.getImageUrl());
                     }
-                    
+
                     User updatedUser = userRepository.save(user);
                     log.info("User updated successfully: {}", updatedUser.getUsername());
                     return ResponseEntity.ok(updatedUser);
@@ -115,16 +115,16 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         log.info("Deleting user with id: {}", id);
-        
+
         return userRepository.findById(id)
                 .map(user -> {
                     userRepository.delete(user);
                     log.info("User deleted successfully: {}", user.getUsername());
-                    
+
                     Map<String, String> response = new HashMap<>();
                     response.put("message", "User deleted successfully");
                     response.put("username", user.getUsername());
-                    
+
                     return ResponseEntity.ok(response);
                 })
                 .orElse(ResponseEntity.notFound().build());
@@ -138,10 +138,10 @@ public class UserController {
     public ResponseEntity<Map<String, Long>> getUserCount() {
         long count = userRepository.count();
         log.info("Total users: {}", count);
-        
+
         Map<String, Long> response = new HashMap<>();
         response.put("count", count);
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -153,10 +153,10 @@ public class UserController {
     public ResponseEntity<Map<String, Boolean>> checkEmailExists(@PathVariable String email) {
         boolean exists = userRepository.existsByEmail(email);
         log.info("Email {} exists: {}", email, exists);
-        
+
         Map<String, Boolean> response = new HashMap<>();
         response.put("exists", exists);
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -168,10 +168,10 @@ public class UserController {
     public ResponseEntity<Map<String, Boolean>> checkUsernameExists(@PathVariable String username) {
         boolean exists = userRepository.existsByUsername(username);
         log.info("Username {} exists: {}", username, exists);
-        
+
         Map<String, Boolean> response = new HashMap<>();
         response.put("exists", exists);
-        
+
         return ResponseEntity.ok(response);
     }
 }

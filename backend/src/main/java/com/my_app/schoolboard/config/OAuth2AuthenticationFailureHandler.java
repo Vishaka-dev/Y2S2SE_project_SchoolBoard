@@ -27,21 +27,26 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
     private String frontendUrl;
 
     @Override
-    public void onAuthenticationFailure(HttpServletRequest request, 
-                                       HttpServletResponse response, 
-                                       AuthenticationException exception) throws IOException {
-        
-        log.error("OAuth2 authentication failed: {}", exception.getMessage());
-        
+    public void onAuthenticationFailure(HttpServletRequest request,
+            HttpServletResponse response,
+            AuthenticationException exception) throws IOException {
+
+        // Sanitize exception message to avoid CR/LF header errors
+        String errorMessage = exception.getLocalizedMessage();
+        if (errorMessage != null) {
+            errorMessage = errorMessage.replaceAll("[\\r\\n]", " ");
+        }
+
         // Clear OAuth2 authorization cookies
         cookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
         log.info("OAuth2 authorization cookies cleared after failure");
-        
+
         String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth2/redirect")
-                .queryParam("error", exception.getLocalizedMessage())
+                .queryParam("error", errorMessage)
                 .build()
                 .toUriString();
 
+        log.info("Redirecting to failure URL: {}", targetUrl);
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }

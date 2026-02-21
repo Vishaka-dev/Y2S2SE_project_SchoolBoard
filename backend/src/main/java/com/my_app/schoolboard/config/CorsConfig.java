@@ -17,42 +17,39 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
-    @Value("${app.frontend-url}")
-    private String frontendUrl;
+        @Value("${app.frontend-url}")
+        private String frontendUrl;
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        
-        // Allow frontend URL - use both specific and wildcard for development
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-                "http://localhost:*",
-                "http://127.0.0.1:*",
-                frontendUrl
-        ));
-        
-        // Allow all HTTP methods
-        configuration.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
-        ));
-        
-        // Allow all headers
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        
-        // Allow credentials (cookies, authorization headers)
-        configuration.setAllowCredentials(true);
-        
-        // Expose headers to frontend
-        configuration.setExposedHeaders(Arrays.asList(
-                "Authorization", "Content-Type", "Access-Control-Allow-Origin"
-        ));
-        
-        // Cache preflight response for 1 hour
-        configuration.setMaxAge(3600L);
-        
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        
-        return source;
-    }
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration configuration = new CorsConfiguration();
+
+                // Allow configured frontend URL
+                configuration.setAllowedOrigins(Arrays.asList(
+                                frontendUrl,
+                                "http://localhost:5173",
+                                "http://127.0.0.1:5173"));
+
+                // Allow all HTTP methods
+                configuration.setAllowedMethods(Arrays.asList(
+                                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+
+                // Allow all headers
+                configuration.setAllowedHeaders(Arrays.asList("*"));
+
+                // Allow credentials (cookies, authorization headers)
+                configuration.setAllowCredentials(true);
+
+                // Expose headers to frontend
+                configuration.setExposedHeaders(Arrays.asList(
+                                "Authorization", "Content-Type", "Access-Control-Allow-Origin"));
+
+                // Cache preflight response for 1 hour
+                configuration.setMaxAge(3600L);
+
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
+
+                return source;
+        }
 }

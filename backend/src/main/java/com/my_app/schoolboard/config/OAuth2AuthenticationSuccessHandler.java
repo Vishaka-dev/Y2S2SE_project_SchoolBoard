@@ -30,13 +30,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private String frontendUrl;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, 
-                                       HttpServletResponse response, 
-                                       Authentication authentication) throws IOException {
-        
+    public void onAuthenticationSuccess(HttpServletRequest request,
+            HttpServletResponse response,
+            Authentication authentication) throws IOException {
+
         log.info("=== OAuth2 Authentication Success Handler Called ===");
         log.info("Frontend URL configured: {}", frontendUrl);
-        
+
         if (response.isCommitted()) {
             log.warn("Response has already been committed. Unable to redirect.");
             return;
@@ -48,19 +48,27 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         CustomOAuth2User oAuth2User = (CustomOAuth2User) authentication.getPrincipal();
         log.info("Authenticated user: {} ({})", oAuth2User.getUsername(), oAuth2User.getEmail());
-        
+
         // Generate JWT token for the OAuth2 user
         String token = jwtService.generateToken(oAuth2User.getUser());
         log.info("JWT token generated (length: {})", token.length());
-        
+
         // Redirect to frontend with JWT token (stateless)
         String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth2/success")
                 .queryParam("token", token)
                 .build()
                 .toUriString();
 
-        log.info("Full redirect URL: {}", targetUrl);
-        log.info("=== Redirecting to Frontend ===");
+        log.info("Constructed redirect URL: {}", targetUrl);
+        log.info("Redirecting to: {}", targetUrl);
+
+        // Safety check for empty frontendUrl
+        if (frontendUrl == null || frontendUrl.trim().isEmpty() || frontendUrl.contains("3000")) {
+            log.warn(
+                    "WARNING: frontendUrl seems incorrect or empty: '{}'. If this is 3000, please check your .env and restart the backend.",
+                    frontendUrl);
+        }
+
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }
