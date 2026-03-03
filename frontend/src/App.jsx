@@ -15,41 +15,41 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/style-guide" element={<StyleGuide />} />
-        <Route 
-          path="/login" 
+        <Route
+          path="/login"
           element={
             authService.isAuthenticated() ? (
               <Navigate to="/dashboard" replace />
             ) : (
               <Login />
             )
-          } 
+          }
         />
-        <Route 
-          path="/register" 
+        <Route
+          path="/register"
           element={
             authService.isAuthenticated() ? (
               <Navigate to="/dashboard" replace />
             ) : (
               <Register />
             )
-          } 
+          }
         />
-        
+
         {/* OAuth2 Routes */}
         <Route path="/oauth2/redirect" element={<OAuth2Redirect />} />
         <Route path="/oauth2/success" element={<OAuth2Redirect />} />
-        
+
         {/* Protected Routes */}
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
-            <ProtectedRoute>
+            // <ProtectedRoute>
               <Dashboard />
-            </ProtectedRoute>
-          } 
+            // </ProtectedRoute>
+          }
         />
-        
+
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
