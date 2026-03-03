@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import OAuth2Redirect from './pages/OAuth2Redirect';
 import ProtectedRoute from './components/ProtectedRoute';
 import authService from './services/authService';
+import StyleGuide from './pages/StyleGuide';
 
 function App() {
   return (
@@ -13,7 +14,7 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Landing />} />
-        
+        <Route path="/style-guide" element={<StyleGuide />} />
         <Route 
           path="/login" 
           element={
