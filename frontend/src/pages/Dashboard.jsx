@@ -2,9 +2,15 @@ import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import CreatePostModal from '../components/CreatePostModal';
+import Toast from '../components/toasts/Toast';
 
 const Dashboard = () => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
 
   return (
     <div className="flex h-screen bg-gray-50 font-dm-sans">
@@ -34,7 +40,7 @@ const Dashboard = () => {
               </button>
               <button
                 onClick={() => setIsCreatePostOpen(true)}
-                className="hidden sm:flex px-4 py-2 bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 font-medium rounded-lg shadow-sm transition-colors items-center gap-2"
+                className="hidden sm:flex px-4 py-2 bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 font-medium rounded-full shadow-sm transition-colors items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
                 Post
@@ -46,8 +52,19 @@ const Dashboard = () => {
         </main>
       </div>
 
-      {/* Modals */}
-      <CreatePostModal isOpen={isCreatePostOpen} onClose={() => setIsCreatePostOpen(false)} />
+      {/* Modals & Toasts */}
+      <CreatePostModal
+        isOpen={isCreatePostOpen}
+        onClose={() => setIsCreatePostOpen(false)}
+        onPostCompleted={showToast}
+      />
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

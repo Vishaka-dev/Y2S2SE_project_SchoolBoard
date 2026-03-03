@@ -46,22 +46,22 @@ const DesignSystem = () => {
           <div className="flex flex-wrap gap-4 md:gap-6 bg-white p-6 rounded-lg shadow-md border border-gray-100 items-center">
             
             {/* Primary */}
-            <button className="bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 font-medium rounded-lg shadow-sm transition-colors py-2 px-4 text-sm md:text-base">
+            <button className="bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 font-medium rounded-full shadow-sm transition-colors py-2 px-4 text-sm md:text-base">
               Primary Button
             </button>
             
             {/* Secondary */}
-            <button className="bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-medium rounded-lg shadow-sm transition-colors py-2 px-4 text-sm md:text-base">
+            <button className="bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-medium rounded-full shadow-sm transition-colors py-2 px-4 text-sm md:text-base">
               Secondary Outline
             </button>
 
             {/* Destructive */}
-            <button className="bg-red-600 text-white border border-red-600 hover:bg-red-700 font-medium rounded-lg shadow-sm transition-colors py-2 px-4 text-sm md:text-base">
+            <button className="bg-red-600 text-white border border-red-600 hover:bg-red-700 font-medium rounded-full shadow-sm transition-colors py-2 px-4 text-sm md:text-base">
               Delete Button
             </button>
 
             {/* Disabled */}
-            <button disabled className="bg-blue-600 text-white border border-blue-600 font-medium rounded-lg shadow-sm py-2 px-4 text-sm md:text-base opacity-50 cursor-not-allowed">
+            <button disabled className="bg-blue-600 text-white border border-blue-600 font-medium rounded-full shadow-sm py-2 px-4 text-sm md:text-base opacity-50 cursor-not-allowed">
               Disabled State
             </button>
           </div>
@@ -111,15 +111,15 @@ const DesignSystem = () => {
           <h2 className="text-lg md:text-xl font-semibold font-manrope border-b border-gray-300 pb-2">4. Alerts & States</h2>
           <div className="space-y-4 bg-white p-6 rounded-lg shadow-md border border-gray-100">
             
-            <div className="text-red-600 bg-red-100 border border-red-400 font-medium py-3 px-4 rounded-md text-sm md:text-base">
+            <div className="text-white bg-red-600 border font-medium py-3 px-4 rounded-md text-sm md:text-base">
               <strong>Error:</strong> Failed to join the event. Please try again.
             </div>
 
-            <div className="text-yellow-600 bg-yellow-100 border border-yellow-400 font-medium py-3 px-4 rounded-md text-sm md:text-base">
+            <div className="text-white bg-yellow-600 border font-medium py-3 px-4 rounded-md text-sm md:text-base">
               <strong>Warning:</strong> Your organization profile is incomplete.
             </div>
 
-            <div className="text-green-600 bg-green-100 border border-green-400 font-medium py-3 px-4 rounded-md text-sm md:text-base">
+            <div className="text-white bg-green-600 border font-medium py-3 px-4 rounded-md text-sm md:text-base">
               <strong>Success:</strong> Post published successfully!
             </div>
           </div>

@@ -1,17 +1,27 @@
 import React, { useState } from 'react';
 
-const CreatePostModal = ({ isOpen, onClose }) => {
+const CreatePostModal = ({ isOpen, onClose, onPostCompleted }) => {
     const [content, setContent] = useState('');
     const [image, setImage] = useState(null);
     const [imagePreview, setImagePreview] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [success, setSuccess] = useState(false);
 
     if (!isOpen) return null;
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            if (!file.type.startsWith('image/')) {
+                if (onPostCompleted) onPostCompleted('Please upload a valid image file (JPEG, PNG, etc).', 'error');
+                // Reset input so they can select again
+                e.target.value = '';
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                if (onPostCompleted) onPostCompleted('Image size should be less than 5MB.', 'error');
+                e.target.value = '';
+                return;
+            }
             setImage(file);
             setImagePreview(URL.createObjectURL(file));
         }
@@ -24,23 +34,48 @@ const CreatePostModal = ({ isOpen, onClose }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Validation 
+        if (!content.trim() && !image) {
+            if (onPostCompleted) onPostCompleted('Please enter some text or upload an image to create a post.', 'error');
+            return;
+        }
+
         setIsSubmitting(true);
 
         // Simulate API call using limited mock time
-        await new Promise(resolve => setTimeout(resolve, 800));
+        try {
+            await new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    // Randomly simulate an error for testing toast error bounds (e.g., 20% fail rate)
+                    if (Math.random() < 0.2) {
+                        reject(new Error('Network error simulated.'));
+                    } else {
+                        resolve();
+                    }
+                }, 800);
+            });
 
-        console.log('Post created mock:', { content, image });
-        setSuccess(true);
+            console.log('Post created mock:', { content, image });
 
-        // Reset form on success or navigate away after a delay
-        setTimeout(() => {
-            setSuccess(false);
+            // Notify parent via Toast callback
+            if (onPostCompleted) {
+                onPostCompleted('Post created successfully!', 'success');
+            }
+
+            // Reset form and close instantly
             setContent('');
             setImage(null);
             setImagePreview('');
             setIsSubmitting(false);
-            onClose(); // close modal
-        }, 1000);
+            onClose();
+
+        } catch (error) {
+            if (onPostCompleted) {
+                onPostCompleted('Failed to create post. Please try again.', 'error');
+            }
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -54,7 +89,7 @@ const CreatePostModal = ({ isOpen, onClose }) => {
                     <button
                         onClick={onClose}
                         className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors"
-                        disabled={isSubmitting || success}
+                        disabled={isSubmitting}
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -64,12 +99,6 @@ const CreatePostModal = ({ isOpen, onClose }) => {
 
                 {/* Form Body */}
                 <div className="p-6 overflow-y-auto">
-                    {success && (
-                        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-600 rounded-md font-medium text-sm animate-fade-in text-center">
-                            Post created successfully!
-                        </div>
-                    )}
-
                     <div className="flex gap-4 mb-4">
                         <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold flex-shrink-0">
                             ME
@@ -89,7 +118,7 @@ const CreatePostModal = ({ isOpen, onClose }) => {
                                 rows={4}
                                 className="w-full bg-white border-0 py-2 text-base md:text-lg text-gray-900 placeholder-gray-400 focus:ring-0 focus:outline-none resize-none"
                                 placeholder="What do you want to talk about?"
-                                disabled={isSubmitting || success}
+                                disabled={isSubmitting}
                                 autoFocus
                             />
                         </div>
@@ -101,7 +130,7 @@ const CreatePostModal = ({ isOpen, onClose }) => {
                                 <button
                                     type="button"
                                     onClick={removeImage}
-                                    disabled={isSubmitting || success}
+                                    disabled={isSubmitting}
                                     className="absolute top-4 right-4 p-1.5 bg-gray-900 bg-opacity-70 text-white rounded-full hover:bg-opacity-100 shadow-md transition-all"
                                     title="Remove image"
                                 >
@@ -126,7 +155,7 @@ const CreatePostModal = ({ isOpen, onClose }) => {
                                 accept="image/*"
                                 className="sr-only"
                                 onChange={handleImageChange}
-                                disabled={isSubmitting || success}
+                                disabled={isSubmitting}
                             />
                         </label>
                     </div>
@@ -134,7 +163,7 @@ const CreatePostModal = ({ isOpen, onClose }) => {
                     <button
                         form="create-post-form"
                         type="submit"
-                        disabled={isSubmitting || success || (!content.trim() && !image)}
+                        disabled={isSubmitting || (!content.trim() && !image)}
                         className="px-6 py-2 bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 font-medium rounded-full shadow-sm transition-colors disabled:opacity-50 disabled:bg-gray-300 disabled:border-gray-300 disabled:text-gray-500 flex items-center gap-2 text-sm"
                     >
                         {isSubmitting ? (
