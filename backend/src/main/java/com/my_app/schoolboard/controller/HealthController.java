@@ -46,7 +46,7 @@ public class HealthController {
         config.put("googleRedirectUri", googleRedirectUri);
         config.put("oauth2AuthUrl", "/oauth2/authorization/google");
         config.put("expectedSuccessRedirect", frontendUrl + "/oauth2/success?token=<JWT>");
-        
+
         log.info("OAuth2 Configuration Requested: {}", config);
         return ResponseEntity.ok(config);
     }
