@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import authService from '../services/authService';
+import logo from '../../logos/learnlink_logo.png';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -71,9 +72,23 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-8 animate-fadeIn">
+        {/* Back to Home Button */}
+        <Link to="/" className="flex items-center justify-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span className="text-sm font-medium">Back to Home</span>
+        </Link>
+
+        <div className="bg-white rounded-lg shadow-xl p-8">
+          {/* LearnLink Logo */}
+          <Link to="/" className="flex justify-center items-center space-x-2 mb-6">
+            <img src={logo} alt="LearnLink Logo" className="h-12 w-auto" />
+            <span className="text-xl font-bold text-gray-900">LearnLink</span>
+          </Link>
+
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
             <p className="mt-2 text-sm text-gray-600">Join us today! Please fill in your details.</p>
