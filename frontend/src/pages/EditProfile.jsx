@@ -5,6 +5,36 @@ import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import accountService from '../services/accountService';
 
+const normalizeInterests = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .filter((item) => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return normalizeInterests(parsed);
+      }
+    } catch {
+      // Continue with comma-separated fallback
+    }
+
+    return trimmed
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
 const EditProfile = () => {
   const [accountData, setAccountData] = useState(null);
   const [formData, setFormData] = useState({});
@@ -30,9 +60,7 @@ const EditProfile = () => {
       // Initialize form data
       if (data.profile) {
         setFormData(data.profile);
-        if (data.profile.interests) {
-          setInterests(data.profile.interests);
-        }
+        setInterests(normalizeInterests(data.profile.interests));
       }
     } catch (err) {
       setError(err.message || 'Failed to load account details');
@@ -58,14 +86,22 @@ const EditProfile = () => {
   };
 
   const handleAddInterest = () => {
-    if (currentInterest.trim() && !interests.includes(currentInterest.trim())) {
-      setInterests([...interests, currentInterest.trim()]);
-      setCurrentInterest('');
-    }
+    const interest = currentInterest.trim();
+    if (!interest) return;
+
+    setInterests((prevInterests) => {
+      const normalized = normalizeInterests(prevInterests);
+      if (normalized.includes(interest)) {
+        return normalized;
+      }
+
+      return [...normalized, interest];
+    });
+    setCurrentInterest('');
   };
 
   const handleRemoveInterest = (index) => {
-    setInterests(interests.filter((_, i) => i !== index));
+    setInterests((prevInterests) => normalizeInterests(prevInterests).filter((_, i) => i !== index));
   };
 
   const validateForm = () => {
@@ -124,7 +160,7 @@ const EditProfile = () => {
       
       // Add interests for students
       if (accountData.role === 'STUDENT') {
-        updateData.interests = interests;
+        updateData.interests = normalizeInterests(interests);
       }
 
       await accountService.updateProfile(updateData);
@@ -216,7 +252,7 @@ const EditProfile = () => {
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
-            {interests.map((interest, index) => (
+            {normalizeInterests(interests).map((interest, index) => (
               <span
                 key={index}
                 className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium border border-purple-200 flex items-center gap-2"

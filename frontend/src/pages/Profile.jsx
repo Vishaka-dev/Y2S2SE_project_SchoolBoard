@@ -39,9 +39,148 @@ const Profile = () => {
   };
 
   // Mock data - Replace with real data from backend
-  const connections = 156;
-  const posts = 23;
-  const courses = user.role === 'STUDENT' ? 5 : user.role === 'TEACHER' ? 3 : 0;
+  const renderStudentProfile = (profile) => (
+    <>
+      <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-blue-600" />
+          Education Details
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-gray-500 mb-1">Education Level</p>
+            <p className="font-semibold text-gray-900">{profile?.educationLevel || 'Not specified'}</p>
+          </div>
+          <div>
+            <p className="text-gray-500 mb-1">Date of Birth</p>
+            <p className="font-semibold text-gray-900">{profile?.dateOfBirth || 'Not specified'}</p>
+          </div>
+
+          {(profile?.educationLevel === 'SCHOOL' || profile?.schoolName) && (
+            <>
+              <div>
+                <p className="text-gray-500 mb-1">School</p>
+                <p className="font-semibold text-gray-900">{profile?.schoolName || 'Not specified'}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 mb-1">Grade</p>
+                <p className="font-semibold text-gray-900">{profile?.grade || 'Not specified'}</p>
+              </div>
+            </>
+          )}
+
+          {(profile?.educationLevel === 'UNIVERSITY' || profile?.universityName) && (
+            <>
+              <div className="md:col-span-2">
+                <p className="text-gray-500 mb-1">University</p>
+                <p className="font-semibold text-gray-900">{profile?.universityName || 'Not specified'}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 mb-1">Degree Program</p>
+                <p className="font-semibold text-gray-900">{profile?.degreeProgram || 'Not specified'}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 mb-1">Year of Study</p>
+                <p className="font-semibold text-gray-900">{profile?.yearOfStudy ? `Year ${profile.yearOfStudy}` : 'Not specified'}</p>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <Award className="w-5 h-5 text-blue-600" />
+          Interests
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {profile?.interests ? (
+            profile.interests.split(',').map((interest, index) => (
+              <span key={index} className="px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm font-medium">
+                {interest.trim()}
+              </span>
+            ))
+          ) : (
+            <p className="text-gray-500 text-sm">No interests added yet.</p>
+          )}
+        </div>
+      </div>
+    </>
+  );
+
+  const renderTeacherProfile = (profile) => (
+    <>
+      <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <Briefcase className="w-5 h-5 text-blue-600" />
+          Professional Details
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-gray-500 mb-1">Institution</p>
+            <p className="font-semibold text-gray-900">{profile?.institutionName || 'Not specified'}</p>
+          </div>
+          <div>
+            <p className="text-gray-500 mb-1">Specialization</p>
+            <p className="font-semibold text-gray-900">{profile?.subjectSpecialization || 'Not specified'}</p>
+          </div>
+          <div>
+            <p className="text-gray-500 mb-1">Experience</p>
+            <p className="font-semibold text-gray-900">{profile?.yearsOfExperience ? `${profile.yearsOfExperience} Years` : 'Not specified'}</p>
+          </div>
+          <div>
+            <p className="text-gray-500 mb-1">Date of Birth</p>
+            <p className="font-semibold text-gray-900">{profile?.dateOfBirth || 'Not specified'}</p>
+          </div>
+          <div className="md:col-span-2">
+            <p className="text-gray-500 mb-1">Qualifications</p>
+            <p className="font-semibold text-gray-900 whitespace-pre-wrap">{profile?.qualifications || 'Not specified'}</p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  const renderInstituteProfile = (profile) => (
+    <>
+      <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <Briefcase className="w-5 h-5 text-blue-600" />
+          Institution Details
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-gray-500 mb-1">Type</p>
+            <p className="font-semibold text-gray-900">{profile?.institutionType || 'Not specified'}</p>
+          </div>
+          <div>
+            <p className="text-gray-500 mb-1">Registration Number</p>
+            <p className="font-semibold text-gray-900">{profile?.registrationNumber || 'Not specified'}</p>
+          </div>
+          <div>
+            <p className="text-gray-500 mb-1">Contact Person</p>
+            <p className="font-semibold text-gray-900">{profile?.contactPerson || 'Not specified'}</p>
+          </div>
+          <div>
+            <p className="text-gray-500 mb-1">Contact Number</p>
+            <p className="font-semibold text-gray-900">{profile?.contactNumber || 'Not specified'}</p>
+          </div>
+          <div className="md:col-span-2">
+            <p className="text-gray-500 mb-1">Address</p>
+            <p className="font-semibold text-gray-900">{profile?.address || 'Not specified'}</p>
+          </div>
+          {profile?.website && (
+            <div className="md:col-span-2">
+              <p className="text-gray-500 mb-1">Website</p>
+              <a href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 hover:underline">
+                {profile.website}
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <div className="space-y-6">
@@ -56,12 +195,12 @@ const Profile = () => {
         <div className="relative px-8 pb-6">
           {/* Profile Picture */}
           <div className="flex items-end justify-between -mt-16 mb-4">
-            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-3xl border-4 border-white shadow-xl">
-              {user.profilePicture ? (
-                <img 
-                  src={user.profilePicture} 
-                  alt={user.fullName} 
-                  className="w-full h-full rounded-full object-cover"
+            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-white to-gray-100 flex items-center justify-center text-blue-600 font-bold text-4xl border-4 border-white shadow-xl relative overflow-hidden">
+              {user.imageUrl ? (
+                <img
+                  src={user.imageUrl}
+                  alt={user.fullName}
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <span>{getUserInitials()}</span>
@@ -80,31 +219,34 @@ const Profile = () => {
 
           {/* Name and Role */}
           <div className="mb-4">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {user.fullName || 'User'}
+            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+              {user.fullName || user.username}
+              {user.role === 'INSTITUTE' && user.profile?.verified && (
+                <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              )}
             </h1>
             <div className="flex items-center gap-3 flex-wrap">
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleBadgeColor()}`}>
                 {getRoleDisplay()}
               </span>
-              {user.role === 'STUDENT' && user.educationLevel && (
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700">
-                  {getEducationLevelDisplay()}
-                </span>
-              )}
+              <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
+                @{user.username}
+              </span>
             </div>
           </div>
 
           {/* Contact Info */}
-          <div className="flex items-center gap-6 text-gray-600 text-sm mb-4 flex-wrap">
+          <div className="flex items-center gap-6 text-gray-600 text-sm flex-wrap">
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4" />
               <span>{user.email}</span>
             </div>
-            {user.location && (
+            {user.profile?.province && (
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                <span>{user.location}</span>
+                <span>{user.profile.province}{user.profile.district ? `, ${user.profile.district}` : ''}</span>
               </div>
             )}
             <div className="flex items-center gap-2">
@@ -112,141 +254,40 @@ const Profile = () => {
               <span>Joined {new Date(user.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
             </div>
           </div>
-
-          {/* Stats */}
-          <div className="flex items-center gap-8 pt-4 border-t border-gray-100">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{connections}</p>
-              <p className="text-sm text-gray-500">Connections</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{posts}</p>
-              <p className="text-sm text-gray-500">Posts</p>
-            </div>
-            {courses > 0 && (
-              <div className="text-center">
-                <p className="text-2xl font-bold text-gray-900">{courses}</p>
-                <p className="text-sm text-gray-500">{user.role === 'STUDENT' ? 'Courses' : 'Teaching'}</p>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* About Section */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-blue-600" />
-              About
-            </h2>
-            <p className="text-gray-700 leading-relaxed">
-              {user.bio || 'No bio added yet. Click "Edit Profile" to add information about yourself.'}
-            </p>
-          </div>
-
-          {/* Education Section (for Students) */}
-          {user.role === 'STUDENT' && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-blue-600" />
-                Education
-              </h2>
-              <div className="space-y-4">
-                <div className="flex gap-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <BookOpen className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      {getEducationLevelDisplay() || 'Education Level'}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {user.institution || 'Institution not specified'}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {user.fieldOfStudy || 'Field of study not specified'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Skills/Interests Section */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Award className="w-5 h-5 text-blue-600" />
-              {user.role === 'STUDENT' ? 'Skills & Interests' : 'Expertise'}
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {user.skills && user.skills.length > 0 ? (
-                user.skills.map((skill, index) => (
-                  <span
-                    key={index}
-                    className="px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm font-medium"
-                  >
-                    {skill}
-                  </span>
-                ))
-              ) : (
-                <p className="text-gray-500 text-sm">No skills added yet.</p>
-              )}
-            </div>
-          </div>
-
-          {/* Activity Section */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-blue-600" />
-              Recent Activity
-            </h2>
-            <div className="space-y-4">
-              <p className="text-gray-500 text-sm text-center py-8">
-                No recent activity to display.
-              </p>
-            </div>
-          </div>
+        {/* Left Column - Role Specific Profile Data */}
+        <div className="lg:col-span-2">
+          {user.role === 'STUDENT' && renderStudentProfile(user.profile)}
+          {user.role === 'TEACHER' && renderTeacherProfile(user.profile)}
+          {user.role === 'INSTITUTE' && renderInstituteProfile(user.profile)}
         </div>
 
-        {/* Right Column */}
+        {/* Right Column - Generic Actions/Stats */}
         <div className="space-y-6">
-          {/* Connections Card */}
+          {/* Stats Card */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-600" />
-                Connections
-              </h2>
-              <span className="text-sm text-gray-500">{connections}</span>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-gray-50 rounded-xl">
+                <p className="text-2xl font-bold text-blue-600">0</p>
+                <p className="text-sm font-medium text-gray-500">Posts</p>
+              </div>
+              <div className="text-center p-4 bg-gray-50 rounded-xl">
+                <p className="text-2xl font-bold text-blue-600">0</p>
+                <p className="text-sm font-medium text-gray-500">Connections</p>
+              </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="w-full aspect-square bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center text-white font-semibold text-sm">
-                  {String.fromCharCode(65 + i)}
-                </div>
-              ))}
-            </div>
-            <button className="w-full mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium">
-              View all connections →
-            </button>
           </div>
 
           {/* Quick Actions */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Settings</h2>
             <div className="space-y-2">
-              <button className="w-full px-4 py-3 bg-blue-50 text-blue-700 rounded-xl text-sm font-medium hover:bg-blue-100 transition text-left">
-                Share Profile
-              </button>
-              <button className="w-full px-4 py-3 bg-gray-50 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-100 transition text-left">
-                Download Resume
-              </button>
-              <button className="w-full px-4 py-3 bg-gray-50 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-100 transition text-left">
-                View Certificates
+              <button onClick={() => navigate('/account/edit-profile')} className="w-full px-4 py-3 bg-blue-50 text-blue-700 rounded-xl text-sm font-medium hover:bg-blue-100 transition text-left flex items-center gap-2">
+                <Edit className="w-4 h-4" /> Edit Profile Information
               </button>
             </div>
           </div>
