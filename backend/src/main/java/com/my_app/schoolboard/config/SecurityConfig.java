@@ -51,7 +51,8 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 // Public endpoints
                                                 .requestMatchers("/api/auth/**", "/api/health/**", "/oauth2/**",
-                                                                "/login/oauth2/**")
+                                                                "/login/oauth2/**", "/uploads/posts/**",
+                                                                "/uploads/profile-images/**")
                                                 .permitAll()
                                                 // Swagger/OpenAPI endpoints
                                                 .requestMatchers("/api-docs", "/api-docs/**", "/swagger-ui/**",

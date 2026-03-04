@@ -4,7 +4,6 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import OAuth2Redirect from './pages/OAuth2Redirect';
-import AccountSettings from './pages/AccountSettings';
 import EditProfile from './pages/EditProfile';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
@@ -75,12 +74,10 @@ function AppRoutes() {
         path="/profile" 
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Profile />
           </ProtectedRoute>
         }
-      >
-        <Route index element={<Profile />} />
-      </Route>
+      />
       
       <Route 
         path="/connections" 
@@ -117,26 +114,13 @@ function AppRoutes() {
       
       {/* Account Management Routes - Also in DashboardLayout */}
       <Route 
-        path="/account/settings" 
-        element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<AccountSettings />} />
-      </Route>
-      
-      <Route 
         path="/account/edit-profile" 
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <EditProfile />
           </ProtectedRoute>
         }
-      >
-        <Route index element={<EditProfile />} />
-      </Route>
+      />
       
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
