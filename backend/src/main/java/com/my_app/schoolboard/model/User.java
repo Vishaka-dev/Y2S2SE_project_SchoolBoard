@@ -53,7 +53,14 @@ public class User {
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
-    
+
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     /**
      * Set default provider value before persisting
      */
@@ -63,7 +70,25 @@ public class User {
             this.provider = AuthProvider.LOCAL;
         }
         if (this.role == null) {
-            this.role = Role.USER;
+            this.role = Role.STUDENT; // Default role for OAuth2 users
         }
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
+    }
+
+    /**
+     * Soft delete the user account
+     */
+    public void softDelete() {
+        this.isActive = false;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Check if account is deleted
+     */
+    public boolean isDeleted() {
+        return !this.isActive || this.deletedAt != null;
     }
 }

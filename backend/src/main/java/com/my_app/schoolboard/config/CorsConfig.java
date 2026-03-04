@@ -24,11 +24,11 @@ public class CorsConfig {
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
 
-                // Allow configured frontend URL
-                configuration.setAllowedOrigins(Arrays.asList(
-                                frontendUrl,
-                                "http://localhost:5173",
-                                "http://127.0.0.1:5173"));
+                // Allow localhost origins on any port for development
+                configuration.setAllowedOriginPatterns(Arrays.asList(
+                                "http://localhost:*",
+                                "http://127.0.0.1:*",
+                                frontendUrl));
 
                 // Allow all HTTP methods
                 configuration.setAllowedMethods(Arrays.asList(

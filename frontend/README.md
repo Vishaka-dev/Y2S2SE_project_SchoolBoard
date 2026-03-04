@@ -60,11 +60,13 @@ frontend/
 ## 🔑 Authentication
 
 ### Email/Password Login
+
 1. Enter credentials on login page
 2. Click "Sign in to Account"
 3. Redirect to dashboard on success
 
 ### Google OAuth2
+
 1. Click "Google" button
 2. Complete Google authentication
 3. Automatic login and redirect

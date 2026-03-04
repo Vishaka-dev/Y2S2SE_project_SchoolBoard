@@ -4,12 +4,30 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
 
 const authService = {
   login: async (email, password) => {
-    const response = await apiClient.post('/api/auth/login', { username: email, password });
+    const response = await apiClient.post('/auth/login', { username: email, password });
     return response.data;
   },
 
-  register: async (username, email, password) => {
-    const response = await apiClient.post('/api/auth/register', { username, email, password });
+  register: async (registrationData) => {
+    // Clean up the data - remove fields that are not needed for this role
+    const cleanData = { ...registrationData };
+    
+    // Remove confirmPassword as backend doesn't need it
+    delete cleanData.confirmPassword;
+    
+    // Remove null or undefined values
+    Object.keys(cleanData).forEach(key => {
+      if (cleanData[key] === null || cleanData[key] === undefined || cleanData[key] === '') {
+        delete cleanData[key];
+      }
+    });
+    
+    const response = await apiClient.post('/auth/register', cleanData);
+    return response.data;
+  },
+
+  completeProfile: async (profileData) => {
+    const response = await apiClient.patch('/users/complete-profile', profileData);
     return response.data;
   },
 

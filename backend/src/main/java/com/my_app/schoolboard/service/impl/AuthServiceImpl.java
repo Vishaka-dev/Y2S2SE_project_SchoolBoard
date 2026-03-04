@@ -5,18 +5,23 @@ import com.my_app.schoolboard.dto.LoginRequest;
 import com.my_app.schoolboard.dto.RegisterRequest;
 import com.my_app.schoolboard.exception.InvalidCredentialsException;
 import com.my_app.schoolboard.exception.UserAlreadyExistsException;
+import com.my_app.schoolboard.factory.RegistrationStrategyFactory;
 import com.my_app.schoolboard.model.AuthProvider;
-import com.my_app.schoolboard.model.Role;
 import com.my_app.schoolboard.model.User;
 import com.my_app.schoolboard.repository.UserRepository;
 import com.my_app.schoolboard.service.AuthService;
 import com.my_app.schoolboard.service.JwtService;
+import com.my_app.schoolboard.strategy.RegistrationStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Enhanced authentication service with Strategy Pattern
+ * Follows SOLID principles and clean architecture
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -25,11 +30,13 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RegistrationStrategyFactory strategyFactory;
 
     @Override
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        log.info("Attempting to register user: {}", request.getUsername());
+        log.info("Attempting to register user: {} with role: {}",
+                request.getUsername(), request.getRole());
 
         // Validate username uniqueness
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -43,17 +50,28 @@ public class AuthServiceImpl implements AuthService {
             throw new UserAlreadyExistsException("Email already exists");
         }
 
-        // Create new user
+        // Get appropriate strategy for the role
+        RegistrationStrategy strategy = strategyFactory.getStrategy(request.getRole());
+
+        // Validate role-specific fields
+        strategy.validateRequest(request);
+
+        // Create user entity
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.USER)
+                .role(request.getRole())
                 .provider(AuthProvider.LOCAL)
                 .build();
 
+        // Save user first
         User savedUser = userRepository.save(user);
-        log.info("User registered successfully: {}", savedUser.getUsername());
+        log.info("User created successfully: {} with role: {}",
+                savedUser.getUsername(), savedUser.getRole());
+
+        // Create role-specific profile using strategy
+        strategy.createProfile(savedUser, request);
 
         // Generate JWT token
         String token = jwtService.generateToken(savedUser);
