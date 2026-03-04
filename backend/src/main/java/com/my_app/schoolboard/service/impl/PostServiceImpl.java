@@ -5,6 +5,9 @@ import com.my_app.schoolboard.model.Post;
 import com.my_app.schoolboard.model.User;
 import com.my_app.schoolboard.repository.PostRepository;
 import com.my_app.schoolboard.repository.UserRepository;
+import com.my_app.schoolboard.repository.StudentProfileRepository;
+import com.my_app.schoolboard.repository.TeacherProfileRepository;
+import com.my_app.schoolboard.repository.InstituteProfileRepository;
 import com.my_app.schoolboard.service.PostService;
 import com.my_app.schoolboard.service.StorageService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +28,9 @@ public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final StudentProfileRepository studentProfileRepository;
+    private final TeacherProfileRepository teacherProfileRepository;
+    private final InstituteProfileRepository instituteProfileRepository;
     private final StorageService storageService;
 
     @Value("${app.frontend-url:http://localhost:5173}")
@@ -134,6 +140,15 @@ public class PostServiceImpl implements PostService {
         postRepository.delete(post);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<PostResponseDTO> getPostsByUsername(String username) {
+        log.info("Fetching all posts for user: {}", username);
+        return postRepository.findAllByAuthorUsernameOrderByCreatedAtDesc(username).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
     private String extractFilename(String imageUrl) {
         if (imageUrl == null || !imageUrl.contains("/uploads/posts/")) {
             return null;
@@ -144,24 +159,34 @@ public class PostServiceImpl implements PostService {
     private PostResponseDTO mapToDTO(Post post) {
         User author = post.getAuthor();
 
-        // Use the username since User model doesn't have fullName natively
-        String authorName = author.getUsername();
+        // Load profile to get fullName
+        String fullName = author.getUsername();
+        Object profileDTO = switch (author.getRole()) {
+            case STUDENT -> studentProfileRepository.findByUser(author).map(p -> p.getFullName()).orElse(null);
+            case TEACHER -> teacherProfileRepository.findByUser(author).map(p -> p.getFullName()).orElse(null);
+            case INSTITUTE ->
+                instituteProfileRepository.findByUser(author).map(p -> p.getInstitutionName()).orElse(null);
+            default -> null;
+        };
+        if (profileDTO != null) {
+            fullName = (String) profileDTO;
+        }
 
         // Extract initials
         String initials = "";
-        if (authorName != null && !authorName.isEmpty()) {
-            String[] parts = authorName.split(" ");
+        if (fullName != null && !fullName.isEmpty()) {
+            String[] parts = fullName.split(" ");
             if (parts.length > 1) {
                 initials = parts[0].substring(0, 1) + parts[1].substring(0, 1);
             } else {
-                initials = parts[0].substring(0, 2);
+                initials = fullName.substring(0, Math.min(fullName.length(), 2));
             }
         }
 
         PostResponseDTO.AuthorDTO authorDTO = PostResponseDTO.AuthorDTO.builder()
-                .name(authorName)
+                .name(fullName)
                 .role(author.getRole().name())
-                .avatar(author.getImageUrl())
+                .avatar(author.getProfileImageUrl() != null ? author.getProfileImageUrl() : author.getImageUrl())
                 .initials(initials.toUpperCase())
                 .username(author.getUsername())
                 .build();

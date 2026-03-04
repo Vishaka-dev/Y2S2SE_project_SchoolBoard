@@ -13,4 +13,6 @@ public interface PostService {
     PostResponseDTO updatePost(Long id, String content, MultipartFile image, String username);
 
     void deletePost(Long id, String username);
+
+    List<PostResponseDTO> getPostsByUsername(String username);
 }

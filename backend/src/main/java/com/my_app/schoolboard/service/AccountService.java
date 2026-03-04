@@ -1,6 +1,7 @@
 package com.my_app.schoolboard.service;
 
 import com.my_app.schoolboard.dto.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Service interface for account management operations
@@ -48,4 +49,13 @@ public interface AccountService {
      * @param request DTO containing password for confirmation
      */
     void deleteAccount(DeleteAccountRequestDTO request);
+
+    /**
+     * Update profile image for the current user
+     * Validates file type and size, replaces old image if exists
+     * 
+     * @param file MultipartFile containing the profile image
+     * @return URL of the uploaded profile image
+     */
+    String updateProfileImage(MultipartFile file);
 }

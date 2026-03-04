@@ -1,6 +1,5 @@
 import { Outlet } from 'react-router-dom';
 import { useState } from 'react';
-import Sidebar from '../sidebar/Sidebar';
 import TopNavbar from '../navbar/TopNavbar';
 import RightSidebar from '../sidebar/RightSidebar';
 import { useAuth } from '../../context/AuthContext';
@@ -9,7 +8,7 @@ import CreatePostModal from '../CreatePostModal';
 import Toast from '../toasts/Toast';
 
 const DashboardLayout = () => {
-  const { loading, error, user, getUserInitials } = useAuth();
+  const { loading, error, user, getUserInitials, getAvatarUrl } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -53,10 +52,7 @@ const DashboardLayout = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
-      {/* Left Sidebar - Fixed width on desktop, hidden on mobile */}
-      <Sidebar />
-
+    <div className="flex bg-gray-50 overflow-hidden">
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Navigation Bar */}
@@ -69,15 +65,20 @@ const DashboardLayout = () => {
             <div className="max-w-4xl mx-auto p-6">
               {/* Create Post Prompt */}
               <div className="bg-white rounded-[24px] md:rounded-[32px] shadow-sm p-4 md:p-6 mb-8 border border-gray-100 flex gap-4 items-center">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
-                  {user?.profilePicture ? (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
+                  {getAvatarUrl() ? (
                     <img
-                      src={user.profilePicture}
-                      alt={user.fullName}
+                      src={getAvatarUrl()}
+                      alt={user?.fullName}
                       className="w-full h-full rounded-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
                     />
                   ) : (
-                    <span className="text-sm">{getUserInitials?.()}</span>
+                    <span className="text-sm">
+                      {getUserInitials?.()}
+                    </span>
                   )}
                 </div>
                 <button

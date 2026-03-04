@@ -11,6 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 
@@ -29,6 +30,7 @@ public class AccountServiceImpl implements AccountService {
     private final TeacherProfileRepository teacherProfileRepository;
     private final InstituteProfileRepository instituteProfileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final FileStorageService fileStorageService;
 
     @Override
     @Transactional(readOnly = true)
@@ -187,6 +189,9 @@ public class AccountServiceImpl implements AccountService {
         // Extract fullName from profile for convenience
         String fullName = extractFullNameFromProfile(profileDTO);
 
+        // Use profileImageUrl if available, otherwise fall back to OAuth2 imageUrl
+        String displayImageUrl = user.getProfileImageUrl() != null ? user.getProfileImageUrl() : user.getImageUrl();
+
         AccountResponseDTO response = AccountResponseDTO.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -195,7 +200,7 @@ public class AccountServiceImpl implements AccountService {
                 .role(user.getRole())
                 .provider(user.getProvider())
                 .createdAt(user.getCreatedAt())
-                .imageUrl(user.getImageUrl())
+                .imageUrl(displayImageUrl)
                 .profile(profileDTO)
                 .build();
 
@@ -390,5 +395,34 @@ public class AccountServiceImpl implements AccountService {
                     return dto;
                 })
                 .orElse(null);
+    }
+
+    @Override
+    public String updateProfileImage(MultipartFile file) {
+        User user = getCurrentAuthenticatedUser();
+
+        log.info("Updating profile image for user: {} (ID: {})", user.getEmail(), user.getId());
+
+        // Delete old profile image if exists
+        if (user.getProfileImageUrl() != null && !user.getProfileImageUrl().isEmpty()) {
+            try {
+                fileStorageService.deleteFile(user.getProfileImageUrl());
+                log.info("Deleted old profile image for user ID: {}", user.getId());
+            } catch (Exception e) {
+                log.warn("Failed to delete old profile image for user ID: {}. Continuing with upload.", user.getId());
+                // Continue with upload even if deletion fails
+            }
+        }
+
+        // Upload new profile image
+        String profileImageUrl = fileStorageService.uploadProfileImage(user.getId(), file);
+
+        // Update user entity
+        user.setProfileImageUrl(profileImageUrl);
+        userRepository.save(user);
+
+        log.info("Profile image updated successfully for user: {}. New URL: {}", user.getEmail(), profileImageUrl);
+
+        return profileImageUrl;
     }
 }

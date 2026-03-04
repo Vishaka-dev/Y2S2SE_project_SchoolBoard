@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, MapPin, BookOpen, Briefcase, Building2, Edit, GraduationCap, Sparkles } from 'lucide-react';
-import Navbar from '../components/Navbar';
-import Sidebar from '../components/Sidebar';
 import AccountOverview from '../components/AccountOverview';
 import SecuritySection from '../components/SecuritySection';
 import DangerZone from '../components/DangerZone';
@@ -170,30 +168,20 @@ const AccountSettings = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 font-dm-sans">
-        <Navbar />
-        <div className="flex">
-          <Sidebar />
-          <main className="flex-1 p-8">
-            <div className="max-w-5xl mx-auto">
-              <div className="animate-pulse space-y-6">
-                <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-                <div className="h-64 bg-gray-200 rounded"></div>
-                <div className="h-96 bg-gray-200 rounded"></div>
-              </div>
-            </div>
-          </main>
+      <div className="flex-1 p-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-96 bg-gray-200 rounded"></div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-dm-sans">
-      <Navbar />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 p-6 lg:p-8">
+    <div className="flex-1 p-6 lg:p-8">
           <div className="max-w-5xl mx-auto">
             {/* Header */}
             <div className="mb-8">
@@ -247,8 +235,6 @@ const AccountSettings = () => {
               <DangerZone />
             </div>
           </div>
-        </main>
-      </div>
     </div>
   );
 };

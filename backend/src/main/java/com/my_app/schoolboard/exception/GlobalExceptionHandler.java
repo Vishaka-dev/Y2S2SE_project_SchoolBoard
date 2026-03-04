@@ -17,132 +17,85 @@ import java.util.Map;
 @Slf4j
 public class GlobalExceptionHandler {
 
-        @ExceptionHandler(UserAlreadyExistsException.class)
-        public ResponseEntity<ErrorResponse> handleUserAlreadyExists(
-                UserAlreadyExistsException ex,
-                HttpServletRequest request) {
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyExistsException ex, HttpServletRequest request) {
+        return buildResponse(ex, HttpStatus.CONFLICT, request);
+    }
 
-                return buildResponse(ex, HttpStatus.CONFLICT, request);
-        }
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex, HttpServletRequest request) {
+        return buildResponse(ex, HttpStatus.UNAUTHORIZED, request);
+    }
 
-        @ExceptionHandler(InvalidCredentialsException.class)
-        public ResponseEntity<ErrorResponse> handleInvalidCredentials(
-                InvalidCredentialsException ex,
-                HttpServletRequest request) {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
+        return buildResponse(ex, HttpStatus.NOT_FOUND, request);
+    }
 
-                return buildResponse(ex, HttpStatus.UNAUTHORIZED, request);
-        }
+    @ExceptionHandler(UnauthorizedOperationException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedOperation(UnauthorizedOperationException ex, HttpServletRequest request) {
+        return buildResponse(ex, HttpStatus.FORBIDDEN, request);
+    }
 
-        @ExceptionHandler(ResourceNotFoundException.class)
-        public ResponseEntity<ErrorResponse> handleResourceNotFound(
-                ResourceNotFoundException ex,
-                HttpServletRequest request) {
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidPassword(InvalidPasswordException ex, HttpServletRequest request) {
+        return buildResponse(ex, HttpStatus.BAD_REQUEST, request);
+    }
 
-                return buildResponse(ex, HttpStatus.NOT_FOUND, request);
-        }
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleEmailAlreadyExists(EmailAlreadyExistsException ex, HttpServletRequest request) {
+        return buildResponse(ex, HttpStatus.CONFLICT, request);
+    }
 
-        @ExceptionHandler(UnauthorizedOperationException.class)
-        public ResponseEntity<ErrorResponse> handleUnauthorizedOperation(
-                UnauthorizedOperationException ex,
-                HttpServletRequest request) {
+    @ExceptionHandler(AccountDeletedException.class)
+    public ResponseEntity<ErrorResponse> handleAccountDeleted(AccountDeletedException ex, HttpServletRequest request) {
+        return buildResponse(ex, HttpStatus.FORBIDDEN, request);
+    }
 
-                return buildResponse(ex, HttpStatus.FORBIDDEN, request);
-        }
+    @ExceptionHandler(InvalidFileException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidFile(InvalidFileException ex, HttpServletRequest request) {
+        return buildResponse(ex, HttpStatus.BAD_REQUEST, request);
+    }
 
-        @ExceptionHandler(InvalidPasswordException.class)
-        public ResponseEntity<ErrorResponse> handleInvalidPassword(
-                InvalidPasswordException ex,
-                HttpServletRequest request) {
+    @ExceptionHandler(FileStorageException.class)
+    public ResponseEntity<ErrorResponse> handleFileStorage(FileStorageException ex, HttpServletRequest request) {
+        return buildResponse(ex, HttpStatus.INTERNAL_SERVER_ERROR, request);
+    }
 
-                return buildResponse(ex, HttpStatus.BAD_REQUEST, request);
-        }
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationErrors(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        Map<String, String> validationErrors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach(error -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            validationErrors.put(fieldName, errorMessage);
+        });
 
-        @ExceptionHandler(EmailAlreadyExistsException.class)
-        public ResponseEntity<ErrorResponse> handleEmailAlreadyExists(
-                EmailAlreadyExistsException ex,
-                HttpServletRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                "Validation failed",
+                request.getRequestURI(),
+                validationErrors);
 
-                return buildResponse(ex, HttpStatus.CONFLICT, request);
-        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
 
-        @ExceptionHandler(AccountDeletedException.class)
-        public ResponseEntity<ErrorResponse> handleAccountDeleted(
-                AccountDeletedException ex,
-                HttpServletRequest request) {
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, HttpServletRequest request) {
+        log.error("Unexpected error occurred: ", ex);
+        return buildResponse(ex, HttpStatus.INTERNAL_SERVER_ERROR, request);
+    }
 
-                return buildResponse(ex, HttpStatus.FORBIDDEN, request);
-        }
-
-        @ExceptionHandler(InvalidFileException.class)
-        public ResponseEntity<ErrorResponse> handleInvalidFile(
-                InvalidFileException ex,
-                HttpServletRequest request) {
-
-                return buildResponse(ex, HttpStatus.BAD_REQUEST, request);
-        }
-
-        @ExceptionHandler(FileStorageException.class)
-        public ResponseEntity<ErrorResponse> handleFileStorage(
-                FileStorageException ex,
-                HttpServletRequest request) {
-
-                return buildResponse(ex, HttpStatus.INTERNAL_SERVER_ERROR, request);
-        }
-
-        @ExceptionHandler(MethodArgumentNotValidException.class)
-        public ResponseEntity<ErrorResponse> handleValidationErrors(
-                MethodArgumentNotValidException ex,
-                HttpServletRequest request) {
-
-                Map<String, String> validationErrors = new HashMap<>();
-                ex.getBindingResult().getAllErrors().forEach(error -> {
-                        String fieldName = ((FieldError) error).getField();
-                        String errorMessage = error.getDefaultMessage();
-                        validationErrors.put(fieldName, errorMessage);
-                });
-
-                ErrorResponse errorResponse = new ErrorResponse(
-                        LocalDateTime.now(),
-                        HttpStatus.BAD_REQUEST.value(),
-                        "Bad Request",
-                        "Validation failed",
-                        request.getRequestURI(),
-                        validationErrors);
-
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        }
-
-        @ExceptionHandler(Exception.class)
-        public ResponseEntity<ErrorResponse> handleGenericException(
-                Exception ex,
-                HttpServletRequest request) {
-
-                log.error("Unexpected error occurred: ", ex);
-
-                ErrorResponse errorResponse = new ErrorResponse(
-                        LocalDateTime.now(),
-                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        "Internal Server Error",
-                        "An unexpected error occurred",
-                        request.getRequestURI());
-
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
-
-        private ResponseEntity<ErrorResponse> buildResponse(
-                Exception ex,
-                HttpStatus status,
-                HttpServletRequest request) {
-
-                log.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
-
-                ErrorResponse errorResponse = new ErrorResponse(
-                        LocalDateTime.now(),
-                        status.value(),
-                        status.getReasonPhrase(),
-                        ex.getMessage(),
-                        request.getRequestURI());
-
-                return ResponseEntity.status(status).body(errorResponse);
-        }
+    private ResponseEntity<ErrorResponse> buildResponse(Exception ex, HttpStatus status, HttpServletRequest request) {
+        log.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI());
+        return ResponseEntity.status(status).body(errorResponse);
+    }
 }

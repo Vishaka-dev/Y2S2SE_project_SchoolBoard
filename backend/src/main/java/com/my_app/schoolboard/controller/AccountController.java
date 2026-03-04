@@ -5,10 +5,10 @@ import com.my_app.schoolboard.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -108,5 +108,28 @@ public class AccountController {
         return ResponseEntity.ok(Map.of(
                 "message", "Account deleted successfully",
                 "status", "success"));
+    }
+
+    /**
+     * POST /api/account/profile-photo
+     * Uploads or updates profile photo for authenticated user
+     * Accepts multipart/form-data
+     * File requirements: JPEG/PNG, max 5MB
+     */
+    @PostMapping(value = "/profile-photo", consumes = "multipart/form-data")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ProfileImageUploadResponseDTO> uploadProfilePhoto(
+            @RequestParam("file") MultipartFile file) {
+
+        log.info("POST /api/account/profile-photo - Uploading profile photo");
+
+        String profileImageUrl = accountService.updateProfileImage(file);
+
+        ProfileImageUploadResponseDTO response = ProfileImageUploadResponseDTO.builder()
+                .profileImageUrl(profileImageUrl)
+                .message("Profile photo uploaded successfully")
+                .build();
+
+        return ResponseEntity.ok(response);
     }
 }

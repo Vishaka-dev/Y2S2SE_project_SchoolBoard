@@ -19,14 +19,14 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-
-        // Serve post files
+        // Serve post files from the upload directory via /uploads/posts/** URL
         Path uploadPath = Paths.get(uploadDir);
         String uploadAbsolutePath = uploadPath.toFile().getAbsolutePath();
         registry.addResourceHandler("/uploads/posts/**")
                 .addResourceLocations("file:" + uploadAbsolutePath + "/");
 
-        // Serve profile images
+        // Serve profile images from the profile-images directory via
+        // /uploads/profile-images/** URL
         Path profileImagePath = Paths.get(profileImageDir);
         String profileImageAbsolutePath = profileImagePath.toFile().getAbsolutePath();
         registry.addResourceHandler("/uploads/profile-images/**")
