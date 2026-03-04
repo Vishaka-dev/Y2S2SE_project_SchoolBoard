@@ -34,10 +34,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         log.info("=== OAuth2 User Load Started ===");
         log.info("Client Registration ID: {}", userRequest.getClientRegistration().getRegistrationId());
-        
+
         OAuth2User oAuth2User = super.loadUser(userRequest);
         log.info("OAuth2 User Attributes: {}", oAuth2User.getAttributes());
-        
+
         try {
             OAuth2User result = processOAuth2User(userRequest, oAuth2User);
             log.info("=== OAuth2 User Load Completed Successfully ===");
@@ -63,9 +63,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         if (userOptional.isPresent()) {
             user = userOptional.get();
-            log.info("Existing user found with email: {} and provider: {}", 
+            log.info("Existing user found with email: {} and provider: {}",
                     oAuth2UserInfo.getEmail(), user.getProvider());
-            
+
             // Update user info from OAuth2 provider if it's a Google user
             if (user.getProvider().equals(AuthProvider.GOOGLE)) {
                 user = updateExistingUser(user, oAuth2UserInfo);
@@ -81,17 +81,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private User registerNewUser(OAuth2UserInfo oAuth2UserInfo) {
         log.info("Registering new OAuth2 user: {}", oAuth2UserInfo.getEmail());
-        
+
         // Generate username from email or name
         String username = generateUsername(oAuth2UserInfo.getEmail());
-        
+
         User user = User.builder()
                 .username(username)
                 .email(oAuth2UserInfo.getEmail())
                 .provider(AuthProvider.GOOGLE)
                 .providerId(oAuth2UserInfo.getId())
                 .imageUrl(oAuth2UserInfo.getImageUrl())
-                .role(Role.USER)
+                .role(Role.STUDENT) // Default role for OAuth2 users
                 .build();
 
         return userRepository.save(user);
@@ -99,10 +99,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private User updateExistingUser(User existingUser, OAuth2UserInfo oAuth2UserInfo) {
         log.info("Updating existing OAuth2 user: {}", oAuth2UserInfo.getEmail());
-        
+
         existingUser.setImageUrl(oAuth2UserInfo.getImageUrl());
         existingUser.setProviderId(oAuth2UserInfo.getId());
-        
+
         return userRepository.save(existingUser);
     }
 
@@ -110,11 +110,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String baseUsername = email.split("@")[0].replaceAll("[^a-zA-Z0-9]", "_");
         String username = baseUsername;
         int counter = 1;
-        
+
         while (userRepository.existsByUsername(username)) {
             username = baseUsername + "_" + counter++;
         }
-        
+
         return username;
     }
 }
