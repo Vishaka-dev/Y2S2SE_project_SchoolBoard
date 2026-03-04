@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, X, AlertCircle, CheckCircle } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import accountService from '../services/accountService';
+import SecuritySection from '../components/SecuritySection';
+import DangerZone from '../components/DangerZone';
 
 const normalizeInterests = (value) => {
   if (Array.isArray(value)) {
@@ -169,7 +171,7 @@ const EditProfile = () => {
 
       // Redirect after 1.5 seconds
       setTimeout(() => {
-        navigate('/account/settings');
+        navigate('/profile');
       }, 1500);
     } catch (err) {
       setError(err.message || 'Failed to update profile. Please try again.');
@@ -641,18 +643,18 @@ const EditProfile = () => {
   return (
     <div className="min-h-screen bg-gray-50 font-dm-sans">
       <Navbar />
-      <main className="max-w-4xl mx-auto p-6 lg:p-8">
+      <main className="max-w-6xl mx-auto p-6 lg:p-8">
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => navigate('/account/settings')}
+            onClick={() => navigate('/profile')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Settings
+            Back to Profile
           </button>
           <h1 className="text-3xl font-bold text-gray-900 font-manrope">Edit Profile</h1>
-          <p className="text-gray-600 mt-2">Update your profile information</p>
+          <p className="text-gray-600 mt-2">Update your profile information and manage account security</p>
         </div>
 
         {/* Messages */}
@@ -682,7 +684,7 @@ const EditProfile = () => {
           <div className="bg-gray-50 px-6 lg:px-8 py-4 border-t border-gray-200 flex gap-3 justify-end">
             <button
               type="button"
-              onClick={() => navigate('/account/settings')}
+              onClick={() => navigate('/profile')}
               disabled={isSaving}
               className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
@@ -698,6 +700,11 @@ const EditProfile = () => {
             </button>
           </div>
         </form>
+
+        <div className="mt-8 space-y-8">
+          <SecuritySection accountData={accountData} />
+          <DangerZone />
+        </div>
       </main>
     </div>
   );

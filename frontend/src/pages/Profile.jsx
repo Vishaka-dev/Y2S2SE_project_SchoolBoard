@@ -190,10 +190,6 @@ const Profile = () => {
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Cover Image + Profile Header */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        {/* Cover Banner */}
-        <div className="h-48 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 relative">
-          <div className="absolute inset-0 bg-black/10"></div>
-        </div>
 
         {/* Profile Info Section */}
         <div className="relative px-8 pb-6">

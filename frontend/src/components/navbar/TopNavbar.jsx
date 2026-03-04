@@ -32,7 +32,7 @@ const TopNavbar = () => {
 
   const handleSettingsClick = () => {
     setDropdownOpen(false);
-    navigate('/account/settings');
+    navigate('/account/edit-profile');
   };
 
   return (
@@ -133,7 +133,7 @@ const TopNavbar = () => {
                     className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-3"
                   >
                     <span className="text-lg">⚙️</span>
-                    <span className="font-medium">Account Settings</span>
+                    <span className="font-medium">Edit Profile</span>
                   </button>
                 </div>
 
