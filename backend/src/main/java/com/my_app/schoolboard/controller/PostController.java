@@ -48,10 +48,12 @@ public class PostController {
      */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<PostResponseDTO>> getAllPosts() {
-        log.info("Fetching all posts for feed");
+    public ResponseEntity<List<PostResponseDTO>> getAllPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        log.info("Fetching all posts for feed - page: {}, size: {}", page, size);
 
-        List<PostResponseDTO> posts = postService.getAllPosts();
+        List<PostResponseDTO> posts = postService.getAllPosts(page, size);
 
         return ResponseEntity.ok(posts);
     }

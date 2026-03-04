@@ -51,11 +51,13 @@ export const postService = {
 
     /**
      * Get all posts for feed
+     * @param {number} page Page number
+     * @param {number} size Page size
      * @returns {Promise<Array>} Array of post objects
      */
-    getAllPosts: async () => {
+    getAllPosts: async (page = 0, size = 10) => {
         try {
-            const response = await apiClient.get('/posts');
+            const response = await apiClient.get(`/posts?page=${page}&size=${size}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching posts:', error);

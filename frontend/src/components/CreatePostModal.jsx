@@ -50,6 +50,9 @@ const CreatePostModal = ({ isOpen, onClose, onPostCompleted }) => {
                 image: image
             });
 
+            // Notify other components (like Home feed) to refresh
+            window.dispatchEvent(new CustomEvent('postCreated'));
+
             // Notify parent via Toast callback
             if (onPostCompleted) {
                 onPostCompleted('Post created successfully!', 'success');

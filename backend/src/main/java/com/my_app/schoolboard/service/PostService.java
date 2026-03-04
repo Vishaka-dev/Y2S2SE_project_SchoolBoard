@@ -8,5 +8,5 @@ import java.util.List;
 public interface PostService {
     PostResponseDTO createPost(String content, MultipartFile image, String username);
 
-    List<PostResponseDTO> getAllPosts();
+    List<PostResponseDTO> getAllPosts(int page, int size);
 }

@@ -19,9 +19,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
         Path uploadPath = Paths.get(uploadDir);
         String uploadAbsolutePath = uploadPath.toFile().getAbsolutePath();
 
-        // Serve files from the upload directory via /uploads/** URL
+        // Serve files from the upload directory via /uploads/posts/** URL
         // e.g., /uploads/posts/image.jpg
-        registry.addResourceHandler("/uploads/**")
+        registry.addResourceHandler("/uploads/posts/**")
                 .addResourceLocations("file:" + uploadAbsolutePath + "/");
     }
 }

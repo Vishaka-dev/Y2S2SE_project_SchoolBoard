@@ -64,8 +64,9 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PostResponseDTO> getAllPosts() {
-        return postRepository.findAllByOrderByCreatedAtDesc().stream()
+    public List<PostResponseDTO> getAllPosts(int page, int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return postRepository.findAllByOrderByCreatedAtDesc(pageable).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
