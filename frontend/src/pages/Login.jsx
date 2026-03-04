@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import authService from '../services/authService';
 import logo from '../../logos/learnlink_logo.png';
+import loginImage from '../../photos/login.jpg';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -30,6 +33,11 @@ const Login = () => {
     try {
       const response = await authService.login(formData.email, formData.password);
       authService.setToken(response.token);
+      
+      // Refresh user data in AuthContext
+      await refreshUser();
+      
+      // Navigate to dashboard
       navigate('/dashboard');
     } catch (err) {
       const errorMessage = err.response?.data?.message || 
@@ -46,37 +54,63 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 animate-fadeIn">
-        {/* Back to Home Button */}
-        <Link to="/" className="flex items-center justify-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="min-h-screen flex">
+      {/* Left Side - Image and Description with Light Blue Background */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-start items-center pt-6 pb-12 px-12 xl:px-16 bg-blue-100 animate-fadeIn">
+        {/* Back to Home Link */}
+        <Link to="/" className="self-start inline-flex items-center text-blue-600 hover:text-blue-700 hover:bg-blue-50 mb-6 px-4 py-2 rounded-lg border-2 border-blue-600 transition group opacity-0 animate-slideInLeft" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+          <svg className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          <span className="text-sm font-medium">Back to Home</span>
+          Back to Home
+        </Link>
+        
+        <Link to="/" className="flex items-center space-x-2 mb-6 opacity-0 animate-slideInLeft" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
+          <img src={logo} alt="LearnLink Logo" className="h-10 w-auto" />
+          <span className="text-2xl font-bold text-gray-900">LearnLink</span>
         </Link>
 
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          {/* LearnLink Logo */}
-          <Link to="/" className="flex justify-center items-center space-x-2 mb-6">
-            <img src={logo} alt="LearnLink Logo" className="h-12 w-auto" />
-            <span className="text-xl font-bold text-gray-900">LearnLink</span>
+        {/* Photo and Text Container */}
+        <div className="w-full max-w-2xl bg-white rounded-lg shadow-md p-4 border-[1px] border-gray-200 opacity-0 animate-slideInUp" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
+          <img 
+            src={loginImage} 
+            alt="Students learning together" 
+            className="w-full h-auto rounded-md mb-5 object-cover"
+          />
+          
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Empowering Sri Lanka's Future
+          </h2>
+          <p className="text-gray-700 text-lg leading-relaxed italic">
+            Connect with thousands of students, share resources, and access premium study materials all in one place.
+          </p>
+        </div>
+      </div>
+
+      {/* Right Side - Login Form with White Background */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-white">
+        <div className="w-full max-w-md opacity-0 animate-fadeIn" style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}>
+          {/* Mobile Logo */}
+          <Link to="/" className="flex lg:hidden items-center justify-center space-x-2 mb-8">
+            <img src={logo} alt="LearnLink Logo" className="h-10 w-auto" />
+            <span className="text-2xl font-bold text-gray-900">LearnLink</span>
           </Link>
 
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Student Login</h2>
-            <p className="mt-2 text-sm text-gray-600">Welcome back! Please enter your details.</p>
-          </div>
+          <div className="bg-white rounded-2xl shadow-2xl p-8 sm:p-10">
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold text-gray-900">Login</h2>
+                <p className="mt-2 text-sm text-gray-600">Welcome back! Please enter your details.</p>
+              </div>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
-              {error}
-            </div>
-          )}
+              {error && (
+                <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-base font-medium text-gray-700 mb-2">
                 Email Address
               </label>
               <div className="relative">
@@ -92,7 +126,7 @@ const Login = () => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                   placeholder="student@example.com"
                   disabled={isLoading}
                 />
@@ -100,7 +134,7 @@ const Login = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-base font-medium text-gray-700 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -116,7 +150,7 @@ const Login = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                   placeholder="••••••••"
                   disabled={isLoading}
                 />
@@ -141,7 +175,7 @@ const Login = () => {
             </div>
 
             <div className="flex items-center justify-end">
-              <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+              <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-500 transition">
                 Forgot password?
               </a>
             </div>
@@ -149,11 +183,11 @@ const Login = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {isLoading ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -165,7 +199,7 @@ const Login = () => {
             </button>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300"></div>
@@ -178,7 +212,7 @@ const Login = () => {
             <button
               onClick={handleGoogleLogin}
               disabled={isLoading}
-              className="mt-6 w-full flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="mt-6 w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -190,21 +224,22 @@ const Login = () => {
             </button>
           </div>
 
-          <p className="mt-6 text-center text-sm text-gray-600">
+          <p className="mt-8 text-center text-sm text-gray-600">
             Don't have an account yet?{' '}
-            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
-              Create student account
+            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 transition">
+              Create an account
             </Link>
           </p>
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <div className="flex justify-center space-x-6 text-sm text-gray-500">
-              <a href="#" className="hover:text-gray-700">Privacy Policy</a>
-              <a href="#" className="hover:text-gray-700">Help Center</a>
-              <a href="#" className="hover:text-gray-700">Terms of Service</a>
+              <a href="#" className="hover:text-gray-700 transition">Privacy Policy</a>
+              <a href="#" className="hover:text-gray-700 transition">Help Center</a>
+              <a href="#" className="hover:text-gray-700 transition">Terms of Service</a>
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

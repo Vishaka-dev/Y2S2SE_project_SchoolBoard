@@ -42,10 +42,6 @@ CREATE DATABASE school_board;
 
 ### 2. Environment Configuration
 
-```bash
-# Copy the example env file
-cp .env.example .env
-```
 
 Fill in your credentials in `.env`:
 - Database credentials
