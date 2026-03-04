@@ -49,9 +49,9 @@ const Sidebar = () => {
       {/* Settings at Bottom */}
       <div className="px-3 py-1 border-t border-gray-200">
         <Link
-          to="/settings"
+          to="/account/settings"
           className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-            isActive('/settings')
+            isActive('/account/settings')
               ? 'bg-blue-50 text-blue-600'
               : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
           }`}

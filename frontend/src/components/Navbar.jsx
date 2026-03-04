@@ -1,21 +1,27 @@
 import { Search, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import authService from '../services/authService';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const { user, logout, getUserInitials, getRoleDisplay } = useAuth();
 
   const handleLogout = () => {
-    authService.logout();
-    navigate('/login');
+    logout();
   };
 
-  // You can later get this from user context/state
-  const user = {
-    name: 'John Doe',
-    role: 'Student',
-    avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=3b82f6&color=fff'
-  };
+  // Show loading state if user is not loaded yet
+  if (!user) {
+    return (
+      <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-6">
+        <div className="text-sm text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
+  // Generate avatar URL with user initials
+  const avatarUrl = user.imageUrl || 
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || user.email)}&background=3b82f6&color=fff`;
 
   return (
     <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
@@ -43,8 +49,8 @@ const Navbar = () => {
         {/* User Profile */}
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="text-sm font-medium text-gray-900">{user.name}</p>
-            <p className="text-xs text-gray-500">{user.role}</p>
+            <p className="text-sm font-medium text-gray-900">{user.fullName || user.email}</p>
+            <p className="text-xs text-gray-500">{getRoleDisplay()}</p>
           </div>
           <button
             onClick={handleLogout}
@@ -52,8 +58,8 @@ const Navbar = () => {
             title="Click to logout"
           >
             <img
-              src={user.avatar}
-              alt={user.name}
+              src={avatarUrl}
+              alt={user.fullName || user.email}
               className="w-9 h-9 rounded-full ring-2 ring-gray-200 hover:ring-blue-500 transition cursor-pointer"
             />
           </button>

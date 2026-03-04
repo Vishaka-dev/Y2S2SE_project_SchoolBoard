@@ -1,42 +1,59 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import authService from '../services/authService';
 
 const OAuth2Redirect = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [error, setError] = useState('');
 
   useEffect(() => {
-    console.log('=== OAuth2 Redirect Page Loaded ===');
-    console.log('Current URL:', window.location.href);
-    
-    const token = searchParams.get('token');
-    const errorParam = searchParams.get('error');
+    const processOAuthCallback = async () => {
+      console.log('=== OAuth2 Redirect Page Loaded ===');
+      console.log('Current URL:', window.location.href);
+      
+      const token = searchParams.get('token');
+      const errorParam = searchParams.get('error');
 
-    console.log('Token from URL:', token ? `${token.substring(0, 20)}...` : 'null');
-    console.log('Error from URL:', errorParam);
+      console.log('Token from URL:', token ? `${token.substring(0, 20)}...` : 'null');
+      console.log('Error from URL:', errorParam);
 
-    if (token) {
-      console.log('Saving token to localStorage');
-      authService.setToken(token);
-      console.log('Redirecting to dashboard');
-      navigate('/dashboard');
-    } else if (errorParam) {
-      const decodedError = decodeURIComponent(errorParam);
-      console.error('OAuth2 Error:', decodedError);
-      setError(decodedError);
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
-    } else {
-      console.error('No token or error received');
-      setError('No token received from OAuth2 provider');
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
-    }
-  }, [searchParams, navigate]);
+      if (token) {
+        console.log('Saving token to localStorage');
+        authService.setToken(token);
+        
+        try {
+          // Refresh user data in AuthContext
+          await refreshUser();
+          console.log('Redirecting to dashboard');
+          navigate('/dashboard');
+        } catch (err) {
+          console.error('Failed to fetch user after OAuth:', err);
+          setError('Failed to load user data. Please try logging in again.');
+          setTimeout(() => {
+            navigate('/login');
+          }, 3000);
+        }
+      } else if (errorParam) {
+        const decodedError = decodeURIComponent(errorParam);
+        console.error('OAuth2 Error:', decodedError);
+        setError(decodedError);
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      } else {
+        console.error('No token or error received');
+        setError('No token received from OAuth2 provider');
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      }
+    };
+
+    processOAuthCallback();
+  }, [searchParams, navigate, refreshUser]);
 
   if (error) {
     return (
