@@ -185,6 +185,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
+<<<<<<< Updated upstream
     /**
      * Handle all other exceptions
      */
@@ -192,6 +193,55 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex,
             HttpServletRequest request) {
+=======
+        /**
+         * Handle InvalidFileException
+         */
+        @ExceptionHandler(InvalidFileException.class)
+        public ResponseEntity<ErrorResponse> handleInvalidFile(
+                        InvalidFileException ex,
+                        HttpServletRequest request) {
+
+                log.error("InvalidFileException: {}", ex.getMessage());
+
+                ErrorResponse errorResponse = new ErrorResponse(
+                                LocalDateTime.now(),
+                                HttpStatus.BAD_REQUEST.value(),
+                                "Bad Request",
+                                ex.getMessage(),
+                                request.getRequestURI());
+
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+
+        /**
+         * Handle FileStorageException
+         */
+        @ExceptionHandler(FileStorageException.class)
+        public ResponseEntity<ErrorResponse> handleFileStorage(
+                        FileStorageException ex,
+                        HttpServletRequest request) {
+
+                log.error("FileStorageException: {}", ex.getMessage());
+
+                ErrorResponse errorResponse = new ErrorResponse(
+                                LocalDateTime.now(),
+                                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                "Internal Server Error",
+                                ex.getMessage(),
+                                request.getRequestURI());
+
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+
+        /**
+         * Handle all other exceptions
+         */
+        @ExceptionHandler(Exception.class)
+        public ResponseEntity<ErrorResponse> handleGenericException(
+                        Exception ex,
+                        HttpServletRequest request) {
+>>>>>>> Stashed changes
 
         log.error("Unexpected error occurred: ", ex);
 
