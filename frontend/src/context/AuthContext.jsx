@@ -58,36 +58,63 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Get user initials for avatar
-  const getUserInitials = () => {
-    if (!user) return '?';
-    
-    if (user.fullName) {
-      return user.fullName
+  const getUserInitials = (currentUser = user) => {
+    if (!currentUser) return '?';
+
+    if (currentUser.fullName) {
+      return currentUser.fullName
         .split(' ')
         .map(n => n[0])
         .join('')
         .toUpperCase()
         .substring(0, 2);
     }
-    
-    if (user.email) {
-      return user.email[0].toUpperCase();
+
+    if (currentUser.email) {
+      return currentUser.email[0].toUpperCase();
     }
-    
+
     return '?';
   };
 
-  // Get role display name
-  const getRoleDisplay = () => {
-    if (!user || !user.role) return 'User';
+  const getAvatarUrl = (currentUser = user) => {
+    if (!currentUser) return null;
+
+    // Check for profile picture - handle both imageUrl and profilePicture naming
+    const imgUrl = currentUser.imageUrl || currentUser.profilePicture;
+
+    if (!imgUrl) {
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.fullName || currentUser.email || 'User')}&background=3b82f6&color=fff`;
+    }
+
+    // If it's already a full HTTP URL (like from backend: http://localhost:8080/uploads/...)
+    // we should return it as is.
+    if (imgUrl.startsWith('http')) {
+      return imgUrl;
+    }
+
+    // Handle relative paths provided by backend
+    // If path starts with uploads or /uploads, it's a profile image
+    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+    const serverUrl = apiBase.replace(/\/api\/?$/, '');
     
+    // Ensure properly formatted path
+    const cleanPath = imgUrl.startsWith('/') ? imgUrl : `/${imgUrl}`;
+
+    return `${serverUrl}${cleanPath}`;
+  };
+
+  // Get role display name
+  const getRoleDisplay = (currentUser = user) => {
+    if (!currentUser || !currentUser.role) return 'User';
+
     const roleMap = {
       STUDENT: 'Student',
       TEACHER: 'Teacher',
       INSTITUTE: 'Institute'
     };
-    
-    return roleMap[user.role] || user.role;
+
+    return roleMap[currentUser.role] || currentUser.role;
   };
 
   const value = {
@@ -97,6 +124,7 @@ export const AuthProvider = ({ children }) => {
     refreshUser,
     logout,
     getUserInitials,
+    getAvatarUrl,
     getRoleDisplay,
     isAuthenticated: !!user
   };

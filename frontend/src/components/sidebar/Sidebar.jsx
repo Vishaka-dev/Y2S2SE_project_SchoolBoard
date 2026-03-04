@@ -24,7 +24,7 @@ const Sidebar = () => {
     { name: 'Connections', icon: Users, path: '/connections' },
     { name: 'Messages', icon: MessageSquare, path: '/messages' },
     { name: 'Notifications', icon: Bell, path: '/notifications' },
-    { name: 'Settings', icon: Settings, path: '/account/settings' },
+    { name: 'Edit Profile', icon: Settings, path: '/account/edit-profile' },
   ];
 
   const isActive = (path) => location.pathname === path;

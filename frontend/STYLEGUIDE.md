@@ -12,9 +12,9 @@
 
 | State | Background | Text Color | Border | Font Weight |
 | :--- | :--- | :--- | :--- | :--- |
-| **Alert / Error** | `bg-red-100` | `text-red-600` | `border-red-400` | `font-medium` |
-| **Warning** | `bg-yellow-100` | `text-yellow-600` | `border-yellow-400` | `font-medium` |
-| **Success** | `bg-green-100` | `text-green-600` | `border-green-400` | `font-medium` |
+| **Alert / Error** | `bg-white` | `bg-red-600` | `font-medium` |
+| **Warning** | `bg-white` | `bg-yellow-600` | `font-medium` |
+| **Success** | `bg-white` | `bg-green-600` | `font-medium` |
 
 ## 3. Typography
 **Font Families:**
@@ -35,13 +35,13 @@
 ## 4. UI Components
 
 **Buttons:**
-* **Primary (Default):** `bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 font-medium rounded-lg shadow-sm transition-colors`
-* **Secondary (Outlined):** `bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-medium rounded-lg shadow-sm transition-colors`
-* **Destructive (Delete):** `bg-red-600 text-white border border-red-600 hover:bg-red-700 font-medium rounded-lg shadow-sm transition-colors`
+* **Primary (Default):** `bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 font-medium rounded-full shadow-sm transition-colors`
+* **Secondary (Outlined):** `bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-medium rounded-full shadow-sm transition-colors`
+* **Destructive (Delete):** `bg-red-600 text-white border border-red-600 hover:bg-red-700 font-medium rounded-full shadow-sm transition-colors`
 * **Small Buttons:** Change rounding to `rounded-md`.
 
 **Form Inputs:**
-* **Base Style:** `bg-white border border-gray-300 rounded-md py-2.5 px-3 text-sm md:text-base text-gray-900 transition-colors`
+* **Base Style:** `bg-white border border-gray-300 rounded-full py-2.5 px-3 text-sm md:text-base text-gray-900 transition-colors`
 * **Focus State:** `focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`
 * **Disabled State:** `disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50`
 * **Error State:** `border-red-300 focus:ring-red-500`
