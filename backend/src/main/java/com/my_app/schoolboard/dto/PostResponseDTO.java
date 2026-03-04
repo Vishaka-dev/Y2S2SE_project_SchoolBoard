@@ -27,5 +27,6 @@ public class PostResponseDTO {
         private String role;
         private String avatar;
         private String initials;
+        private String username;
     }
 }

@@ -163,6 +163,7 @@ public class PostServiceImpl implements PostService {
                 .role(author.getRole().name())
                 .avatar(author.getImageUrl())
                 .initials(initials.toUpperCase())
+                .username(author.getUsername())
                 .build();
 
         return PostResponseDTO.builder()
