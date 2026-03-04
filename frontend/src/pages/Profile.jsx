@@ -58,9 +58,9 @@ const Profile = () => {
           <div className="flex items-end justify-between -mt-16 mb-4">
             <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-3xl border-4 border-white shadow-xl">
               {user.profilePicture ? (
-                <img 
-                  src={user.profilePicture} 
-                  alt={user.fullName} 
+                <img
+                  src={user.profilePicture}
+                  alt={user.fullName}
                   className="w-full h-full rounded-full object-cover"
                 />
               ) : (
@@ -183,7 +183,7 @@ const Profile = () => {
               {user.role === 'STUDENT' ? 'Skills & Interests' : 'Expertise'}
             </h2>
             <div className="flex flex-wrap gap-2">
-              {user.skills && user.skills.length > 0 ? (
+              {Array.isArray(user.skills) && user.skills.length > 0 ? (
                 user.skills.map((skill, index) => (
                   <span
                     key={index}
