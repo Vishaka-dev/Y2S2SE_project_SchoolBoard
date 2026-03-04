@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, X, AlertCircle, CheckCircle } from 'lucide-react';
-import Navbar from '../components/Navbar';
-import Sidebar from '../components/Sidebar';
 import accountService from '../services/accountService';
 
 const EditProfile = () => {
@@ -589,29 +587,19 @@ const EditProfile = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 font-dm-sans">
-        <Navbar />
-        <div className="flex">
-          <Sidebar />
-          <main className="flex-1 p-8">
-            <div className="max-w-4xl mx-auto">
-              <div className="animate-pulse space-y-6">
-                <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-                <div className="h-96 bg-gray-200 rounded"></div>
-              </div>
-            </div>
-          </main>
+      <div className="flex-1 p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-96 bg-gray-200 rounded"></div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-dm-sans">
-      <Navbar />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 p-6 lg:p-8">
+    <div className="flex-1 p-6 lg:p-8">
           <div className="max-w-4xl mx-auto">
             {/* Header */}
             <div className="mb-8">
@@ -670,8 +658,6 @@ const EditProfile = () => {
               </div>
             </form>
           </div>
-        </main>
-      </div>
     </div>
   );
 };
