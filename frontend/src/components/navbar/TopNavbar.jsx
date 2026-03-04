@@ -2,9 +2,10 @@ import { Search, Bell, MessageSquare, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import learnlinkLogo from '../../../logos/learnlink_logo-transparent.png';
 
 const TopNavbar = () => {
-  const { user, getUserInitials, getRoleDisplay, logout } = useAuth();
+  const { user, getUserInitials, getRoleDisplay, getAvatarUrl, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -37,9 +38,17 @@ const TopNavbar = () => {
 
   return (
     <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
+      <div 
+        onClick={() => navigate('/')} 
+        className="flex items-center gap-3 cursor-pointer select-none"
+      >
+        <img src={learnlinkLogo} alt="LearnLink" className="h-8 w-auto" />
+        <h1 className="text-xl font-bold text-gray-900 hidden sm:block">LearnLink</h1>
+      </div>
+      
       {/* Search Bar */}
-      <div className="flex-1 max-w-2xl">
-        <div className="relative">
+      <div className="flex-1 flex justify-center px-4 sm:px-8">
+        <div className="relative w-full max-w-2xl">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-5 w-5 text-gray-400" />
           </div>
@@ -54,7 +63,7 @@ const TopNavbar = () => {
       {/* Right Side - Icons & Profile */}
       <div className="flex items-center gap-3 ml-6">
         {/* Notification Bell */}
-        <button 
+        <button
           onClick={() => navigate('/notifications')}
           className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
           title="Notifications"
@@ -64,7 +73,7 @@ const TopNavbar = () => {
         </button>
 
         {/* Messages */}
-        <button 
+        <button
           onClick={() => navigate('/messages')}
           className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
           title="Messages"
@@ -88,19 +97,22 @@ const TopNavbar = () => {
                 </p>
                 <p className="text-xs text-gray-500">{getRoleDisplay()}</p>
               </div>
-              
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold shadow-md group-hover:shadow-lg transition">
-                {user.profilePicture ? (
-                  <img 
-                    src={user.profilePicture} 
-                    alt={user.fullName} 
-                    className="w-full h-full rounded-full object-cover"
+
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold shadow-md group-hover:shadow-lg transition overflow-hidden">
+                {getAvatarUrl() ? (
+                  <img
+                    src={getAvatarUrl()}
+                    alt={user.fullName || user.username}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
                   />
                 ) : (
-                  <span className="text-sm">{getUserInitials()}</span>
+                  <span className="text-xs">{getUserInitials()}</span>
                 )}
               </div>
-              
+
               <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
@@ -127,7 +139,7 @@ const TopNavbar = () => {
                     <span className="text-lg">👤</span>
                     <span className="font-medium">View Profile</span>
                   </button>
-                  
+
                   <button
                     onClick={handleSettingsClick}
                     className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-3"

@@ -130,16 +130,26 @@ const Home = () => {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex gap-3">
                     {/* Author Avatar */}
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-sm">
-                      {post.author?.avatar ? (
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-sm overflow-hidden">
+                      {(post.author?.imageUrl || post.author?.avatar) ? (
                         <img
-                          src={post.author.avatar}
-                          alt={post.author.name}
-                          className="w-full h-full rounded-full object-cover"
+                          src={(post.author?.imageUrl || post.author?.avatar).startsWith('http')
+                            ? (post.author.imageUrl || post.author.avatar)
+                            : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/api\/?$/, '')}${(post.author.imageUrl || post.author.avatar).startsWith('/') ? (post.author.imageUrl || post.author.avatar) : '/' + (post.author.imageUrl || post.author.avatar)}`
+                          }
+                          alt={post.author?.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            // Logic to show fallback initials if needed
+                            const fallback = e.target.parentElement.querySelector('.avatar-fallback');
+                            if (fallback) fallback.classList.remove('hidden');
+                          }}
                         />
-                      ) : (
-                        <span className="text-sm">{post.author?.initials || 'U'}</span>
-                      )}
+                      ) : null}
+                      <span className={`avatar-fallback ${(post.author?.imageUrl || post.author?.avatar) ? 'hidden' : ''} text-sm`}>
+                        {post.author?.initials || post.author?.fullName?.[0] || 'U'}
+                      </span>
                     </div>
 
                     {/* Author Info */}
@@ -197,26 +207,31 @@ const Home = () => {
                 </div>
 
                 {/* Post Content */}
-                {post.content && (
-                  <p className="text-gray-700 mb-4 leading-relaxed font-dm-sans whitespace-pre-wrap">{post.content}</p>
-                )}
+                <div className="mb-4">
+                  {post.content && (
+                    <p className="text-gray-700 leading-relaxed font-dm-sans whitespace-pre-wrap">{post.content}</p>
+                  )}
+                </div>
 
                 {/* Media (if any) */}
-                {post.imageUrl && (
+                {(post.imageUrl || post.postImageUrl) && (
                   <div className="mb-4 rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50">
                     <img
-                      src={post.imageUrl}
+                      src={(post.imageUrl || post.postImageUrl).startsWith('http') 
+                        ? (post.imageUrl || post.postImageUrl) 
+                        : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/api\/?$/, '')}${(post.imageUrl || post.postImageUrl).startsWith('/') ? (post.imageUrl || post.postImageUrl) : '/' + (post.imageUrl || post.postImageUrl)}`
+                      }
                       alt="Post content"
                       className="w-full h-auto max-h-[500px] object-contain"
                       onError={(e) => {
-                        console.error('Image load failed:', post.imageUrl);
+                        console.error('Image load failed:', (post.imageUrl || post.postImageUrl));
                         e.target.style.display = 'none';
                       }}
                     />
                   </div>
                 )}
 
-                {/* Engagement Stats */}
+                  {/* Engagement Stats */}
                 <div className="flex items-center gap-4 text-[13px] text-gray-500 pb-3 mb-3 border-b border-gray-50 font-medium">
                   <span className="hover:text-blue-600 cursor-pointer">0 likes</span>
                   <span className="hover:text-blue-600 cursor-pointer">0 comments</span>

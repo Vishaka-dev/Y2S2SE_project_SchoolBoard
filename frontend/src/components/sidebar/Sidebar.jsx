@@ -6,12 +6,12 @@ import {
   MessageSquare, 
   Bell, 
   Settings,
-  GraduationCap,
   Menu,
   X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useState } from 'react';
+import learnlinkLogo from '../../../logos/learnlink_logo.png';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -32,11 +32,8 @@ const Sidebar = () => {
   const SidebarContent = () => (
     <>
       {/* Logo Section */}
-      <div className="flex items-center gap-2 px-6 h-16 border-b border-gray-200">
-        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-          <GraduationCap className="w-5 h-5 text-white" />
-        </div>
-        <span className="text-xl font-semibold text-gray-900">LearnLink</span>
+      <div className="flex items-center justify-center px-6 h-16 border-b border-gray-200">
+        <img src={learnlinkLogo} alt="LearnLink" className="h-10 w-auto" />
       </div>
 
       {/* Navigation Items */}

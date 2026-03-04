@@ -73,6 +73,26 @@ const accountService = {
     } catch (error) {
       throw error.response?.data || error;
     }
+  },
+
+  /**
+   * Upload profile photo
+   * @param {File} file - The image file to upload
+   * @returns {Promise<Object>} Upload response with imageUrl
+   */
+  uploadProfilePhoto: async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await apiClient.post('/account/profile-photo', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
   }
 };
 

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import logo from '../../logos/learnlink_logo.png';
+import logo from '../../logos/learnlink_logo-transparent.png';
 import uniStudents from '../../photos/uni_students.webp';
 import school from '../../photos/school.webp';
 

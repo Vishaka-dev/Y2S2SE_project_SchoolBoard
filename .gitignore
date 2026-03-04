@@ -50,6 +50,13 @@ Thumbs.db
 *.swp
 *.swo
 
+### Backup & Temporary Files ###
+*.bak
+*.backup
+*.orig
+*.rej
+*~
+
 ### Logs ###
 logs/
 *.log
@@ -61,3 +68,11 @@ pnpm-debug.log*
 *_DEBUG.txt
 test-*.ps1
 test-*.http
+
+### User Uploads ###
+uploads/
+backend/uploads/
+**/uploads/
+
+### Miscellaneous ###
+git

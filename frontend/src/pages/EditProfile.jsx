@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, X, AlertCircle, CheckCircle } from 'lucide-react';
-import Navbar from '../components/Navbar';
+import { ArrowLeft, Save, X, AlertCircle, CheckCircle, Camera, Upload, Loader2 } from 'lucide-react';
 import accountService from '../services/accountService';
 import SecuritySection from '../components/SecuritySection';
 import DangerZone from '../components/DangerZone';
+import TopNavbar from '../components/navbar/TopNavbar';
+import { useAuth } from '../context/AuthContext';
 
 const normalizeInterests = (value) => {
   if (Array.isArray(value)) {
@@ -43,10 +44,12 @@ const EditProfile = () => {
   const [currentInterest, setCurrentInterest] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const navigate = useNavigate();
+  const { refreshUser, getAvatarUrl } = useAuth();
 
   useEffect(() => {
     fetchAccountData();
@@ -145,6 +148,40 @@ const EditProfile = () => {
     return Object.keys(errors).length === 0;
   };
 
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Basic validation
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File size must be less than 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await accountService.uploadProfilePhoto(file);
+      setAccountData(prev => ({
+        ...prev,
+        imageUrl: response.profileImageUrl
+      }));
+      await refreshUser();
+      setSuccess('Profile photo updated successfully!');
+    } catch (err) {
+      setError(err.message || 'Failed to upload profile photo');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -167,6 +204,7 @@ const EditProfile = () => {
       }
 
       await accountService.updateProfile(updateData);
+      await refreshUser();
       setSuccess('Profile updated successfully!');
 
       // Redirect after 1.5 seconds
@@ -629,7 +667,7 @@ const EditProfile = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 font-dm-sans">
-        <Navbar />
+        <TopNavbar />
         <div className="max-w-4xl mx-auto p-8">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-gray-200 rounded w-1/3"></div>
@@ -642,7 +680,7 @@ const EditProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-dm-sans">
-      <Navbar />
+      <TopNavbar />
       <main className="max-w-6xl mx-auto p-6 lg:p-8">
         {/* Header */}
         <div className="mb-8">
@@ -671,11 +709,49 @@ const EditProfile = () => {
             <p className="text-sm text-green-600">{success}</p>
           </div>
         )}
-        
+
         {/* Form */}
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-6 lg:p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Profile Photo Section */}
+              <div className="md:col-span-2 flex flex-col items-center justify-center pb-6 border-b border-gray-100">
+                <div className="relative group">
+                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-md bg-gray-100 flex items-center justify-center">
+                    <img
+                      src={getAvatarUrl(accountData)}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+
+                    {isUploading && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 transition-opacity">
+                        <Loader2 className="w-8 h-8 text-white animate-spin" />
+                      </div>
+                    )}
+                  </div>
+
+                  <label
+                    htmlFor="profile-photo-upload"
+                    className={`absolute bottom-0 right-0 p-2.5 bg-blue-600 text-white rounded-full shadow-lg cursor-pointer hover:bg-blue-700 transition-all transform group-hover:scale-110 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <Camera className="w-5 h-5" />
+                    <input
+                      id="profile-photo-upload"
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      disabled={isUploading}
+                    />
+                  </label>
+                </div>
+                <div className="mt-4 text-center">
+                  <h3 className="text-sm font-medium text-gray-900">Profile Photo</h3>
+                  <p className="text-xs text-gray-500 mt-1">Recommended: JPG, PNG (Max 5MB)</p>
+                </div>
+              </div>
+
               {renderFormFields()}
             </div>
           </div>

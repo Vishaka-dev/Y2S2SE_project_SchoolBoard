@@ -50,6 +50,9 @@ public class User {
     @Column(name = "image_url")
     private String imageUrl; // Profile picture from OAuth2 provider
 
+    @Column(name = "profile_image_url")
+    private String profileImageUrl; // Uploaded profile picture (overrides OAuth2 image)
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

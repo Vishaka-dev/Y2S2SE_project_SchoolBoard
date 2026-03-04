@@ -95,6 +95,21 @@ export const postService = {
             console.error('Error deleting post:', error);
             throw error.response?.data || new Error('Network error deleting post');
         }
+    },
+
+    /**
+     * Get all posts by a specific user
+     * @param {string} username Username
+     * @returns {Promise<Array>} Array of post objects
+     */
+    getUserPosts: async (username) => {
+        try {
+            const response = await apiClient.get(`/posts/user/${encodeURIComponent(username)}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching user posts:', error);
+            throw error.response?.data || new Error('Network error fetching user posts');
+        }
     }
 };
 

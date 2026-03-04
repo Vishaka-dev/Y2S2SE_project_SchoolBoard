@@ -93,4 +93,18 @@ public class PostController {
 
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Get all posts by a specific user
+     * GET /api/posts/user/{username}
+     */
+    @GetMapping("/user/{username}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<PostResponseDTO>> getUserPosts(@PathVariable String username) {
+        log.info("Fetching all posts for user: {}", username);
+
+        List<PostResponseDTO> posts = postService.getPostsByUsername(username);
+
+        return ResponseEntity.ok(posts);
+    }
 }

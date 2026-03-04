@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import Sidebar from '../components/Sidebar';
-import Navbar from '../components/Navbar';
+import TopNavbar from '../components/navbar/TopNavbar';
 import CreatePostModal from '../components/CreatePostModal';
 import Toast from '../components/toasts/Toast';
 
@@ -14,13 +13,10 @@ const Dashboard = () => {
 
   return (
     <div className="flex h-screen bg-gray-50 font-dm-sans">
-      {/* Sidebar */}
-      <Sidebar />
-
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Navbar */}
-        <Navbar />
+        <TopNavbar />
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto">
