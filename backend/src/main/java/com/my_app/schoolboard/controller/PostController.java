@@ -1,0 +1,58 @@
+package com.my_app.schoolboard.controller;
+
+import com.my_app.schoolboard.dto.PostResponseDTO;
+import com.my_app.schoolboard.service.PostService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/posts")
+@CrossOrigin(origins = "${app.frontend-url}", allowCredentials = "true")
+@RequiredArgsConstructor
+@Slf4j
+public class PostController {
+
+    private final PostService postService;
+
+    /**
+     * Create a new post
+     * POST /api/posts
+     * Consumes multipart/form-data
+     */
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PostResponseDTO> createPost(
+            @RequestParam(value = "content", required = false) String content,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            Authentication authentication) {
+
+        log.info("Received request to create post from user: {}", authentication.getName());
+
+        PostResponseDTO response = postService.createPost(content, image, authentication.getName());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Get all posts for the feed
+     * GET /api/posts
+     */
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<PostResponseDTO>> getAllPosts() {
+        log.info("Fetching all posts for feed");
+
+        List<PostResponseDTO> posts = postService.getAllPosts();
+
+        return ResponseEntity.ok(posts);
+    }
+}

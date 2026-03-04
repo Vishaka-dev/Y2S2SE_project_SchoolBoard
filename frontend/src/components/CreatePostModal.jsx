@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { postService } from '../services/postService';
 
 const CreatePostModal = ({ isOpen, onClose, onPostCompleted }) => {
     const [content, setContent] = useState('');
@@ -43,20 +44,11 @@ const CreatePostModal = ({ isOpen, onClose, onPostCompleted }) => {
 
         setIsSubmitting(true);
 
-        // Simulate API call using limited mock time
         try {
-            await new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    // Randomly simulate an error for testing toast error bounds (e.g., 20% fail rate)
-                    if (Math.random() < 0.2) {
-                        reject(new Error('Network error simulated.'));
-                    } else {
-                        resolve();
-                    }
-                }, 800);
+            await postService.createPost({
+                content: content.trim(),
+                image: image
             });
-
-            console.log('Post created mock:', { content, image });
 
             // Notify parent via Toast callback
             if (onPostCompleted) {
