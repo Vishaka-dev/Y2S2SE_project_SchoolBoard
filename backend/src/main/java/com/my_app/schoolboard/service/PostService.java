@@ -9,4 +9,8 @@ public interface PostService {
     PostResponseDTO createPost(String content, MultipartFile image, String username);
 
     List<PostResponseDTO> getAllPosts(int page, int size);
+
+    PostResponseDTO updatePost(Long id, String content, MultipartFile image, String username);
+
+    void deletePost(Long id, String username);
 }

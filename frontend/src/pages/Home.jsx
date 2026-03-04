@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ThumbsUp, MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
+import { ThumbsUp, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react';
 import { postService } from '../services/postService';
 import RoleBasedWidget from '../components/widgets/RoleBasedWidget';
+import EditPostModal from '../components/EditPostModal';
 
 const Home = () => {
   const { user } = useAuth();
@@ -11,6 +12,9 @@ const Home = () => {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [activeMenu, setActiveMenu] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(null);
+  const [editingPost, setEditingPost] = useState(null);
   const POSTS_PER_PAGE = 10;
 
   const loadPosts = async (pageToLoad, isInitial = false) => {
@@ -52,10 +56,34 @@ const Home = () => {
     return () => window.removeEventListener('postCreated', handlePostCreated);
   }, []);
 
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setActiveMenu(null);
+    if (activeMenu) {
+      window.addEventListener('click', handleClickOutside);
+    }
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, [activeMenu]);
+
   const handleLoadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
     loadPosts(nextPage);
+  };
+
+  const handleDelete = async (postId) => {
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
+
+    setIsDeleting(postId);
+    try {
+      await postService.deletePost(postId);
+      setPosts(prev => prev.filter(p => p.id !== postId));
+      setActiveMenu(null);
+    } catch (error) {
+      alert('Failed to delete post: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsDeleting(null);
+    }
   };
 
   const getRoleBadgeColor = (role) => {
@@ -97,7 +125,7 @@ const Home = () => {
         ) : (
           <>
             {posts.map((post) => (
-              <div key={post.id} className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition group/post">
+              <div key={post.id} className={`bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition group/post relative ${isDeleting === post.id ? 'opacity-50 grayscale' : ''}`}>
                 {/* Post Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex gap-3">
@@ -128,10 +156,44 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {/* More Options */}
-                  <button className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition opacity-0 group-hover/post:opacity-100">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </button>
+                  {/* More Options / Menu */}
+                  <div className="relative">
+                    {(user?.username === post.author?.username || user?.role === 'ADMIN') && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenu(activeMenu === post.id ? null : post.id);
+                          }}
+                          className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+
+                        {activeMenu === post.id && (
+                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 animate-in fade-in zoom-in duration-200">
+                            <button
+                              onClick={() => {
+                                setEditingPost(post);
+                                setActiveMenu(null);
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                            >
+                              <Pencil className="w-4 h-4" />
+                              <span className="font-semibold">Edit Post</span>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(post.id)}
+                              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              <span className="font-semibold">Delete Post</span>
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 {/* Post Content */}
@@ -206,6 +268,22 @@ const Home = () => {
           </>
         )}
       </div>
+
+      {editingPost && (
+        <EditPostModal
+          isOpen={true}
+          post={editingPost}
+          onClose={() => setEditingPost(null)}
+          onPostCompleted={(msg, type) => {
+            // Re-fetch to show updates
+            if (type === 'success') {
+              setPage(0);
+              loadPosts(0, true);
+            }
+            alert(msg);
+          }}
+        />
+      )}
     </div>
   );
 };

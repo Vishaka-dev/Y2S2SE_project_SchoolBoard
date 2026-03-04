@@ -63,6 +63,38 @@ export const postService = {
             console.error('Error fetching posts:', error);
             throw error.response?.data || new Error('Network error fetching posts');
         }
+    },
+
+    /**
+     * Update an existing post
+     * @param {string|number} id Post ID
+     * @param {Object} postData Object containing content and/or image
+     */
+    updatePost: async (id, postData) => {
+        const formData = new FormData();
+        if (postData.content !== undefined) formData.append('content', postData.content);
+        if (postData.image) formData.append('image', postData.image);
+
+        try {
+            const response = await apiClient.patch(`/posts/${id}`, formData);
+            return response.data;
+        } catch (error) {
+            console.error('Error updating post:', error);
+            throw error.response?.data || new Error('Network error updating post');
+        }
+    },
+
+    /**
+     * Delete a post
+     * @param {string|number} id Post ID
+     */
+    deletePost: async (id) => {
+        try {
+            await apiClient.delete(`/posts/${id}`);
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            throw error.response?.data || new Error('Network error deleting post');
+        }
     }
 };
 

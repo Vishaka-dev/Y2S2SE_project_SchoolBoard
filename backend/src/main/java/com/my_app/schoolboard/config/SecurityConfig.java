@@ -51,7 +51,7 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 // Public endpoints
                                                 .requestMatchers("/api/auth/**", "/api/health/**", "/oauth2/**",
-                                                                "/login/oauth2/**")
+                                                                "/login/oauth2/**", "/uploads/posts/**")
                                                 .permitAll()
                                                 // Protected endpoints - require authentication
                                                 .requestMatchers("/api/users/**", "/api/account/**").authenticated()

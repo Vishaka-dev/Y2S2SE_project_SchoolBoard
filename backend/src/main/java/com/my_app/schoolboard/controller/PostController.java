@@ -57,4 +57,40 @@ public class PostController {
 
         return ResponseEntity.ok(posts);
     }
+
+    /**
+     * Update an existing post
+     * PATCH /api/posts/{id}
+     */
+    @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PostResponseDTO> updatePost(
+            @PathVariable Long id,
+            @RequestParam(value = "content", required = false) String content,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            Authentication authentication) {
+
+        log.info("Received request to update post {} from user: {}", id, authentication.getName());
+
+        PostResponseDTO response = postService.updatePost(id, content, image, authentication.getName());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Delete a post
+     * DELETE /api/posts/{id}
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> deletePost(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        log.info("Received request to delete post {} from user: {}", id, authentication.getName());
+
+        postService.deletePost(id, authentication.getName());
+
+        return ResponseEntity.noContent().build();
+    }
 }

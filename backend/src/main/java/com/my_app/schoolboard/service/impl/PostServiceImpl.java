@@ -71,6 +71,76 @@ public class PostServiceImpl implements PostService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public PostResponseDTO updatePost(Long id, String content, MultipartFile image, String username) {
+        log.info("Updating post {} by user {}", id, username);
+
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Security check: Only author or admin can update
+        if (!post.getAuthor().getId().equals(user.getId()) && !user.getRole().name().equals("ADMIN")) {
+            throw new RuntimeException("Unauthorized to update this post");
+        }
+
+        if (content != null) {
+            post.setContent(content);
+        }
+
+        if (image != null && !image.isEmpty()) {
+            // Delete old image if exists
+            if (post.getImageUrl() != null) {
+                storageService.delete(extractFilename(post.getImageUrl()));
+            }
+
+            // Store new image
+            String filename = storageService.store(image);
+            String imageUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/posts/")
+                    .path(filename)
+                    .toUriString();
+            post.setImageUrl(imageUrl);
+        }
+
+        Post updatedPost = postRepository.save(post);
+        return mapToDTO(updatedPost);
+    }
+
+    @Override
+    @Transactional
+    public void deletePost(Long id, String username) {
+        log.info("Deleting post {} by user {}", id, username);
+
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Security check: Only author or admin can delete
+        if (!post.getAuthor().getId().equals(user.getId()) && !user.getRole().name().equals("ADMIN")) {
+            throw new RuntimeException("Unauthorized to delete this post");
+        }
+
+        // Delete image from storage
+        if (post.getImageUrl() != null) {
+            storageService.delete(extractFilename(post.getImageUrl()));
+        }
+
+        postRepository.delete(post);
+    }
+
+    private String extractFilename(String imageUrl) {
+        if (imageUrl == null || !imageUrl.contains("/uploads/posts/")) {
+            return null;
+        }
+        return imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+    }
+
     private PostResponseDTO mapToDTO(Post post) {
         User author = post.getAuthor();
 

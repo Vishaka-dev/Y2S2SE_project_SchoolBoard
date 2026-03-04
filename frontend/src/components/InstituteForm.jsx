@@ -332,7 +332,7 @@ const InstituteForm = ({ formData, onChange, onSubmit, onBack, errors, isLoading
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
           <input
-            type="url"
+            type="text"
             name="website"
             value={formData.website || ''}
             onChange={onChange}
