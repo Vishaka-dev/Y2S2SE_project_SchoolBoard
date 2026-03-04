@@ -56,11 +56,13 @@ const EditProfile = () => {
     try {
       const data = await accountService.getAccountDetails();
       setAccountData(data);
-      
+
       // Initialize form data
       if (data.profile) {
         setFormData(data.profile);
-        setInterests(normalizeInterests(data.profile.interests));
+        if (data.profile.interests) {
+          setInterests(Array.isArray(data.profile.interests) ? data.profile.interests : []);
+        }
       }
     } catch (err) {
       setError(err.message || 'Failed to load account details');
@@ -75,7 +77,7 @@ const EditProfile = () => {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear field error when user starts typing
     if (fieldErrors[name]) {
       setFieldErrors(prev => ({
@@ -114,7 +116,7 @@ const EditProfile = () => {
 
     if (accountData.role === 'STUDENT') {
       const isSchoolStudent = accountData.profile?.educationLevel === 'SCHOOL';
-      
+
       if (isSchoolStudent) {
         if (!formData.schoolName?.trim()) {
           errors.schoolName = 'School name is required';
@@ -157,7 +159,7 @@ const EditProfile = () => {
     try {
       // Prepare update data based on role
       const updateData = { ...formData };
-      
+
       // Add interests for students
       if (accountData.role === 'STUDENT') {
         updateData.interests = normalizeInterests(interests);
@@ -165,7 +167,7 @@ const EditProfile = () => {
 
       await accountService.updateProfile(updateData);
       setSuccess('Profile updated successfully!');
-      
+
       // Redirect after 1.5 seconds
       setTimeout(() => {
         navigate('/account/settings');
@@ -252,7 +254,7 @@ const EditProfile = () => {
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
-            {normalizeInterests(interests).map((interest, index) => (
+            {Array.isArray(interests) && interests.map((interest, index) => (
               <span
                 key={index}
                 className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium border border-purple-200 flex items-center gap-2"

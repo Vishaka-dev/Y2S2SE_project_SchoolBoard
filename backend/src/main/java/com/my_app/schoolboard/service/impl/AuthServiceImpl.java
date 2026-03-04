@@ -92,10 +92,22 @@ public class AuthServiceImpl implements AuthService {
                     return new InvalidCredentialsException("Invalid username or password");
                 });
 
+        // Verify password exists (local accounts only)
+        if (user.getPassword() == null) {
+            log.warn("Login failed: User {} has no local password (possibly OAuth2 user)", request.getUsername());
+            throw new InvalidCredentialsException("Invalid username or password");
+        }
+
         // Verify password
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             log.warn("Login failed: Invalid password for user {}", request.getUsername());
             throw new InvalidCredentialsException("Invalid username or password");
+        }
+
+        // Verify role exists
+        if (user.getRole() == null) {
+            log.error("Critical error: User {} has no assigned role", user.getUsername());
+            throw new RuntimeException("User profile is incomplete: Missing role");
         }
 
         log.info("User logged in successfully: {}", user.getUsername());
