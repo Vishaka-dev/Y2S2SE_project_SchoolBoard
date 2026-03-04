@@ -1,6 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { MapPin, Briefcase, Calendar, Mail, Edit, Users, BookOpen, Award, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import TopNavbar from '../components/navbar/TopNavbar';
 
 const Profile = () => {
   const { user, getUserInitials, getRoleDisplay } = useAuth();
@@ -183,9 +184,12 @@ const Profile = () => {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Cover Image + Profile Header */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className="flex h-screen bg-gray-50 overflow-hidden flex-col">
+      <TopNavbar />
+      <main className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Cover Image + Profile Header */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         {/* Cover Banner */}
         <div className="h-48 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 relative">
           <div className="absolute inset-0 bg-black/10"></div>
@@ -282,17 +286,10 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Settings</h2>
-            <div className="space-y-2">
-              <button onClick={() => navigate('/account/edit-profile')} className="w-full px-4 py-3 bg-blue-50 text-blue-700 rounded-xl text-sm font-medium hover:bg-blue-100 transition text-left flex items-center gap-2">
-                <Edit className="w-4 h-4" /> Edit Profile Information
-              </button>
-            </div>
-          </div>
         </div>
       </div>
+        </div>
+      </main>
     </div>
   );
 };

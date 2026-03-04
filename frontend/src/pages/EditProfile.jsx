@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, X, AlertCircle, CheckCircle } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import Sidebar from '../components/Sidebar';
 import accountService from '../services/accountService';
 
 const normalizeInterests = (value) => {
@@ -629,16 +628,11 @@ const EditProfile = () => {
     return (
       <div className="min-h-screen bg-gray-50 font-dm-sans">
         <Navbar />
-        <div className="flex">
-          <Sidebar />
-          <main className="flex-1 p-8">
-            <div className="max-w-4xl mx-auto">
-              <div className="animate-pulse space-y-6">
-                <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-                <div className="h-96 bg-gray-200 rounded"></div>
-              </div>
-            </div>
-          </main>
+        <div className="max-w-4xl mx-auto p-8">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-96 bg-gray-200 rounded"></div>
+          </div>
         </div>
       </div>
     );
@@ -647,69 +641,64 @@ const EditProfile = () => {
   return (
     <div className="min-h-screen bg-gray-50 font-dm-sans">
       <Navbar />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 p-6 lg:p-8">
-          <div className="max-w-4xl mx-auto">
-            {/* Header */}
-            <div className="mb-8">
-              <button
-                onClick={() => navigate('/account/settings')}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Settings
-              </button>
-              <h1 className="text-3xl font-bold text-gray-900 font-manrope">Edit Profile</h1>
-              <p className="text-gray-600 mt-2">Update your profile information</p>
-            </div>
+      <main className="max-w-4xl mx-auto p-6 lg:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => navigate('/account/settings')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Settings
+          </button>
+          <h1 className="text-3xl font-bold text-gray-900 font-manrope">Edit Profile</h1>
+          <p className="text-gray-600 mt-2">Update your profile information</p>
+        </div>
 
-            {/* Messages */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            )}
-
-            {success && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-green-600">{success}</p>
-              </div>
-            )}
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="p-6 lg:p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {renderFormFields()}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="bg-gray-50 px-6 lg:px-8 py-4 border-t border-gray-200 flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => navigate('/account/settings')}
-                  disabled={isSaving}
-                  className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm hover:shadow flex items-center gap-2"
-                >
-                  <Save className="w-4 h-4" />
-                  {isSaving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
+        {/* Messages */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-600">{error}</p>
           </div>
-        </main>
-      </div>
+        )}
+
+        {success && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-green-600">{success}</p>
+          </div>
+        )}
+        
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-6 lg:p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {renderFormFields()}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="bg-gray-50 px-6 lg:px-8 py-4 border-t border-gray-200 flex gap-3 justify-end">
+            <button
+              type="button"
+              onClick={() => navigate('/account/settings')}
+              disabled={isSaving}
+              className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm hover:shadow flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </main>
     </div>
   );
 };

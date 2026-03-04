@@ -75,12 +75,10 @@ function AppRoutes() {
         path="/profile" 
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Profile />
           </ProtectedRoute>
         }
-      >
-        <Route index element={<Profile />} />
-      </Route>
+      />
       
       <Route 
         path="/connections" 
@@ -131,12 +129,10 @@ function AppRoutes() {
         path="/account/edit-profile" 
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <EditProfile />
           </ProtectedRoute>
         }
-      >
-        <Route index element={<EditProfile />} />
-      </Route>
+      />
       
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
