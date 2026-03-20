@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
+import { PROVINCES } from '../constants/provinces';
 
 const TeacherForm = ({ formData, onChange, onSubmit, onBack, errors, isLoading }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const provinces = [
-    'Western', 'Central', 'Southern', 'Northern', 'Eastern',
-    'North Western', 'North Central', 'Uva', 'Sabaragamuwa'
-  ];
 
   return (
     <div className="space-y-6">
@@ -246,7 +242,7 @@ const TeacherForm = ({ formData, onChange, onSubmit, onBack, errors, isLoading }
               }`}
             >
               <option value="">Select Province</option>
-              {provinces.map((province) => (
+              {PROVINCES.map((province) => (
                 <option key={province} value={province}>
                   {province}
                 </option>
