@@ -1,13 +1,38 @@
 import React, { useState } from 'react';
+import { X } from 'lucide-react';
+import { PROVINCES } from '../constants/provinces';
 
 const StudentForm = ({ educationLevel, formData, onChange, onSubmit, onBack, errors, isLoading }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const provinces = [
-    'Western', 'Central', 'Southern', 'Northern', 'Eastern',
-    'North Western', 'North Central', 'Uva', 'Sabaragamuwa'
-  ];
+  const [currentInterest, setCurrentInterest] = useState('');
+
+  const handleAddInterest = () => {
+    const interest = currentInterest.trim();
+    if (!interest) return;
+
+    const currentInterests = Array.isArray(formData.interests) ? formData.interests : [];
+    if (!currentInterests.includes(interest)) {
+      onChange({
+        target: {
+          name: 'interests',
+          value: [...currentInterests, interest],
+        },
+      });
+    }
+    setCurrentInterest('');
+  };
+
+  const handleRemoveInterest = (index) => {
+    const currentInterests = Array.isArray(formData.interests) ? formData.interests : [];
+    onChange({
+      target: {
+        name: 'interests',
+        value: currentInterests.filter((_, i) => i !== index),
+      },
+    });
+  };
 
   const grades = Array.from({ length: 13 }, (_, i) => i + 1);
   const years = Array.from({ length: 6 }, (_, i) => i + 1);
@@ -195,7 +220,7 @@ const StudentForm = ({ educationLevel, formData, onChange, onSubmit, onBack, err
             }`}
           >
             <option value="">Select Province</option>
-            {provinces.map((province) => (
+            {PROVINCES.map((province) => (
               <option key={province} value={province}>
                 {province}
               </option>
@@ -206,19 +231,44 @@ const StudentForm = ({ educationLevel, formData, onChange, onSubmit, onBack, err
           )}
         </div>
 
-        {/* Interests */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Interests
           </label>
-          <input
-            type="text"
-            name="interests"
-            value={formData.interests || ''}
-            onChange={onChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-            placeholder="e.g., Mathematics, Science, Sports (optional)"
-          />
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              value={currentInterest}
+              onChange={(e) => setCurrentInterest(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddInterest())}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              placeholder="e.g., Mathematics, Science, Sports (optional)"
+            />
+            <button
+              type="button"
+              onClick={handleAddInterest}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
+            >
+              Add
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {Array.isArray(formData.interests) && formData.interests.map((interest, index) => (
+              <span
+                key={index}
+                className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium border border-blue-200 flex items-center gap-2"
+              >
+                {interest}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveInterest(index)}
+                  className="hover:text-blue-900"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* School-specific fields */}

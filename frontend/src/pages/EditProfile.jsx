@@ -6,6 +6,8 @@ import SecuritySection from '../components/SecuritySection';
 import DangerZone from '../components/DangerZone';
 import TopNavbar from '../components/navbar/TopNavbar';
 import { useAuth } from '../context/AuthContext';
+import Toast from '../components/toasts/Toast';
+import { PROVINCES } from '../constants/provinces';
 
 const normalizeInterests = (value) => {
   if (Array.isArray(value)) {
@@ -65,7 +67,7 @@ const EditProfile = () => {
       if (data.profile) {
         setFormData(data.profile);
         if (data.profile.interests) {
-          setInterests(Array.isArray(data.profile.interests) ? data.profile.interests : []);
+          setInterests(normalizeInterests(data.profile.interests));
         }
       }
     } catch (err) {
@@ -198,9 +200,10 @@ const EditProfile = () => {
       // Prepare update data based on role
       const updateData = { ...formData };
 
-      // Add interests for students
+      // Add interests for students as a comma-separated string
       if (accountData.role === 'STUDENT') {
-        updateData.interests = normalizeInterests(interests);
+        const normalizedInterests = normalizeInterests(interests);
+        updateData.interests = normalizedInterests.length > 0 ? normalizedInterests.join(', ') : '';
       }
 
       await accountService.updateProfile(updateData);
@@ -255,19 +258,21 @@ const EditProfile = () => {
           />
         </div>
 
-        {/* Province */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Province
           </label>
-          <input
-            type="text"
+          <select
             name="province"
             value={formData.province || ''}
             onChange={handleInputChange}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter your province"
-          />
+          >
+            <option value="">Select province</option>
+            {PROVINCES.map(province => (
+              <option key={province} value={province}>{province}</option>
+            ))}
+          </select>
         </div>
 
         {/* Interests */}
@@ -447,19 +452,21 @@ const EditProfile = () => {
           />
         </div>
 
-        {/* Province */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Province
           </label>
-          <input
-            type="text"
+          <select
             name="province"
             value={formData.province || ''}
             onChange={handleInputChange}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter your province"
-          />
+          >
+            <option value="">Select province</option>
+            {PROVINCES.map(province => (
+              <option key={province} value={province}>{province}</option>
+            ))}
+          </select>
         </div>
 
         <div className="md:col-span-2 border-t border-gray-200 pt-6">
@@ -556,19 +563,21 @@ const EditProfile = () => {
           )}
         </div>
 
-        {/* Province */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Province
           </label>
-          <input
-            type="text"
+          <select
             name="province"
             value={formData.province || ''}
             onChange={handleInputChange}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter province"
-          />
+          >
+            <option value="">Select province</option>
+            {PROVINCES.map(province => (
+              <option key={province} value={province}>{province}</option>
+            ))}
+          </select>
         </div>
 
         {/* District */}
@@ -695,19 +704,20 @@ const EditProfile = () => {
           <p className="text-gray-600 mt-2">Update your profile information and manage account security</p>
         </div>
 
-        {/* Messages */}
+        {/* Toasts */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
+          <Toast
+            message={error}
+            type="error"
+            onClose={() => setError('')}
+          />
         )}
 
         {success && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-green-600">{success}</p>
-          </div>
+          <Toast
+            message={success}
+            onClose={() => setSuccess('')}
+          />
         )}
 
         {/* Form */}
