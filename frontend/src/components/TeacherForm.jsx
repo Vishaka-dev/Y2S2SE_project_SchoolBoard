@@ -5,8 +5,15 @@ const TeacherForm = ({ formData, onChange, onSubmit, onBack, errors, isLoading }
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const provinces = [
-    'Western', 'Central', 'Southern', 'Northern', 'Eastern',
-    'North Western', 'North Central', 'Uva', 'Sabaragamuwa'
+    'Central Province',
+    'Eastern Province',
+    'North Central Province',
+    'North Western Province',
+    'Northern Province',
+    'Sabaragamuwa Province',
+    'Southern Province',
+    'Uva Province',
+    'Western Province'
   ];
 
   return (

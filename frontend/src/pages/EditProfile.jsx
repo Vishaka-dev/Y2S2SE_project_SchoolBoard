@@ -255,19 +255,21 @@ const EditProfile = () => {
           />
         </div>
 
-        {/* Province */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Province
           </label>
-          <input
-            type="text"
+          <select
             name="province"
             value={formData.province || ''}
             onChange={handleInputChange}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter your province"
-          />
+          >
+            <option value="">Select province</option>
+            {PROVINCES.map(province => (
+              <option key={province} value={province}>{province}</option>
+            ))}
+          </select>
         </div>
 
         {/* Interests */}
@@ -447,19 +449,21 @@ const EditProfile = () => {
           />
         </div>
 
-        {/* Province */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Province
           </label>
-          <input
-            type="text"
+          <select
             name="province"
             value={formData.province || ''}
             onChange={handleInputChange}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter your province"
-          />
+          >
+            <option value="">Select province</option>
+            {PROVINCES.map(province => (
+              <option key={province} value={province}>{province}</option>
+            ))}
+          </select>
         </div>
 
         <div className="md:col-span-2 border-t border-gray-200 pt-6">
@@ -556,19 +560,21 @@ const EditProfile = () => {
           )}
         </div>
 
-        {/* Province */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Province
           </label>
-          <input
-            type="text"
+          <select
             name="province"
             value={formData.province || ''}
             onChange={handleInputChange}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter province"
-          />
+          >
+            <option value="">Select province</option>
+            {PROVINCES.map(province => (
+              <option key={province} value={province}>{province}</option>
+            ))}
+          </select>
         </div>
 
         {/* District */}

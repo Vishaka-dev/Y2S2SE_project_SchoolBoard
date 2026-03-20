@@ -5,20 +5,27 @@ const InstituteForm = ({ formData, onChange, onSubmit, onBack, errors, isLoading
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const provinces = [
-    'Western', 'Central', 'Southern', 'Northern', 'Eastern',
-    'North Western', 'North Central', 'Uva', 'Sabaragamuwa'
+    'Central Province',
+    'Eastern Province',
+    'North Central Province',
+    'North Western Province',
+    'Northern Province',
+    'Sabaragamuwa Province',
+    'Southern Province',
+    'Uva Province',
+    'Western Province'
   ];
 
   const districts = {
-    'Western': ['Colombo', 'Gampaha', 'Kalutara'],
-    'Central': ['Kandy', 'Matale', 'Nuwara Eliya'],
-    'Southern': ['Galle', 'Matara', 'Hambantota'],
-    'Northern': ['Jaffna', 'Kilinochchi', 'Mannar', 'Vavuniya', 'Mullaitivu'],
-    'Eastern': ['Trincomalee', 'Batticaloa', 'Ampara'],
-    'North Western': ['Kurunegala', 'Puttalam'],
-    'North Central': ['Anuradhapura', 'Polonnaruwa'],
-    'Uva': ['Badulla', 'Monaragala'],
-    'Sabaragamuwa': ['Ratnapura', 'Kegalle']
+    'Central Province': ['Kandy', 'Matale', 'Nuwara Eliya'],
+    'Eastern Province': ['Trincomalee', 'Batticaloa', 'Ampara'],
+    'North Central Province': ['Anuradhapura', 'Polonnaruwa'],
+    'North Western Province': ['Kurunegala', 'Puttalam'],
+    'Northern Province': ['Jaffna', 'Kilinochchi', 'Mannar', 'Vavuniya', 'Mullaitivu'],
+    'Sabaragamuwa Province': ['Ratnapura', 'Kegalle'],
+    'Southern Province': ['Galle', 'Matara', 'Hambantota'],
+    'Uva Province': ['Badulla', 'Monaragala'],
+    'Western Province': ['Colombo', 'Gampaha', 'Kalutara']
   };
 
   const institutionTypes = ['SCHOOL', 'UNIVERSITY', 'COLLEGE', 'TRAINING_INSTITUTE', 'OTHER'];
