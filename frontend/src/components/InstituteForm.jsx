@@ -1,20 +1,9 @@
 import React, { useState } from 'react';
+import { PROVINCES } from '../constants/provinces';
 
 const InstituteForm = ({ formData, onChange, onSubmit, onBack, errors, isLoading }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const provinces = [
-    'Central Province',
-    'Eastern Province',
-    'North Central Province',
-    'North Western Province',
-    'Northern Province',
-    'Sabaragamuwa Province',
-    'Southern Province',
-    'Uva Province',
-    'Western Province'
-  ];
 
   const districts = {
     'Central Province': ['Kandy', 'Matale', 'Nuwara Eliya'],
@@ -236,7 +225,7 @@ const InstituteForm = ({ formData, onChange, onSubmit, onBack, errors, isLoading
               }`}
             >
               <option value="">Select Province</option>
-              {provinces.map((province) => (
+              {PROVINCES.map((province) => (
                 <option key={province} value={province}>
                   {province}
                 </option>

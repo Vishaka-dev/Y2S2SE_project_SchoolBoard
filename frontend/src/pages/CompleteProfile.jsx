@@ -6,6 +6,37 @@ import TeacherForm from '../components/TeacherForm';
 import InstituteForm from '../components/InstituteForm';
 import RoleSelection from '../components/RoleSelection';
 import EducationLevelSelection from '../components/EducationLevelSelection';
+import Toast from '../components/toasts/Toast';
+
+const normalizeInterests = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .filter((item) => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return normalizeInterests(parsed);
+      }
+    } catch {
+      // Continue with comma-separated fallback
+    }
+
+    return trimmed
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
 
 const CompleteProfile = () => {
   const navigate = useNavigate();
@@ -228,6 +259,11 @@ const CompleteProfile = () => {
         profileData.yearsOfExperience = parseInt(profileData.yearsOfExperience, 10);
       }
 
+      // Handle interests if it's an array (from the tag system)
+      if (profileData.interests && Array.isArray(profileData.interests)) {
+        profileData.interests = profileData.interests.length > 0 ? profileData.interests.join(', ') : '';
+      }
+
       // Call the completeProfile service
       await authService.completeProfile(profileData);
 
@@ -287,24 +323,13 @@ const CompleteProfile = () => {
 
         {/* Main Content Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8 sm:p-10">
-          {/* API Error Message */}
+          {/* API Error Toast */}
           {apiError && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-3">
-              <svg
-                className="w-5 h-5 mt-0.5 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p>{apiError}</p>
-            </div>
+            <Toast
+              message={apiError}
+              type="error"
+              onClose={() => setApiError('')}
+            />
           )}
 
           {/* Step 1: Role Selection */}
