@@ -66,6 +66,25 @@ const Profile = () => {
     return levels[user.educationLevel] || user.educationLevel;
   };
 
+  const renderContentWithHashtags = (content) => {
+    if (!content) return null;
+    
+    const parts = content.split(/(#\w+)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('#')) {
+        return (
+          <span
+            key={index}
+            className="text-blue-600 font-medium"
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   // Mock data - Replace with real data from backend
   const renderStudentProfile = (profile) => (
     <>
@@ -335,7 +354,9 @@ const Profile = () => {
                           </div>
                         </div>
                         {post.content && (
-                          <p className="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap font-dm-sans">{post.content}</p>
+                          <p className="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap font-dm-sans">
+                            {renderContentWithHashtags(post.content)}
+                          </p>
                         )}
                         {post.imageUrl && (
                           <div className="rounded-xl overflow-hidden border border-gray-100 bg-gray-50 mb-4 shadow-sm">
