@@ -9,6 +9,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @Builder
@@ -39,4 +41,10 @@ public class Post {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @ElementCollection
+    @CollectionTable(name = "post_hashtags", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "hashtag")
+    @Builder.Default
+    private Set<String> hashtags = new HashSet<>();
 }
