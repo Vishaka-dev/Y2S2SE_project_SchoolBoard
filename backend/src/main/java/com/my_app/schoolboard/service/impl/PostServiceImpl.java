@@ -18,7 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -62,6 +66,7 @@ public class PostServiceImpl implements PostService {
                 .content(content)
                 .imageUrl(imageUrl)
                 .author(author)
+                .hashtags(extractHashtags(content))
                 .build();
 
         Post savedPost = postRepository.save(post);
@@ -112,6 +117,10 @@ public class PostServiceImpl implements PostService {
             post.setImageUrl(imageUrl);
         }
 
+        if (content != null) {
+            post.setHashtags(extractHashtags(content));
+        }
+
         Post updatedPost = postRepository.save(post);
         return mapToDTO(updatedPost);
     }
@@ -156,6 +165,19 @@ public class PostServiceImpl implements PostService {
         return imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
     }
 
+    private Set<String> extractHashtags(String content) {
+        if (content == null || content.isEmpty()) {
+            return new HashSet<>();
+        }
+        Set<String> hashtags = new HashSet<>();
+        Pattern pattern = Pattern.compile("#(\\w+)");
+        Matcher matcher = pattern.matcher(content);
+        while (matcher.find()) {
+            hashtags.add(matcher.group(1).toLowerCase());
+        }
+        return hashtags;
+    }
+
     private PostResponseDTO mapToDTO(Post post) {
         User author = post.getAuthor();
 
@@ -197,6 +219,7 @@ public class PostServiceImpl implements PostService {
                 .content(post.getContent())
                 .imageUrl(post.getImageUrl())
                 .author(authorDTO)
+                .hashtags(post.getHashtags())
                 .createdAt(post.getCreatedAt())
                 .build();
     }

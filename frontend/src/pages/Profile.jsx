@@ -120,6 +120,37 @@ const Profile = () => {
     }
   };
 
+  const getEducationLevelDisplay = () => {
+    if (!user.educationLevel) return null;
+    const levels = {
+      HIGH_SCHOOL: 'High School',
+      UNDERGRADUATE: 'Undergraduate',
+      POSTGRADUATE: 'Postgraduate',
+      DOCTORATE: 'Doctorate'
+    };
+    return levels[user.educationLevel] || user.educationLevel;
+  };
+
+  const renderContentWithHashtags = (content) => {
+    if (!content) return null;
+    
+    const parts = content.split(/(#\w+)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('#')) {
+        return (
+          <span
+            key={index}
+            className="text-blue-600 font-medium"
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
+  // Mock data - Replace with real data from backend
   const renderStudentProfile = (profile) => (
     <>
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -353,7 +384,9 @@ const Profile = () => {
                     {posts.map((post) => (
                       <div key={post.id} className="border-b border-gray-100 last:border-0 pb-6 last:pb-0">
                         {post.content && (
-                          <p className="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap font-dm-sans">{post.content}</p>
+                          <p className="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap font-dm-sans">
+                            {renderContentWithHashtags(post.content)}
+                          </p>
                         )}
                         {post.imageUrl && (
                           <img
