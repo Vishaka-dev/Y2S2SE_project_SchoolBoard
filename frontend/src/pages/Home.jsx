@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { postService } from '../services/postService';
 import RoleBasedWidget from '../components/widgets/RoleBasedWidget';
 import EditPostModal from '../components/EditPostModal';
-
 const Home = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -25,6 +24,7 @@ const Home = () => {
 
     try {
       const data = await postService.getAllPosts(pageToLoad, POSTS_PER_PAGE);
+
       if (isInitial) {
         setPosts(data);
       } else {
@@ -46,6 +46,7 @@ const Home = () => {
   };
 
   useEffect(() => {
+    setPage(0);
     loadPosts(0, true);
 
     // Listen for new posts created from the modal
@@ -105,6 +106,25 @@ const Home = () => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const renderContentWithHashtags = (content) => {
+    if (!content) return null;
+    
+    const parts = content.split(/(#\w+)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('#')) {
+        return (
+          <span
+            key={index}
+            className="text-blue-600 font-medium"
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
   };
 
   return (
@@ -221,7 +241,9 @@ const Home = () => {
                 {/* Post Content */}
                 <div className="mb-4">
                   {post.content && (
-                    <p className="text-gray-700 leading-relaxed font-dm-sans whitespace-pre-wrap">{post.content}</p>
+                    <p className="text-gray-700 leading-relaxed font-dm-sans whitespace-pre-wrap">
+                      {renderContentWithHashtags(post.content)}
+                    </p>
                   )}
                 </div>
 

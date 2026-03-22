@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @Builder
@@ -16,6 +17,7 @@ public class PostResponseDTO {
     private String content;
     private String imageUrl;
     private AuthorDTO author;
+    private Set<String> hashtags;
     private LocalDateTime createdAt;
 
     @Data
