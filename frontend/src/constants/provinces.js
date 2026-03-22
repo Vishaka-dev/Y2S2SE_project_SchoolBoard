@@ -1,0 +1,11 @@
+export const PROVINCES = [
+  'Central Province',
+  'Eastern Province',
+  'North Central Province',
+  'North Western Province',
+  'Northern Province',
+  'Sabaragamuwa Province',
+  'Southern Province',
+  'Uva Province',
+  'Western Province'
+];

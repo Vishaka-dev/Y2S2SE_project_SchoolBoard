@@ -1,0 +1,785 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Save, X, AlertCircle, CheckCircle, Camera, Upload, Loader2 } from 'lucide-react';
+import accountService from '../services/accountService';
+import SecuritySection from '../components/SecuritySection';
+import DangerZone from '../components/DangerZone';
+import TopNavbar from '../components/navbar/TopNavbar';
+import { useAuth } from '../context/AuthContext';
+import Toast from '../components/toasts/Toast';
+import { PROVINCES } from '../constants/provinces';
+
+const normalizeInterests = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .filter((item) => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  // Defensive fallback: if somehow a string arrives (legacy data), split on comma
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const EditProfile = () => {
+  const [accountData, setAccountData] = useState(null);
+  const [formData, setFormData] = useState({});
+  const [interests, setInterests] = useState([]);
+  const [currentInterest, setCurrentInterest] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const navigate = useNavigate();
+  const { refreshUser, getAvatarUrl } = useAuth();
+
+  useEffect(() => {
+    fetchAccountData();
+  }, []);
+
+  const fetchAccountData = async () => {
+    setIsLoading(true);
+    try {
+      const data = await accountService.getAccountDetails();
+      setAccountData(data);
+
+      // Initialize form data
+      if (data.profile) {
+        setFormData(data.profile);
+        if (data.profile.interests) {
+          setInterests(normalizeInterests(data.profile.interests));
+        }
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to load account details');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Clear field error when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const handleAddInterest = () => {
+    const interest = currentInterest.trim();
+    if (!interest) return;
+
+    setInterests((prevInterests) => {
+      const normalized = normalizeInterests(prevInterests);
+      if (normalized.includes(interest)) {
+        return normalized;
+      }
+
+      return [...normalized, interest];
+    });
+    setCurrentInterest('');
+  };
+
+  const handleRemoveInterest = (index) => {
+    setInterests((prevInterests) => normalizeInterests(prevInterests).filter((_, i) => i !== index));
+  };
+
+  const validateForm = () => {
+    const errors = {};
+
+    // Common validations
+    if (!formData.fullName?.trim()) {
+      errors.fullName = 'Full name is required';
+    }
+
+    if (accountData.role === 'STUDENT') {
+      const isSchoolStudent = accountData.profile?.educationLevel === 'SCHOOL';
+
+      if (isSchoolStudent) {
+        if (!formData.schoolName?.trim()) {
+          errors.schoolName = 'School name is required';
+        }
+      } else {
+        if (!formData.universityName?.trim()) {
+          errors.universityName = 'University name is required';
+        }
+      }
+    }
+
+    if (accountData.role === 'TEACHER') {
+      if (!formData.institutionName?.trim()) {
+        errors.institutionName = 'Institution name is required';
+      }
+    }
+
+    if (accountData.role === 'INSTITUTE') {
+      if (!formData.institutionName?.trim()) {
+        errors.institutionName = 'Institution name is required';
+      }
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Basic validation
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File size must be less than 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await accountService.uploadProfilePhoto(file);
+      setAccountData(prev => ({
+        ...prev,
+        imageUrl: response.profileImageUrl
+      }));
+      await refreshUser();
+      setSuccess('Profile photo updated successfully!');
+    } catch (err) {
+      setError(err.message || 'Failed to upload profile photo');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!validateForm()) {
+      setError('Please fix the errors before submitting');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      // Prepare update data based on role
+      const updateData = { ...formData };
+
+      // Send interests as an array (List<String>) — do NOT join to string
+      if (accountData.role === 'STUDENT') {
+        updateData.interests = normalizeInterests(interests);
+      }
+
+      await accountService.updateProfile(updateData);
+      await refreshUser();
+      setSuccess('Profile updated successfully!');
+
+      // Redirect after 1.5 seconds
+      setTimeout(() => {
+        navigate('/profile');
+      }, 1500);
+    } catch (err) {
+      setError(err.message || 'Failed to update profile. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const renderStudentFields = () => {
+    const isSchoolStudent = accountData.profile?.educationLevel === 'SCHOOL';
+
+    return (
+      <>
+        {/* Full Name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Full Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="fullName"
+            value={formData.fullName || ''}
+            onChange={handleInputChange}
+            className={`w-full px-4 py-2.5 border ${fieldErrors.fullName ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+            placeholder="Enter your full name"
+          />
+          {fieldErrors.fullName && (
+            <p className="text-xs text-red-600 mt-1">{fieldErrors.fullName}</p>
+          )}
+        </div>
+
+        {/* Date of Birth */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Date of Birth
+          </label>
+          <input
+            type="date"
+            name="dateOfBirth"
+            value={formData.dateOfBirth || ''}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Province
+          </label>
+          <select
+            name="province"
+            value={formData.province || ''}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Select province</option>
+            {PROVINCES.map(province => (
+              <option key={province} value={province}>{province}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Interests */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Interests
+          </label>
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              value={currentInterest}
+              onChange={(e) => setCurrentInterest(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddInterest())}
+              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Add an interest and press Enter"
+            />
+            <button
+              type="button"
+              onClick={handleAddInterest}
+              className="px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all"
+            >
+              Add
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {Array.isArray(interests) && interests.map((interest, index) => (
+              <span
+                key={index}
+                className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium border border-purple-200 flex items-center gap-2"
+              >
+                {interest}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveInterest(index)}
+                  className="hover:text-purple-900"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="md:col-span-2 border-t border-gray-200 pt-6">
+          <h4 className="text-base font-semibold text-gray-900 mb-4">
+            {isSchoolStudent ? 'School Information' : 'University Information'}
+          </h4>
+        </div>
+
+        {isSchoolStudent ? (
+          <>
+            {/* School Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                School Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="schoolName"
+                value={formData.schoolName || ''}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-2.5 border ${fieldErrors.schoolName ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                placeholder="Enter school name"
+              />
+              {fieldErrors.schoolName && (
+                <p className="text-xs text-red-600 mt-1">{fieldErrors.schoolName}</p>
+              )}
+            </div>
+
+            {/* Grade */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Grade
+              </label>
+              <input
+                type="text"
+                name="grade"
+                value={formData.grade || ''}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g., Grade 10"
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            {/* University Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                University Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="universityName"
+                value={formData.universityName || ''}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-2.5 border ${fieldErrors.universityName ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                placeholder="Enter university name"
+              />
+              {fieldErrors.universityName && (
+                <p className="text-xs text-red-600 mt-1">{fieldErrors.universityName}</p>
+              )}
+            </div>
+
+            {/* Degree Program */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Degree Program
+              </label>
+              <input
+                type="text"
+                name="degreeProgram"
+                value={formData.degreeProgram || ''}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g., Computer Science"
+              />
+            </div>
+
+            {/* Year of Study */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Year of Study
+              </label>
+              <select
+                name="yearOfStudy"
+                value={formData.yearOfStudy || ''}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select year</option>
+                <option value="1">Year 1</option>
+                <option value="2">Year 2</option>
+                <option value="3">Year 3</option>
+                <option value="4">Year 4</option>
+                <option value="5">Year 5+</option>
+              </select>
+            </div>
+          </>
+        )}
+      </>
+    );
+  };
+
+  const renderTeacherFields = () => {
+    return (
+      <>
+        {/* Full Name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Full Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="fullName"
+            value={formData.fullName || ''}
+            onChange={handleInputChange}
+            className={`w-full px-4 py-2.5 border ${fieldErrors.fullName ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+            placeholder="Enter your full name"
+          />
+          {fieldErrors.fullName && (
+            <p className="text-xs text-red-600 mt-1">{fieldErrors.fullName}</p>
+          )}
+        </div>
+
+        {/* Date of Birth */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Date of Birth
+          </label>
+          <input
+            type="date"
+            name="dateOfBirth"
+            value={formData.dateOfBirth || ''}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Province
+          </label>
+          <select
+            name="province"
+            value={formData.province || ''}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Select province</option>
+            {PROVINCES.map(province => (
+              <option key={province} value={province}>{province}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="md:col-span-2 border-t border-gray-200 pt-6">
+          <h4 className="text-base font-semibold text-gray-900 mb-4">
+            Professional Information
+          </h4>
+        </div>
+
+        {/* Institution Name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Institution Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="institutionName"
+            value={formData.institutionName || ''}
+            onChange={handleInputChange}
+            className={`w-full px-4 py-2.5 border ${fieldErrors.institutionName ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+            placeholder="Enter institution name"
+          />
+          {fieldErrors.institutionName && (
+            <p className="text-xs text-red-600 mt-1">{fieldErrors.institutionName}</p>
+          )}
+        </div>
+
+        {/* Subject Specialization */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Subject Specialization
+          </label>
+          <input
+            type="text"
+            name="subjectSpecialization"
+            value={formData.subjectSpecialization || ''}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="e.g., Mathematics, Physics"
+          />
+        </div>
+
+        {/* Years of Experience */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Years of Experience
+          </label>
+          <input
+            type="number"
+            name="yearsOfExperience"
+            value={formData.yearsOfExperience || ''}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="0"
+            min="0"
+          />
+        </div>
+
+        {/* Qualifications */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Qualifications
+          </label>
+          <input
+            type="text"
+            name="qualifications"
+            value={formData.qualifications || ''}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="e.g., M.Sc., Ph.D."
+          />
+        </div>
+      </>
+    );
+  };
+
+  const renderInstituteFields = () => {
+    return (
+      <>
+        {/* Institution Name */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Institution Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="institutionName"
+            value={formData.institutionName || ''}
+            onChange={handleInputChange}
+            className={`w-full px-4 py-2.5 border ${fieldErrors.institutionName ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+            placeholder="Enter institution name"
+          />
+          {fieldErrors.institutionName && (
+            <p className="text-xs text-red-600 mt-1">{fieldErrors.institutionName}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Province
+          </label>
+          <select
+            name="province"
+            value={formData.province || ''}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Select province</option>
+            {PROVINCES.map(province => (
+              <option key={province} value={province}>{province}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* District */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            District
+          </label>
+          <input
+            type="text"
+            name="district"
+            value={formData.district || ''}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter district"
+          />
+        </div>
+
+        {/* Address */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Address
+          </label>
+          <textarea
+            name="address"
+            value={formData.address || ''}
+            onChange={handleInputChange}
+            rows="3"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter full address"
+          />
+        </div>
+
+        {/* Contact Person */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Contact Person
+          </label>
+          <input
+            type="text"
+            name="contactPerson"
+            value={formData.contactPerson || ''}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter contact person name"
+          />
+        </div>
+
+        {/* Contact Number */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Contact Number
+          </label>
+          <input
+            type="tel"
+            name="contactNumber"
+            value={formData.contactNumber || ''}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter contact number"
+          />
+        </div>
+
+        {/* Website */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Website
+          </label>
+          <input
+            type="url"
+            name="website"
+            value={formData.website || ''}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="https://example.com"
+          />
+        </div>
+      </>
+    );
+  };
+
+  const renderFormFields = () => {
+    if (!accountData) return null;
+
+    switch (accountData.role) {
+      case 'STUDENT':
+        return renderStudentFields();
+      case 'TEACHER':
+        return renderTeacherFields();
+      case 'INSTITUTE':
+        return renderInstituteFields();
+      default:
+        return null;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 font-dm-sans">
+        <TopNavbar />
+        <div className="max-w-4xl mx-auto p-8">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-96 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 font-dm-sans">
+      <TopNavbar />
+      <main className="max-w-6xl mx-auto p-6 lg:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => navigate('/profile')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Profile
+          </button>
+          <h1 className="text-3xl font-bold text-gray-900 font-manrope">Edit Profile</h1>
+          <p className="text-gray-600 mt-2">Update your profile information and manage account security</p>
+        </div>
+
+        {/* Toasts */}
+        {error && (
+          <Toast
+            message={error}
+            type="error"
+            onClose={() => setError('')}
+          />
+        )}
+
+        {success && (
+          <Toast
+            message={success}
+            onClose={() => setSuccess('')}
+          />
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-6 lg:p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Profile Photo Section */}
+              <div className="md:col-span-2 flex flex-col items-center justify-center pb-6 border-b border-gray-100">
+                <div className="relative group">
+                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-md bg-gray-100 flex items-center justify-center">
+                    <img
+                      src={getAvatarUrl(accountData)}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+
+                    {isUploading && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 transition-opacity">
+                        <Loader2 className="w-8 h-8 text-white animate-spin" />
+                      </div>
+                    )}
+                  </div>
+
+                  <label
+                    htmlFor="profile-photo-upload"
+                    className={`absolute bottom-0 right-0 p-2.5 bg-blue-600 text-white rounded-full shadow-lg cursor-pointer hover:bg-blue-700 transition-all transform group-hover:scale-110 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <Camera className="w-5 h-5" />
+                    <input
+                      id="profile-photo-upload"
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      disabled={isUploading}
+                    />
+                  </label>
+                </div>
+                <div className="mt-4 text-center">
+                  <h3 className="text-sm font-medium text-gray-900">Profile Photo</h3>
+                  <p className="text-xs text-gray-500 mt-1">Recommended: JPG, PNG (Max 5MB)</p>
+                </div>
+              </div>
+
+              {renderFormFields()}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="bg-gray-50 px-6 lg:px-8 py-4 border-t border-gray-200 flex gap-3 justify-end">
+            <button
+              type="button"
+              onClick={() => navigate('/profile')}
+              disabled={isSaving}
+              className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm hover:shadow flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+
+        <div className="mt-8 space-y-8">
+          <SecuritySection accountData={accountData} />
+          <DangerZone />
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default EditProfile;
