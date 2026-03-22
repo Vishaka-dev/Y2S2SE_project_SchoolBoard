@@ -1,5 +1,5 @@
 import { useAuth } from '../context/AuthContext';
-import { MapPin, Briefcase, Calendar, Mail, Edit, BookOpen, Award, MessageSquare, ThumbsUp, Share2 } from 'lucide-react';
+import { MapPin, Briefcase, Calendar, Mail, Edit, BookOpen, Award, MessageSquare, ThumbsUp, Share2, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import TopNavbar from '../components/navbar/TopNavbar';
 import postService from '../services/postService';
@@ -8,6 +8,8 @@ import apiClient from '../api/apiClient';
 import { getFollowStats, getRelationship } from '../services/followService';
 import FollowButton from '../components/FollowButton';
 import FollowListModal from '../components/FollowListModal';
+import CreatePostModal from '../components/CreatePostModal';
+import Toast from '../components/toasts/Toast';
 
 const Profile = () => {
   const { user: currentUser, getUserInitials, getRoleDisplay, getAvatarUrl, refreshUser } = useAuth();
@@ -23,6 +25,12 @@ const Profile = () => {
   const [relationship, setRelationship] = useState({ isFollowing: false, isFollowedBy: false, isMutual: false });
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [modalState, setModalState] = useState({ isOpen: false, mode: 'followers' });
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
 
   const isOwnProfile = !userId || String(currentUser?.id) === String(userId);
 
@@ -290,6 +298,40 @@ const Profile = () => {
               {profileUser.role === 'TEACHER' && renderTeacherProfile(profileUser.profile)}
               {profileUser.role === 'INSTITUTE' && renderInstituteProfile(profileUser.profile)}
 
+              {isOwnProfile && (
+                <div className="bg-white rounded-[24px] md:rounded-[32px] shadow-sm p-4 md:p-6 mb-6 border border-gray-100 flex gap-4 items-center">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
+                    {getAvatarUrl(currentUser) ? (
+                      <img
+                        src={getAvatarUrl(currentUser)}
+                        alt={currentUser?.fullName}
+                        className="w-full h-full rounded-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <span className="text-sm">
+                        {getUserInitials(currentUser)}
+                      </span>
+                    )}
+                   </div>
+                   <button
+                     onClick={() => setIsCreatePostOpen(true)}
+                     className="flex-1 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-500 rounded-full py-3 px-4 text-sm md:text-base text-left transition-colors font-medium border-dashed focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-text"
+                   >
+                     Share an academic update, ask a question, or start a discussion...
+                   </button>
+                   <button
+                     onClick={() => setIsCreatePostOpen(true)}
+                     className="hidden sm:flex px-4 py-2 bg-blue-600 text-white rounded-full font-medium shadow-sm transition-colors items-center gap-2 hover:bg-blue-700"
+                   >
+                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                     <span className="text-sm">Post</span>
+                   </button>
+                 </div>
+              )}
+
               <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2 font-manrope">
                   <MessageSquare className="w-5 h-5 text-blue-600" />
@@ -340,16 +382,26 @@ const Profile = () => {
 
             <div className="space-y-6">
               <div className="bg-white rounded-2xl shadow-sm p-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-gray-50 rounded-xl">
-                    <p className="text-2xl font-bold text-blue-600">{posts.length}</p>
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1">Posts</p>
-                  </div>
-                  <div className="text-center p-4 bg-gray-50 rounded-xl">
-                    <p className="text-2xl font-bold text-blue-600">{followersCount}</p>
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1">Followers</p>
-                  </div>
-                </div>
+                <div className="grid grid-cols-3 gap-4">
+  <div className="text-center p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100"
+       onClick={() => {
+         // Optionally scroll to posts section if needed, or do nothing.
+         // Keeping it clickable for UI consistency as requested.
+       }}>
+    <p className="text-2xl font-bold text-blue-600">{posts.length}</p>
+    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1">Posts</p>
+  </div>
+  <div className="text-center p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100"
+       onClick={() => setModalState({ isOpen: true, mode: 'followers' })}>
+    <p className="text-2xl font-bold text-blue-600">{followersCount}</p>
+    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1">Followers</p>
+  </div>
+  <div className="text-center p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100"
+       onClick={() => setModalState({ isOpen: true, mode: 'following' })}>
+    <p className="text-2xl font-bold text-blue-600">{followingCount}</p>
+    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1">Following</p>
+  </div>
+</div>
               </div>
             </div>
           </div>
@@ -363,6 +415,20 @@ const Profile = () => {
         mode={modalState.mode}
         title={modalState.mode === 'followers' ? 'Followers' : 'Following'}
       />
+
+      <CreatePostModal
+        isOpen={isCreatePostOpen}
+        onClose={() => setIsCreatePostOpen(false)}
+        onPostCompleted={showToast}
+      />
+      
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

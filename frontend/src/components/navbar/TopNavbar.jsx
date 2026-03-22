@@ -1,4 +1,4 @@
-import { Bell, MessageSquare, ChevronDown } from 'lucide-react';
+import { Bell, MessageSquare, ChevronDown, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -54,6 +54,15 @@ const TopNavbar = () => {
 
       {/* Right Side - Icons & Profile */}
       <div className="flex items-center gap-3 ml-6">
+        {/* Home */}
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
+          title="Home"
+        >
+          <Home className="h-5 w-5 group-hover:text-blue-600 transition" />
+        </button>
+
         {/* Notification Bell */}
         <button
           onClick={() => navigate('/notifications')}

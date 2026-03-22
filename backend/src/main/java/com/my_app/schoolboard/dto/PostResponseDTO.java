@@ -23,6 +23,7 @@ public class PostResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class AuthorDTO {
+        private Long id;
         private String name;
         private String role;
         private String avatar;

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ThumbsUp, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { postService } from '../services/postService';
 import RoleBasedWidget from '../components/widgets/RoleBasedWidget';
 import EditPostModal from '../components/EditPostModal';
 
 const Home = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -128,9 +130,19 @@ const Home = () => {
               <div key={post.id} className={`bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition group/post relative ${isDeleting === post.id ? 'opacity-50 grayscale' : ''}`}>
                 {/* Post Header */}
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex gap-3">
+                  <div 
+                    className="flex gap-3 cursor-pointer group/author"
+                    onClick={() => {
+                        if (post.author?.id) {
+                            navigate(`/profile/${post.author.id}`);
+                        } else if (post.author?.username) {
+                            // Fallback if ID is missing but username exists (e.g. cached posts)
+                            navigate(`/profile/${post.author.username}`);
+                         }
+                    }}
+                  >
                     {/* Author Avatar */}
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-sm overflow-hidden">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-sm overflow-hidden group-hover/author:opacity-90 transition-opacity">
                       {(post.author?.imageUrl || post.author?.avatar) ? (
                         <img
                           src={(post.author?.imageUrl || post.author?.avatar).startsWith('http')
@@ -154,7 +166,7 @@ const Home = () => {
 
                     {/* Author Info */}
                     <div>
-                      <h3 className="text-sm font-bold text-gray-900 group-hover/post:text-blue-600 transition-colors">
+                      <h3 className="text-sm font-bold text-gray-900 group-hover/author:text-blue-600 transition-colors">
                         {post.author?.name || 'Unknown User'}
                       </h3>
                       <div className="flex items-center gap-2 mt-0.5">

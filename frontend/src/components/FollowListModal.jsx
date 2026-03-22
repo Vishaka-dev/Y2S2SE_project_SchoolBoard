@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { getFollowers, getFollowing } from '../services/followService';
 import UserCard from './UserCard';
 
@@ -8,6 +9,7 @@ const FollowListModal = ({ isOpen, onClose, userId, mode, title }) => {
   const [page, setPage] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const fetchPage = async (pageNumber, append = false) => {
     setIsLoading(true);
@@ -86,7 +88,17 @@ const FollowListModal = ({ isOpen, onClose, userId, mode, title }) => {
           ) : users.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-8">{emptyMessage}</p>
           ) : (
-            users.map((user) => <UserCard key={user.id} user={user} showFollowButton={false} />)
+            users.map((user) => (
+              <UserCard 
+                key={user.id} 
+                user={user} 
+                showFollowButton={false} 
+                onClick={() => {
+                  onClose();
+                  navigate(`/profile/${user.id}`);
+                }}
+              />
+            ))
           )}
         </div>
 
