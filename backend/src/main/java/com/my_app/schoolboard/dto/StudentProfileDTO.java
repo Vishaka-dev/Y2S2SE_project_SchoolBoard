@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 /**
  * Profile data for student accounts in account responses
  */
@@ -16,7 +18,7 @@ public class StudentProfileDTO {
     private String fullName;
     private String dateOfBirth;
     private String province;
-    private String interests;
+    private List<String> interests;
 
     // School-specific
     private String schoolName;

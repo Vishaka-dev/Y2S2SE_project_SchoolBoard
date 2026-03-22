@@ -130,8 +130,8 @@ const CompleteProfile = () => {
       newErrors.province = 'Province is required';
     }
 
-    if (!formData.interests || formData.interests.trim().length === 0) {
-      newErrors.interests = 'Please share your interests';
+    if (!Array.isArray(formData.interests) || formData.interests.length === 0) {
+      newErrors.interests = 'Please add at least one interest';
     }
 
     if (educationLevel === 'SCHOOL') {
@@ -259,9 +259,10 @@ const CompleteProfile = () => {
         profileData.yearsOfExperience = parseInt(profileData.yearsOfExperience, 10);
       }
 
-      // Handle interests if it's an array (from the tag system)
-      if (profileData.interests && Array.isArray(profileData.interests)) {
-        profileData.interests = profileData.interests.length > 0 ? profileData.interests.join(', ') : '';
+      // Ensure interests is sent as an array (List<String>) — never join to string
+      if (profileData.interests && !Array.isArray(profileData.interests)) {
+        // Defensive: if somehow a non-array arrives, normalize it
+        profileData.interests = normalizeInterests(profileData.interests);
       }
 
       // Call the completeProfile service

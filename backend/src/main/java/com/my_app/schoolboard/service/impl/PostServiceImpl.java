@@ -206,6 +206,7 @@ public class PostServiceImpl implements PostService {
         }
 
         PostResponseDTO.AuthorDTO authorDTO = PostResponseDTO.AuthorDTO.builder()
+                .id(author.getId())
                 .name(fullName)
                 .role(author.getRole().name())
                 .avatar(author.getProfileImageUrl() != null ? author.getProfileImageUrl() : author.getImageUrl())
