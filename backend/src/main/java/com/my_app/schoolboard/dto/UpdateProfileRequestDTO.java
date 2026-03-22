@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * DTO for updating profile information
@@ -20,8 +21,7 @@ public class UpdateProfileRequestDTO {
     @Size(max = 50, message = "Province must not exceed 50 characters")
     private String province;
 
-    @Size(max = 500, message = "Interests must not exceed 500 characters")
-    private String interests;
+    private List<String> interests;
 
     // Student-specific fields
     @Size(max = 100, message = "Full name must not exceed 100 characters")

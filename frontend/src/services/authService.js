@@ -15,9 +15,13 @@ const authService = {
     // Remove confirmPassword as backend doesn't need it
     delete cleanData.confirmPassword;
     
-    // Remove null or undefined values
+    // Remove null/undefined/empty-string values, but preserve arrays (e.g. interests)
     Object.keys(cleanData).forEach(key => {
-      if (cleanData[key] === null || cleanData[key] === undefined || cleanData[key] === '') {
+      if (
+        cleanData[key] === null ||
+        cleanData[key] === undefined ||
+        (typeof cleanData[key] === 'string' && cleanData[key] === '')
+      ) {
         delete cleanData[key];
       }
     });

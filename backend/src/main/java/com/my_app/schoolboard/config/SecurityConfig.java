@@ -58,6 +58,13 @@ public class SecurityConfig {
                                                 .requestMatchers("/api-docs", "/api-docs/**", "/swagger-ui/**",
                                                                 "/swagger-ui.html", "/v3/api-docs/**")
                                                 .permitAll()
+                                                .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                                                "/api/users/*/followers",
+                                                                "/api/users/*/following",
+                                                                "/api/users/*/follow-stats",
+                                                                "/api/users/*/relationship",
+                                                                "/api/users/search")
+                                                .permitAll()
                                                 // Protected endpoints - require authentication
                                                 .requestMatchers("/api/users/**", "/api/account/**").authenticated()
                                                 // All other endpoints require authentication

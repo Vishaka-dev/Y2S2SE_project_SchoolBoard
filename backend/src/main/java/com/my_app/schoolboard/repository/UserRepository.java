@@ -2,6 +2,8 @@ package com.my_app.schoolboard.repository;
 
 import com.my_app.schoolboard.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -51,4 +53,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.email = :email AND u.isActive = true")
     boolean existsActiveByEmail(@Param("email") String email);
+
+    @Query("""
+            SELECT u FROM User u
+            WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%'))
+              AND u.isActive = true
+            ORDER BY
+              CASE WHEN LOWER(u.username) = LOWER(:query) THEN 0
+                   WHEN LOWER(u.username) LIKE LOWER(CONCAT(:query, '%')) THEN 1
+                   ELSE 2 END,
+              u.username ASC
+            """)
+    Page<User> searchByUsername(@Param("query") String query, Pageable pageable);
 }
