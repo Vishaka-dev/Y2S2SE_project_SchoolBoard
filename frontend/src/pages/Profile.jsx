@@ -17,6 +17,7 @@ const Profile = () => {
   const [profileUser, setProfileUser] = useState(null);
   const [posts, setPosts] = useState([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [postsRefreshKey, setPostsRefreshKey] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [relationship, setRelationship] = useState({ isFollowing: false, isFollowedBy: false, isMutual: false });
@@ -81,7 +82,14 @@ const Profile = () => {
     };
 
     fetchUserPosts();
-  }, [profileUser?.username]);
+  }, [profileUser?.username, postsRefreshKey]);
+
+  // Re-fetch posts whenever a new post is created anywhere in the app
+  useEffect(() => {
+    const handlePostCreated = () => setPostsRefreshKey((k) => k + 1);
+    window.addEventListener('postCreated', handlePostCreated);
+    return () => window.removeEventListener('postCreated', handlePostCreated);
+  }, []);
 
   if (!currentUser || isProfileLoading || !profileUser) {
     return (
@@ -304,6 +312,13 @@ const Profile = () => {
                       <div key={post.id} className="border-b border-gray-100 last:border-0 pb-6 last:pb-0">
                         {post.content && (
                           <p className="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap font-dm-sans">{post.content}</p>
+                        )}
+                        {post.imageUrl && (
+                          <img
+                            src={post.imageUrl}
+                            alt="Post image"
+                            className="rounded-lg max-h-80 w-full object-cover mb-4"
+                          />
                         )}
                         <div className="flex items-center gap-4 text-gray-400">
                           <button className="flex items-center gap-1.5 text-xs font-bold hover:text-blue-600 transition-colors">
