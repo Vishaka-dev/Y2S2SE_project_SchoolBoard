@@ -8,11 +8,14 @@ import com.my_app.schoolboard.repository.UserRepository;
 import com.my_app.schoolboard.repository.StudentProfileRepository;
 import com.my_app.schoolboard.repository.TeacherProfileRepository;
 import com.my_app.schoolboard.repository.InstituteProfileRepository;
+import com.my_app.schoolboard.repository.FollowRepository;
 import com.my_app.schoolboard.service.PostService;
 import com.my_app.schoolboard.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,10 +38,21 @@ public class PostServiceImpl implements PostService {
     private final StudentProfileRepository studentProfileRepository;
     private final TeacherProfileRepository teacherProfileRepository;
     private final InstituteProfileRepository instituteProfileRepository;
+    private final FollowRepository followRepository;
     private final StorageService storageService;
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
+
+    private Long getCurrentUserIdOrNull() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+            return userRepository.findByUsername(auth.getName())
+                    .map(User::getId)
+                    .orElse(null);
+        }
+        return null;
+    }
 
     @Override
     @Transactional
@@ -70,15 +84,16 @@ public class PostServiceImpl implements PostService {
                 .build();
 
         Post savedPost = postRepository.save(post);
-        return mapToDTO(savedPost);
+        return mapToDTO(savedPost, author.getId());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<PostResponseDTO> getAllPosts(int page, int size) {
+        Long currentUserId = getCurrentUserIdOrNull();
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
         return postRepository.findAllByOrderByCreatedAtDesc(pageable).stream()
-                .map(this::mapToDTO)
+                .map(post -> mapToDTO(post, currentUserId))
                 .collect(Collectors.toList());
     }
 
@@ -122,7 +137,7 @@ public class PostServiceImpl implements PostService {
         }
 
         Post updatedPost = postRepository.save(post);
-        return mapToDTO(updatedPost);
+        return mapToDTO(updatedPost, user.getId());
     }
 
     @Override
@@ -153,8 +168,9 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     public List<PostResponseDTO> getPostsByUsername(String username) {
         log.info("Fetching all posts for user: {}", username);
+        Long currentUserId = getCurrentUserIdOrNull();
         return postRepository.findAllByAuthorUsernameOrderByCreatedAtDesc(username).stream()
-                .map(this::mapToDTO)
+                .map(post -> mapToDTO(post, currentUserId))
                 .collect(Collectors.toList());
     }
 
@@ -178,7 +194,7 @@ public class PostServiceImpl implements PostService {
         return hashtags;
     }
 
-    private PostResponseDTO mapToDTO(Post post) {
+    private PostResponseDTO mapToDTO(Post post, Long currentUserId) {
         User author = post.getAuthor();
 
         // Load profile to get fullName
@@ -205,6 +221,15 @@ public class PostServiceImpl implements PostService {
             }
         }
 
+        Boolean isFollowing = false;
+        Boolean isMutual = false;
+
+        if (currentUserId != null && !currentUserId.equals(author.getId())) {
+            isFollowing = followRepository.existsByFollower_IdAndFollowing_Id(currentUserId, author.getId());
+            boolean isFollowedBy = followRepository.existsByFollower_IdAndFollowing_Id(author.getId(), currentUserId);
+            isMutual = isFollowing && isFollowedBy;
+        }
+
         PostResponseDTO.AuthorDTO authorDTO = PostResponseDTO.AuthorDTO.builder()
                 .id(author.getId())
                 .name(fullName)
@@ -212,6 +237,8 @@ public class PostServiceImpl implements PostService {
                 .avatar(author.getProfileImageUrl() != null ? author.getProfileImageUrl() : author.getImageUrl())
                 .initials(initials.toUpperCase())
                 .username(author.getUsername())
+                .isFollowing(isFollowing)
+                .isMutual(isMutual)
                 .build();
 
         return PostResponseDTO.builder()
