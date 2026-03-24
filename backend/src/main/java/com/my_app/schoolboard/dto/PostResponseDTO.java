@@ -31,5 +31,9 @@ public class PostResponseDTO {
         private String avatar;
         private String initials;
         private String username;
+        @com.fasterxml.jackson.annotation.JsonProperty("isFollowing")
+        private Boolean isFollowing;
+        @com.fasterxml.jackson.annotation.JsonProperty("isMutual")
+        private Boolean isMutual;
     }
 }

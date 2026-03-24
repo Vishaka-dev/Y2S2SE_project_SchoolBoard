@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { postService } from '../services/postService';
 import RoleBasedWidget from '../components/widgets/RoleBasedWidget';
 import EditPostModal from '../components/EditPostModal';
+import FollowButton from '../components/FollowButton';
+
 const Home = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -72,6 +74,21 @@ const Home = () => {
     const nextPage = page + 1;
     setPage(nextPage);
     loadPosts(nextPage);
+  };
+
+  const handleFollowChange = (authorId, newIsFollowing) => {
+    setPosts(prevPosts => prevPosts.map(post => {
+      if (post.author?.id === authorId) {
+        return {
+          ...post,
+          author: {
+            ...post.author,
+            isFollowing: newIsFollowing
+          }
+        };
+      }
+      return post;
+    }));
   };
 
   const handleDelete = async (postId) => {
@@ -198,43 +215,56 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {/* More Options / Menu */}
-                  <div className="relative">
-                    {(user?.username === post.author?.username || user?.role === 'ADMIN') && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveMenu(activeMenu === post.id ? null : post.id);
-                          }}
-                          className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition"
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
-
-                        {activeMenu === post.id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 animate-in fade-in zoom-in duration-200">
-                            <button
-                              onClick={() => {
-                                setEditingPost(post);
-                                setActiveMenu(null);
-                              }}
-                              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                            >
-                              <Pencil className="w-4 h-4" />
-                              <span className="font-semibold">Edit Post</span>
-                            </button>
-                            <button
-                              onClick={() => handleDelete(post.id)}
-                              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              <span className="font-semibold">Delete Post</span>
-                            </button>
-                          </div>
-                        )}
-                      </>
+                  {/* Action & Menu Container */}
+                  <div className="flex items-center gap-3">
+                    {user?.id !== post.author?.id && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <FollowButton
+                          targetUserId={post.author?.id}
+                          initialIsFollowing={post.author?.isFollowing || false}
+                          size="sm"
+                          onFollowChange={(newIsFollowing) => handleFollowChange(post.author?.id, newIsFollowing)}
+                        />
+                      </div>
                     )}
+                    
+                    <div className="relative">
+                      {(user?.username === post.author?.username || user?.role === 'ADMIN') && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenu(activeMenu === post.id ? null : post.id);
+                            }}
+                            className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+
+                          {activeMenu === post.id && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 animate-in fade-in zoom-in duration-200">
+                              <button
+                                onClick={() => {
+                                  setEditingPost(post);
+                                  setActiveMenu(null);
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                              >
+                                <Pencil className="w-4 h-4" />
+                                <span className="font-semibold">Edit Post</span>
+                              </button>
+                              <button
+                                onClick={() => handleDelete(post.id)}
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                <span className="font-semibold">Delete Post</span>
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 
