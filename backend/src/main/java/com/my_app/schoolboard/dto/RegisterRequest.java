@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Enhanced registration request DTO supporting all role types
@@ -44,7 +45,7 @@ public class RegisterRequest {
 
     // ===== Student-specific fields =====
     private EducationLevel educationLevel;
-    private String interests;
+    private List<String> interests;
 
     // School student fields
     private String schoolName;

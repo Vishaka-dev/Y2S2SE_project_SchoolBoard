@@ -10,6 +10,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Student profile entity supporting both SCHOOL and UNIVERSITY students
@@ -44,8 +46,10 @@ public class StudentProfile {
     @Column(name = "province", nullable = false, length = 50)
     private String province;
 
-    @Column(name = "interests", length = 500)
-    private String interests; // Comma-separated or JSON
+    @ElementCollection
+    @CollectionTable(name = "student_interests", joinColumns = @JoinColumn(name = "student_profile_id"))
+    @Column(name = "interest", length = 100, nullable = false)
+    private List<String> interests = new ArrayList<>();
 
     // School-specific fields (nullable)
     @Column(name = "school_name", length = 200)

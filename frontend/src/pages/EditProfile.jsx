@@ -16,26 +16,13 @@ const normalizeInterests = (value) => {
       .map((item) => item.trim())
       .filter(Boolean);
   }
-
+  // Defensive fallback: if somehow a string arrives (legacy data), split on comma
   if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed) return [];
-
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (Array.isArray(parsed)) {
-        return normalizeInterests(parsed);
-      }
-    } catch {
-      // Continue with comma-separated fallback
-    }
-
-    return trimmed
+    return value
       .split(',')
       .map((item) => item.trim())
       .filter(Boolean);
   }
-
   return [];
 };
 
@@ -200,10 +187,9 @@ const EditProfile = () => {
       // Prepare update data based on role
       const updateData = { ...formData };
 
-      // Add interests for students as a comma-separated string
+      // Send interests as an array (List<String>) — do NOT join to string
       if (accountData.role === 'STUDENT') {
-        const normalizedInterests = normalizeInterests(interests);
-        updateData.interests = normalizedInterests.length > 0 ? normalizedInterests.join(', ') : '';
+        updateData.interests = normalizeInterests(interests);
       }
 
       await accountService.updateProfile(updateData);

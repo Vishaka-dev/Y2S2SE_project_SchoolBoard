@@ -1,8 +1,9 @@
-import { Search, Bell, MessageSquare, ChevronDown } from 'lucide-react';
+import { Bell, MessageSquare, ChevronDown, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import learnlinkLogo from '../../../logos/learnlink_logo-transparent.png';
+import UserSearchDropdown from './UserSearchDropdown';
 
 const TopNavbar = () => {
   const { user, getUserInitials, getRoleDisplay, getAvatarUrl, logout } = useAuth();
@@ -48,20 +49,20 @@ const TopNavbar = () => {
       
       {/* Search Bar */}
       <div className="flex-1 flex justify-center px-4 sm:px-8">
-        <div className="relative w-full max-w-2xl">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search for connections, courses, articles..."
-            className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm transition"
-          />
-        </div>
+        <UserSearchDropdown />
       </div>
 
       {/* Right Side - Icons & Profile */}
       <div className="flex items-center gap-3 ml-6">
+        {/* Home */}
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
+          title="Home"
+        >
+          <Home className="h-5 w-5 group-hover:text-blue-600 transition" />
+        </button>
+
         {/* Notification Bell */}
         <button
           onClick={() => navigate('/notifications')}

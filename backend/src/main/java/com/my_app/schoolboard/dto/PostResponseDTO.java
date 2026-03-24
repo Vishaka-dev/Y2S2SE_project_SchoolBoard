@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @Builder
@@ -16,6 +17,7 @@ public class PostResponseDTO {
     private String content;
     private String imageUrl;
     private AuthorDTO author;
+    private Set<String> hashtags;
     private LocalDateTime createdAt;
 
     @Data
@@ -23,10 +25,15 @@ public class PostResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class AuthorDTO {
+        private Long id;
         private String name;
         private String role;
         private String avatar;
         private String initials;
         private String username;
+        @com.fasterxml.jackson.annotation.JsonProperty("isFollowing")
+        private Boolean isFollowing;
+        @com.fasterxml.jackson.annotation.JsonProperty("isMutual")
+        private Boolean isMutual;
     }
 }

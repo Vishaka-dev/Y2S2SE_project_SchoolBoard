@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ThumbsUp, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { postService } from '../services/postService';
 import RoleBasedWidget from '../components/widgets/RoleBasedWidget';
 import EditPostModal from '../components/EditPostModal';
+import FollowButton from '../components/FollowButton';
 
 const Home = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -23,6 +26,7 @@ const Home = () => {
 
     try {
       const data = await postService.getAllPosts(pageToLoad, POSTS_PER_PAGE);
+
       if (isInitial) {
         setPosts(data);
       } else {
@@ -44,6 +48,7 @@ const Home = () => {
   };
 
   useEffect(() => {
+    setPage(0);
     loadPosts(0, true);
 
     // Listen for new posts created from the modal
@@ -69,6 +74,21 @@ const Home = () => {
     const nextPage = page + 1;
     setPage(nextPage);
     loadPosts(nextPage);
+  };
+
+  const handleFollowChange = (authorId, newIsFollowing) => {
+    setPosts(prevPosts => prevPosts.map(post => {
+      if (post.author?.id === authorId) {
+        return {
+          ...post,
+          author: {
+            ...post.author,
+            isFollowing: newIsFollowing
+          }
+        };
+      }
+      return post;
+    }));
   };
 
   const handleDelete = async (postId) => {
@@ -105,6 +125,25 @@ const Home = () => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
+  const renderContentWithHashtags = (content) => {
+    if (!content) return null;
+    
+    const parts = content.split(/(#\w+)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('#')) {
+        return (
+          <span
+            key={index}
+            className="text-blue-600 font-medium"
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Feed Posts */}
@@ -128,9 +167,19 @@ const Home = () => {
               <div key={post.id} className={`bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition group/post relative ${isDeleting === post.id ? 'opacity-50 grayscale' : ''}`}>
                 {/* Post Header */}
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex gap-3">
+                  <div 
+                    className="flex gap-3 cursor-pointer group/author"
+                    onClick={() => {
+                        if (post.author?.id) {
+                            navigate(`/profile/${post.author.id}`);
+                        } else if (post.author?.username) {
+                            // Fallback if ID is missing but username exists (e.g. cached posts)
+                            navigate(`/profile/${post.author.username}`);
+                         }
+                    }}
+                  >
                     {/* Author Avatar */}
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-sm overflow-hidden">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-sm overflow-hidden group-hover/author:opacity-90 transition-opacity">
                       {(post.author?.imageUrl || post.author?.avatar) ? (
                         <img
                           src={(post.author?.imageUrl || post.author?.avatar).startsWith('http')
@@ -154,7 +203,7 @@ const Home = () => {
 
                     {/* Author Info */}
                     <div>
-                      <h3 className="text-sm font-bold text-gray-900 group-hover/post:text-blue-600 transition-colors">
+                      <h3 className="text-sm font-bold text-gray-900 group-hover/author:text-blue-600 transition-colors">
                         {post.author?.name || 'Unknown User'}
                       </h3>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -166,50 +215,65 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {/* More Options / Menu */}
-                  <div className="relative">
-                    {(user?.username === post.author?.username || user?.role === 'ADMIN') && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveMenu(activeMenu === post.id ? null : post.id);
-                          }}
-                          className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition"
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
-
-                        {activeMenu === post.id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 animate-in fade-in zoom-in duration-200">
-                            <button
-                              onClick={() => {
-                                setEditingPost(post);
-                                setActiveMenu(null);
-                              }}
-                              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                            >
-                              <Pencil className="w-4 h-4" />
-                              <span className="font-semibold">Edit Post</span>
-                            </button>
-                            <button
-                              onClick={() => handleDelete(post.id)}
-                              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              <span className="font-semibold">Delete Post</span>
-                            </button>
-                          </div>
-                        )}
-                      </>
+                  {/* Action & Menu Container */}
+                  <div className="flex items-center gap-3">
+                    {user?.id !== post.author?.id && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <FollowButton
+                          targetUserId={post.author?.id}
+                          initialIsFollowing={post.author?.isFollowing || false}
+                          size="sm"
+                          onFollowChange={(newIsFollowing) => handleFollowChange(post.author?.id, newIsFollowing)}
+                        />
+                      </div>
                     )}
+                    
+                    <div className="relative">
+                      {(user?.username === post.author?.username || user?.role === 'ADMIN') && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenu(activeMenu === post.id ? null : post.id);
+                            }}
+                            className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+
+                          {activeMenu === post.id && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 animate-in fade-in zoom-in duration-200">
+                              <button
+                                onClick={() => {
+                                  setEditingPost(post);
+                                  setActiveMenu(null);
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                              >
+                                <Pencil className="w-4 h-4" />
+                                <span className="font-semibold">Edit Post</span>
+                              </button>
+                              <button
+                                onClick={() => handleDelete(post.id)}
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                <span className="font-semibold">Delete Post</span>
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Post Content */}
                 <div className="mb-4">
                   {post.content && (
-                    <p className="text-gray-700 leading-relaxed font-dm-sans whitespace-pre-wrap">{post.content}</p>
+                    <p className="text-gray-700 leading-relaxed font-dm-sans whitespace-pre-wrap">
+                      {renderContentWithHashtags(post.content)}
+                    </p>
                   )}
                 </div>
 

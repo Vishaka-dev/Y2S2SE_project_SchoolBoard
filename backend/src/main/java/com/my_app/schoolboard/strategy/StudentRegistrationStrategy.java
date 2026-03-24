@@ -10,6 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * Registration strategy for STUDENT role
  * Handles both SCHOOL and UNIVERSITY students
@@ -27,13 +30,19 @@ public class StudentRegistrationStrategy implements RegistrationStrategy {
         log.info("Creating student profile for user: {} with education level: {}",
                 user.getUsername(), request.getEducationLevel());
 
+        // Trim and filter out blank interests before persisting
+        List<String> trimmedInterests = request.getInterests().stream()
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toList());
+
         StudentProfile profile = StudentProfile.builder()
                 .user(user)
                 .educationLevel(request.getEducationLevel())
                 .fullName(request.getFullName())
                 .dateOfBirth(request.getDateOfBirth())
                 .province(request.getProvince())
-                .interests(request.getInterests())
+                .interests(trimmedInterests)
                 .build();
 
         // Set education-level specific fields
@@ -66,6 +75,17 @@ public class StudentRegistrationStrategy implements RegistrationStrategy {
         }
         if (request.getProvince() == null || request.getProvince().isBlank()) {
             throw new IllegalArgumentException("Province is required for students");
+        }
+
+        // Interests validation — required for STUDENT only
+        List<String> interests = request.getInterests();
+        if (interests == null || interests.isEmpty()) {
+            throw new IllegalArgumentException("At least one interest is required for students");
+        }
+        for (String interest : interests) {
+            if (interest == null || interest.isBlank()) {
+                throw new IllegalArgumentException("Each interest must be a non-blank string");
+            }
         }
 
         // Education-level specific validation

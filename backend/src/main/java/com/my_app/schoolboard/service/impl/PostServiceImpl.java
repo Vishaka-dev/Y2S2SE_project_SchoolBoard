@@ -1,25 +1,34 @@
 package com.my_app.schoolboard.service.impl;
 
-import com.my_app.schoolboard.dto.PostResponseDTO;
-import com.my_app.schoolboard.model.Post;
-import com.my_app.schoolboard.model.User;
-import com.my_app.schoolboard.repository.PostRepository;
-import com.my_app.schoolboard.repository.UserRepository;
-import com.my_app.schoolboard.repository.StudentProfileRepository;
-import com.my_app.schoolboard.repository.TeacherProfileRepository;
-import com.my_app.schoolboard.repository.InstituteProfileRepository;
-import com.my_app.schoolboard.service.PostService;
-import com.my_app.schoolboard.service.StorageService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.my_app.schoolboard.dto.PostResponseDTO;
+import com.my_app.schoolboard.model.Post;
+import com.my_app.schoolboard.model.User;
+import com.my_app.schoolboard.repository.FollowRepository;
+import com.my_app.schoolboard.repository.InstituteProfileRepository;
+import com.my_app.schoolboard.repository.PostRepository;
+import com.my_app.schoolboard.repository.StudentProfileRepository;
+import com.my_app.schoolboard.repository.TeacherProfileRepository;
+import com.my_app.schoolboard.repository.UserRepository;
+import com.my_app.schoolboard.service.PostService;
+import com.my_app.schoolboard.service.StorageService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -31,10 +40,21 @@ public class PostServiceImpl implements PostService {
     private final StudentProfileRepository studentProfileRepository;
     private final TeacherProfileRepository teacherProfileRepository;
     private final InstituteProfileRepository instituteProfileRepository;
+    private final FollowRepository followRepository;
     private final StorageService storageService;
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
+
+    private Long getCurrentUserIdOrNull() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+            return userRepository.findByUsername(auth.getName())
+                    .map(User::getId)
+                    .orElse(null);
+        }
+        return null;
+    }
 
     @Override
     @Transactional
@@ -62,18 +82,20 @@ public class PostServiceImpl implements PostService {
                 .content(content)
                 .imageUrl(imageUrl)
                 .author(author)
+                .hashtags(extractHashtags(content))
                 .build();
 
         Post savedPost = postRepository.save(post);
-        return mapToDTO(savedPost);
+        return mapToDTO(savedPost, author.getId());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<PostResponseDTO> getAllPosts(int page, int size) {
+        Long currentUserId = getCurrentUserIdOrNull();
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
         return postRepository.findAllByOrderByCreatedAtDesc(pageable).stream()
-                .map(this::mapToDTO)
+                .map(post -> mapToDTO(post, currentUserId))
                 .collect(Collectors.toList());
     }
 
@@ -112,8 +134,12 @@ public class PostServiceImpl implements PostService {
             post.setImageUrl(imageUrl);
         }
 
+        if (content != null) {
+            post.setHashtags(extractHashtags(content));
+        }
+
         Post updatedPost = postRepository.save(post);
-        return mapToDTO(updatedPost);
+        return mapToDTO(updatedPost, user.getId());
     }
 
     @Override
@@ -144,8 +170,9 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     public List<PostResponseDTO> getPostsByUsername(String username) {
         log.info("Fetching all posts for user: {}", username);
+        Long currentUserId = getCurrentUserIdOrNull();
         return postRepository.findAllByAuthorUsernameOrderByCreatedAtDesc(username).stream()
-                .map(this::mapToDTO)
+                .map(post -> mapToDTO(post, currentUserId))
                 .collect(Collectors.toList());
     }
 
@@ -156,7 +183,33 @@ public class PostServiceImpl implements PostService {
         return imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
     }
 
-    private PostResponseDTO mapToDTO(Post post) {
+    private Set<String> extractHashtags(String content) {
+        if (content == null || content.isEmpty()) {
+            return new HashSet<>();
+        }
+        Set<String> hashtags = new HashSet<>();
+        Pattern pattern = Pattern.compile("#(\\w+)");
+        Matcher matcher = pattern.matcher(content);
+        while (matcher.find()) {
+            hashtags.add(matcher.group(1).toLowerCase());
+        }
+        return hashtags;
+    }
+
+    @Override
+    public List<PostResponseDTO> searchPosts(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+
+        List<Post> posts = postRepository.searchByContentKeyword(keyword.trim());
+
+        return posts.stream()
+                .map(post -> mapToDTO(post, getCurrentUserIdOrNull()))
+                .toList();
+    }
+
+    private PostResponseDTO mapToDTO(Post post, Long currentUserId) {
         User author = post.getAuthor();
 
         // Load profile to get fullName
@@ -183,12 +236,24 @@ public class PostServiceImpl implements PostService {
             }
         }
 
+        Boolean isFollowing = false;
+        Boolean isMutual = false;
+
+        if (currentUserId != null && !currentUserId.equals(author.getId())) {
+            isFollowing = followRepository.existsByFollower_IdAndFollowing_Id(currentUserId, author.getId());
+            boolean isFollowedBy = followRepository.existsByFollower_IdAndFollowing_Id(author.getId(), currentUserId);
+            isMutual = isFollowing && isFollowedBy;
+        }
+
         PostResponseDTO.AuthorDTO authorDTO = PostResponseDTO.AuthorDTO.builder()
+                .id(author.getId())
                 .name(fullName)
                 .role(author.getRole().name())
                 .avatar(author.getProfileImageUrl() != null ? author.getProfileImageUrl() : author.getImageUrl())
                 .initials(initials.toUpperCase())
                 .username(author.getUsername())
+                .isFollowing(isFollowing)
+                .isMutual(isMutual)
                 .build();
 
         return PostResponseDTO.builder()
@@ -196,6 +261,7 @@ public class PostServiceImpl implements PostService {
                 .content(post.getContent())
                 .imageUrl(post.getImageUrl())
                 .author(authorDTO)
+                .hashtags(post.getHashtags())
                 .createdAt(post.getCreatedAt())
                 .build();
     }

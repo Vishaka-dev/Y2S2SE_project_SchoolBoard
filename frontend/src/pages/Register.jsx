@@ -21,6 +21,7 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     role: '',
+    interests: [],
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +35,7 @@ const Register = () => {
       password: '',
       confirmPassword: '',
       role: '',
+      interests: [],
     });
     setErrors({});
     setApiError('');
@@ -135,8 +137,8 @@ const Register = () => {
       newErrors.province = 'Province is required';
     }
 
-    if (!formData.interests || formData.interests.trim().length === 0) {
-      newErrors.interests = 'Please share your interests';
+    if (!Array.isArray(formData.interests) || formData.interests.length === 0) {
+      newErrors.interests = 'Please add at least one interest';
     }
 
     if (educationLevel === 'SCHOOL') {
