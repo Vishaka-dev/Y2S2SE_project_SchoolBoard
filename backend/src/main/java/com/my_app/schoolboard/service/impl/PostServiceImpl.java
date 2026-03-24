@@ -1,18 +1,12 @@
 package com.my_app.schoolboard.service.impl;
 
-import com.my_app.schoolboard.dto.PostResponseDTO;
-import com.my_app.schoolboard.model.Post;
-import com.my_app.schoolboard.model.User;
-import com.my_app.schoolboard.repository.PostRepository;
-import com.my_app.schoolboard.repository.UserRepository;
-import com.my_app.schoolboard.repository.StudentProfileRepository;
-import com.my_app.schoolboard.repository.TeacherProfileRepository;
-import com.my_app.schoolboard.repository.InstituteProfileRepository;
-import com.my_app.schoolboard.repository.FollowRepository;
-import com.my_app.schoolboard.service.PostService;
-import com.my_app.schoolboard.service.StorageService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,12 +15,20 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import com.my_app.schoolboard.dto.PostResponseDTO;
+import com.my_app.schoolboard.model.Post;
+import com.my_app.schoolboard.model.User;
+import com.my_app.schoolboard.repository.FollowRepository;
+import com.my_app.schoolboard.repository.InstituteProfileRepository;
+import com.my_app.schoolboard.repository.PostRepository;
+import com.my_app.schoolboard.repository.StudentProfileRepository;
+import com.my_app.schoolboard.repository.TeacherProfileRepository;
+import com.my_app.schoolboard.repository.UserRepository;
+import com.my_app.schoolboard.service.PostService;
+import com.my_app.schoolboard.service.StorageService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -192,6 +194,19 @@ public class PostServiceImpl implements PostService {
             hashtags.add(matcher.group(1).toLowerCase());
         }
         return hashtags;
+    }
+
+    @Override
+    public List<PostResponseDTO> searchPosts(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+
+        List<Post> posts = postRepository.searchByContentKeyword(keyword.trim());
+
+        return posts.stream()
+                .map(post -> mapToDTO(post, getCurrentUserIdOrNull()))
+                .toList();
     }
 
     private PostResponseDTO mapToDTO(Post post, Long currentUserId) {
