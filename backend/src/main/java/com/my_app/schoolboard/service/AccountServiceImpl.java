@@ -44,6 +44,17 @@ public class AccountServiceImpl implements AccountService {
         return buildAccountResponse(user);
     }
 
+        @Override
+        @Transactional(readOnly = true)
+        public AccountResponseDTO getAccountByUserId(Long userId) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+            if (user.isDeleted()) {
+                throw new AccountDeletedException();
+            }
+            return buildAccountResponse(user);
+        }
+
     @Override
     public AccountResponseDTO updateProfile(UpdateProfileRequestDTO request) {
         User user = getCurrentAuthenticatedUser();
