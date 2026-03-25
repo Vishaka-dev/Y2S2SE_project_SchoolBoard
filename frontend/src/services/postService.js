@@ -98,6 +98,16 @@ export const postService = {
     },
 
     /**
+     * Search posts by keyword
+     * @param {string} keyword Search keyword
+     * @returns {Promise<Array>} Array of post objects matching the search
+     */
+    searchPosts: async (keyword) => {
+        const response = await apiClient.get(`/posts/search?keyword=${encodeURIComponent(keyword)}`);
+        return response.data;
+    },
+
+    /**
      * Get all posts by a specific user
      * @param {string} username Username
      * @returns {Promise<Array>} Array of post objects

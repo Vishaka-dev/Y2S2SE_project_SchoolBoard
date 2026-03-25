@@ -127,7 +127,7 @@ const Home = () => {
 
   const renderContentWithHashtags = (content) => {
     if (!content) return null;
-    
+
     const parts = content.split(/(#\w+)/g);
     return parts.map((part, index) => {
       if (part.startsWith('#')) {
@@ -167,15 +167,15 @@ const Home = () => {
               <div key={post.id} className={`bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition group/post relative ${isDeleting === post.id ? 'opacity-50 grayscale' : ''}`}>
                 {/* Post Header */}
                 <div className="flex items-start justify-between mb-4">
-                  <div 
+                  <div
                     className="flex gap-3 cursor-pointer group/author"
                     onClick={() => {
-                        if (post.author?.id) {
-                            navigate(`/profile/${post.author.id}`);
-                        } else if (post.author?.username) {
-                            // Fallback if ID is missing but username exists (e.g. cached posts)
-                            navigate(`/profile/${post.author.username}`);
-                         }
+                      if (post.author?.id) {
+                        navigate(`/profile/${post.author.id}`);
+                      } else if (post.author?.username) {
+                        // Fallback if ID is missing but username exists (e.g. cached posts)
+                        navigate(`/profile/${post.author.username}`);
+                      }
                     }}
                   >
                     {/* Author Avatar */}
@@ -227,7 +227,7 @@ const Home = () => {
                         />
                       </div>
                     )}
-                    
+
                     <div className="relative">
                       {(user?.username === post.author?.username || user?.role === 'ADMIN') && (
                         <>
@@ -281,8 +281,8 @@ const Home = () => {
                 {(post.imageUrl || post.postImageUrl) && (
                   <div className="mb-4 rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50">
                     <img
-                      src={(post.imageUrl || post.postImageUrl).startsWith('http') 
-                        ? (post.imageUrl || post.postImageUrl) 
+                      src={(post.imageUrl || post.postImageUrl).startsWith('http')
+                        ? (post.imageUrl || post.postImageUrl)
                         : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/api\/?$/, '')}${(post.imageUrl || post.postImageUrl).startsWith('/') ? (post.imageUrl || post.postImageUrl) : '/' + (post.imageUrl || post.postImageUrl)}`
                       }
                       alt="Post content"
@@ -295,7 +295,7 @@ const Home = () => {
                   </div>
                 )}
 
-                  {/* Engagement Stats */}
+                {/* Engagement Stats */}
                 <div className="flex items-center gap-4 text-[13px] text-gray-500 pb-3 mb-3 border-b border-gray-50 font-medium">
                   <span className="hover:text-blue-600 cursor-pointer">0 likes</span>
                   <span className="hover:text-blue-600 cursor-pointer">0 comments</span>

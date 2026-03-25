@@ -54,15 +54,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.email = :email AND u.isActive = true")
     boolean existsActiveByEmail(@Param("email") String email);
 
-    @Query("""
-            SELECT u FROM User u
-            WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%'))
-              AND u.isActive = true
-            ORDER BY
-              CASE WHEN LOWER(u.username) = LOWER(:query) THEN 0
-                   WHEN LOWER(u.username) LIKE LOWER(CONCAT(:query, '%')) THEN 1
-                   ELSE 2 END,
-              u.username ASC
-            """)
+    @Query(value = """
+SELECT u FROM User u
+WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%'))
+AND u.isActive = true
+ORDER BY u.username ASC
+""",
+countQuery = """
+SELECT COUNT(u) FROM User u
+WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%'))
+AND u.isActive = true
+""")
     Page<User> searchByUsername(@Param("query") String query, Pageable pageable);
 }
