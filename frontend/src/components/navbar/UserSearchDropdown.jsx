@@ -81,7 +81,7 @@ const UserSearchDropdown = () => {
               setIsOpen(true);
             }
           }}
-          placeholder="Search users..."
+          placeholder="Search users or posts..."
           className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm transition"
         />
       </div>
