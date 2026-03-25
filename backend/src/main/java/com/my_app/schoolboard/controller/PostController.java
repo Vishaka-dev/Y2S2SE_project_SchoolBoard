@@ -73,7 +73,7 @@ public class PostController {
      * Update an existing post
      * PATCH /api/posts/{id}
      */
-    @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PatchMapping(value = "/{id:\\d+}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<PostResponseDTO> updatePost(
             @PathVariable Long id,
@@ -92,7 +92,7 @@ public class PostController {
      * Delete a post
      * DELETE /api/posts/{id}
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deletePost(
             @PathVariable Long id,
@@ -129,6 +129,7 @@ public class PostController {
     public ResponseEntity<List<PostResponseDTO>> searchPosts(
             @RequestParam(value = "keyword", required = false) String keyword) {
 
+        System.out.println("=== SEARCH ENDPOINT HIT === keyword: " + keyword);
         log.info("Searching posts with keyword: {}", keyword);
 
         List<PostResponseDTO> posts = postService.searchPosts(keyword);

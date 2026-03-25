@@ -42,7 +42,7 @@ public class UserController {
      * Get user by ID
      * GET /api/users/{id}
      */
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         log.info("Fetching user with id: {}", id);
         return userRepository.findById(id)
@@ -81,7 +81,7 @@ public class UserController {
      * Update user
      * PUT /api/users/{id}
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{id:\\d+}")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
         log.info("Updating user with id: {}", id);
 
@@ -112,7 +112,7 @@ public class UserController {
      * Delete user
      * DELETE /api/users/{id}
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         log.info("Deleting user with id: {}", id);
 
