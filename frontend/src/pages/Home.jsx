@@ -18,7 +18,8 @@ const Home = () => {
   const [activeMenu, setActiveMenu] = useState(null);
   const [isDeleting, setIsDeleting] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
-
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSearchMode, setIsSearchMode] = useState(false);
   const POSTS_PER_PAGE = 10;
 
   const loadPosts = async (pageToLoad, isInitial = false) => {
@@ -59,10 +60,36 @@ const Home = () => {
     };
 
     window.addEventListener('postCreated', handlePostCreated);
-    return () => window.removeEventListener('postCreated', handlePostCreated);
+
+    // Listen for post search from the navbar search input
+    const handlePostSearch = async (e) => {
+      const keyword = e.detail?.keyword || '';
+      if (!keyword.trim()) {
+        // Empty search — reload normal feed
+        setIsSearchMode(false);
+        setPage(0);
+        loadPosts(0, true);
+        return;
+      }
+      setIsSearching(true);
+      setIsSearchMode(true);
+      try {
+        const results = await postService.searchPosts(keyword.trim());
+        setPosts(results);
+        setHasMore(false);
+      } catch (error) {
+        console.error('Post search failed:', error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    window.addEventListener('postSearch', handlePostSearch);
+    return () => {
+      window.removeEventListener('postCreated', handlePostCreated);
+      window.removeEventListener('postSearch', handlePostSearch);
+    };
   }, []);
-
-
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -151,10 +178,10 @@ const Home = () => {
     <div className="space-y-6">
       {/* Feed Posts */}
       <div className="space-y-4">
-        {isLoading ? (
+        {isLoading || isSearching ? (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-gray-500 font-medium font-dm-sans">Loading your feed...</p>
+            <p className="text-gray-500 font-medium font-dm-sans">{isSearching ? 'Searching posts...' : 'Loading your feed...'}</p>
           </div>
         ) : posts.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-12 text-center">
@@ -323,7 +350,7 @@ const Home = () => {
               </div>
             ))}
 
-            {hasMore && (
+            {!isSearchMode && hasMore && (
               <div className="text-center py-6">
                 <button
                   onClick={handleLoadMore}
@@ -342,7 +369,7 @@ const Home = () => {
               </div>
             )}
 
-            {!hasMore && posts.length > 0 && (
+            {!isSearchMode && !hasMore && posts.length > 0 && (
               <div className="text-center py-8 text-gray-400 font-medium text-sm">
                 You've reached the end of the feed ✨
               </div>

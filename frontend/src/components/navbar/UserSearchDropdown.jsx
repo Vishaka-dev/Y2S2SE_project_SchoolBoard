@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { searchUsers } from '../../services/userSearchService';
+import { postService } from '../../services/postService';
 import UserCard from '../UserCard';
 
 const UserSearchDropdown = () => {
@@ -9,6 +10,7 @@ const UserSearchDropdown = () => {
   const wrapperRef = useRef(null);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
+  const [postResults, setPostResults] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -47,10 +49,18 @@ const UserSearchDropdown = () => {
       setIsLoading(true);
       setError('');
       try {
-        const response = await searchUsers(trimmedQuery, 0, 10);
-        setResults(response.data?.content || []);
+        const [userResponse, postResponse] = await Promise.allSettled([
+          searchUsers(trimmedQuery, 0, 10),
+          postService.searchPosts(trimmedQuery),
+        ]);
+        setResults(userResponse.status === 'fulfilled' ? (userResponse.value.data?.content || []) : []);
+        setPostResults(postResponse.status === 'fulfilled' ? (postResponse.value || []) : []);
+
+        // Dispatch post search results to Home page
+        window.dispatchEvent(new CustomEvent('postSearch', { detail: { keyword: trimmedQuery } }));
       } catch (searchError) {
         setResults([]);
+        setPostResults([]);
         setError('Search failed. Try again.');
       } finally {
         setIsLoading(false);
@@ -63,7 +73,17 @@ const UserSearchDropdown = () => {
   const handleResultClick = (userId) => {
     setIsOpen(false);
     setQuery('');
+    // Clear post search when navigating to a profile
+    window.dispatchEvent(new CustomEvent('postSearch', { detail: { keyword: '' } }));
     navigate(`/profile/${userId}`);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      const trimmed = query.trim();
+      window.dispatchEvent(new CustomEvent('postSearch', { detail: { keyword: trimmed } }));
+      setIsOpen(false);
+    }
   };
 
   return (
@@ -76,6 +96,7 @@ const UserSearchDropdown = () => {
           type="text"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={handleKeyDown}
           onFocus={() => {
             if (query.trim().length > 0) {
               setIsOpen(true);
@@ -94,8 +115,8 @@ const UserSearchDropdown = () => {
             </div>
           ) : error ? (
             <p className="text-sm text-red-600 py-3">{error}</p>
-          ) : results.length === 0 ? (
-            <p className="text-sm text-gray-500 py-3">No users found for '{query.trim()}'</p>
+          ) : results.length === 0 && postResults.length === 0 ? (
+            <p className="text-sm text-gray-500 py-3">No results found for '{query.trim()}'</p>
           ) : (
             results.map((user) => (
               <UserCard
