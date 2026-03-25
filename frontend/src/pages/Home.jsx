@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ThumbsUp, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react';
+import { ThumbsUp, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, X, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { postService } from '../services/postService';
 import RoleBasedWidget from '../components/widgets/RoleBasedWidget';
@@ -18,6 +18,9 @@ const Home = () => {
   const [activeMenu, setActiveMenu] = useState(null);
   const [isDeleting, setIsDeleting] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState(null);
   const POSTS_PER_PAGE = 10;
 
   const loadPosts = async (pageToLoad, isInitial = false) => {
@@ -60,6 +63,36 @@ const Home = () => {
     window.addEventListener('postCreated', handlePostCreated);
     return () => window.removeEventListener('postCreated', handlePostCreated);
   }, []);
+
+  // Debounced search
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await postService.searchPosts(searchQuery.trim());
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Search failed:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults(null);
+  };
+
+  const displayedPosts = searchResults !== null ? searchResults : posts;
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -127,7 +160,7 @@ const Home = () => {
 
   const renderContentWithHashtags = (content) => {
     if (!content) return null;
-    
+
     const parts = content.split(/(#\w+)/g);
     return parts.map((part, index) => {
       if (part.startsWith('#')) {
@@ -146,36 +179,64 @@ const Home = () => {
 
   return (
     <div className="space-y-6">
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            id="search-posts"
+            type="text"
+            placeholder="Search posts..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-dm-sans text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+          />
+          {searchQuery && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-200 transition"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        {searchQuery && (
+          <p className="mt-2 text-xs text-gray-500 font-dm-sans">
+            {isSearching ? 'Searching...' : searchResults !== null ? `${searchResults.length} result${searchResults.length !== 1 ? 's' : ''} found` : ''}
+          </p>
+        )}
+      </div>
+
       {/* Feed Posts */}
       <div className="space-y-4">
-        {isLoading ? (
+        {isLoading || isSearching ? (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-gray-500 font-medium font-dm-sans">Loading your feed...</p>
+            <p className="text-gray-500 font-medium font-dm-sans">{isSearching ? 'Searching...' : 'Loading your feed...'}</p>
           </div>
-        ) : posts.length === 0 ? (
+        ) : displayedPosts.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-12 text-center">
             <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
-              <MessageCircle className="w-10 h-10" />
+              {searchResults !== null ? <Search className="w-10 h-10" /> : <MessageCircle className="w-10 h-10" />}
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2 font-manrope">No posts yet</h3>
-            <p className="text-gray-500 mb-6 font-dm-sans">Be the first to share something with the community!</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-2 font-manrope">{searchResults !== null ? 'No results found' : 'No posts yet'}</h3>
+            <p className="text-gray-500 mb-6 font-dm-sans">{searchResults !== null ? 'Try a different search term' : 'Be the first to share something with the community!'}</p>
           </div>
         ) : (
           <>
-            {posts.map((post) => (
+            {displayedPosts.map((post) => (
               <div key={post.id} className={`bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition group/post relative ${isDeleting === post.id ? 'opacity-50 grayscale' : ''}`}>
                 {/* Post Header */}
                 <div className="flex items-start justify-between mb-4">
-                  <div 
+                  <div
                     className="flex gap-3 cursor-pointer group/author"
                     onClick={() => {
-                        if (post.author?.id) {
-                            navigate(`/profile/${post.author.id}`);
-                        } else if (post.author?.username) {
-                            // Fallback if ID is missing but username exists (e.g. cached posts)
-                            navigate(`/profile/${post.author.username}`);
-                         }
+                      if (post.author?.id) {
+                        navigate(`/profile/${post.author.id}`);
+                      } else if (post.author?.username) {
+                        // Fallback if ID is missing but username exists (e.g. cached posts)
+                        navigate(`/profile/${post.author.username}`);
+                      }
                     }}
                   >
                     {/* Author Avatar */}
@@ -227,7 +288,7 @@ const Home = () => {
                         />
                       </div>
                     )}
-                    
+
                     <div className="relative">
                       {(user?.username === post.author?.username || user?.role === 'ADMIN') && (
                         <>
@@ -281,8 +342,8 @@ const Home = () => {
                 {(post.imageUrl || post.postImageUrl) && (
                   <div className="mb-4 rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50">
                     <img
-                      src={(post.imageUrl || post.postImageUrl).startsWith('http') 
-                        ? (post.imageUrl || post.postImageUrl) 
+                      src={(post.imageUrl || post.postImageUrl).startsWith('http')
+                        ? (post.imageUrl || post.postImageUrl)
                         : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/api\/?$/, '')}${(post.imageUrl || post.postImageUrl).startsWith('/') ? (post.imageUrl || post.postImageUrl) : '/' + (post.imageUrl || post.postImageUrl)}`
                       }
                       alt="Post content"
@@ -295,7 +356,7 @@ const Home = () => {
                   </div>
                 )}
 
-                  {/* Engagement Stats */}
+                {/* Engagement Stats */}
                 <div className="flex items-center gap-4 text-[13px] text-gray-500 pb-3 mb-3 border-b border-gray-50 font-medium">
                   <span className="hover:text-blue-600 cursor-pointer">0 likes</span>
                   <span className="hover:text-blue-600 cursor-pointer">0 comments</span>
@@ -320,7 +381,7 @@ const Home = () => {
               </div>
             ))}
 
-            {hasMore && (
+            {searchResults === null && hasMore && (
               <div className="text-center py-6">
                 <button
                   onClick={handleLoadMore}
@@ -339,7 +400,7 @@ const Home = () => {
               </div>
             )}
 
-            {!hasMore && posts.length > 0 && (
+            {searchResults === null && !hasMore && posts.length > 0 && (
               <div className="text-center py-8 text-gray-400 font-medium text-sm">
                 You've reached the end of the feed ✨
               </div>
