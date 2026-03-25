@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { followUser, unfollowUser } from '../services/followService';
 import Toast from './toasts/Toast';
@@ -13,6 +13,11 @@ const FollowButton = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
+
+  // Sync internal state if the prop changes (e.g., when data loads asynchronously)
+  useEffect(() => {
+    setIsFollowing(initialIsFollowing);
+  }, [initialIsFollowing]);
 
   const sizeClasses =
     size === 'sm'
