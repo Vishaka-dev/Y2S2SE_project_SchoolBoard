@@ -37,8 +37,8 @@ const Login = () => {
       // Refresh user data in AuthContext
       await refreshUser();
       
-      // Navigate to dashboard
-      navigate('/dashboard');
+      // Navigate to feed
+      navigate('/feed');
     } catch (err) {
       const errorMessage = err.response?.data?.message || 
                           err.response?.data?.error || 

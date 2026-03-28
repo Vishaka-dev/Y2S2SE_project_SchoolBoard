@@ -27,8 +27,8 @@ const OAuth2Redirect = () => {
         try {
           // Refresh user data in AuthContext
           await refreshUser();
-          console.log('Redirecting to dashboard');
-          navigate('/dashboard');
+          console.log('Redirecting to feed');
+          navigate('/feed');
         } catch (err) {
           console.error('Failed to fetch user after OAuth:', err);
           setError('Failed to load user data. Please try logging in again.');

@@ -34,7 +34,7 @@ function AppRoutes() {
           loading ? (
             <LoadingSpinner />
           ) : user ? (
-            <Navigate to="/dashboard" replace />
+            <Navigate to="/feed" replace />
           ) : (
             <Login />
           )
@@ -48,7 +48,7 @@ function AppRoutes() {
           loading ? (
             <LoadingSpinner />
           ) : user ? (
-            <Navigate to="/dashboard" replace />
+            <Navigate to="/feed" replace />
           ) : (
             <Register />
           )
@@ -61,7 +61,7 @@ function AppRoutes() {
       
       {/* Protected Dashboard Routes - All wrapped in DashboardLayout */}
       <Route 
-        path="/dashboard" 
+        path="/feed" 
         element={
           <ProtectedRoute>
             <DashboardLayout />
@@ -70,6 +70,11 @@ function AppRoutes() {
       >
         <Route index element={<Home />} />
       </Route>
+
+      <Route
+        path="/dashboard"
+        element={<Navigate to="/feed" replace />}
+      />
       
       <Route 
         path="/profile" 
