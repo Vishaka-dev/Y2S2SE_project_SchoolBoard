@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BookOpenText, Download, ExternalLink, Filter, Loader2, Search, Trash2, UploadCloud } from 'lucide-react';
+import { BookOpenText, Filter, Loader2, Plus, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import resourceHubService from '../services/resourceHubService';
+import ResourceUploadModal from '../components/resource-hub/ResourceUploadModal';
+import ResourceCard from '../components/resource-hub/ResourceCard';
 
 const RESOURCE_CATEGORIES = [
   'STEM',
@@ -68,6 +70,7 @@ const ResourceHub = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [fetchError, setFetchError] = useState('');
   const [formError, setFormError] = useState('');
@@ -247,6 +250,7 @@ const ResourceHub = () => {
 
       setFormSuccess('Resource uploaded successfully.');
       resetUploadForm();
+      setIsUploadModalOpen(false);
       await loadResources(0, false, filters);
     } catch (error) {
       setFormError(extractErrorMessage(error));
@@ -313,149 +317,36 @@ const ResourceHub = () => {
               and presentations with the LearnLink community.
             </p>
           </div>
-          <div className="bg-blue-50 text-blue-700 border border-blue-100 rounded-lg px-3 py-2 text-xs md:text-sm font-medium">
-            {activeFilterCount} active filter{activeFilterCount === 1 ? '' : 's'}
-          </div>
-        </div>
-      </section>
 
-      <section className="bg-white rounded-lg shadow-md border border-gray-100 p-4 md:p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <UploadCloud className="w-5 h-5 text-blue-600" />
-          <h2 className="text-lg md:text-xl font-semibold font-manrope text-gray-900">Upload Resource</h2>
-        </div>
-
-        <form onSubmit={handleUploadSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-              <input
-                type="text"
-                value={form.title}
-                onChange={handleFormChange('title')}
-                placeholder="Enter resource title"
-                className="w-full bg-white border border-gray-300 rounded-md py-2.5 px-3 text-sm md:text-base text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                maxLength={255}
-              />
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-50 text-blue-700 border border-blue-100 rounded-lg px-3 py-2 text-xs md:text-sm font-medium">
+              {activeFilterCount} active filter{activeFilterCount === 1 ? '' : 's'}
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <select
-                value={form.category}
-                onChange={handleFormChange('category')}
-                className="w-full bg-white border border-gray-300 rounded-md py-2.5 px-3 text-sm md:text-base text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {RESOURCE_CATEGORIES.map((category) => (
-                  <option key={category} value={category}>
-                    {prettyLabel(category)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-              <select
-                value={form.type}
-                onChange={handleTypeChange}
-                className="w-full bg-white border border-gray-300 rounded-md py-2.5 px-3 text-sm md:text-base text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {RESOURCE_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {prettyLabel(type)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {form.type === 'LINK' ? 'External URL' : 'File'}
-              </label>
-
-              {form.type === 'LINK' ? (
-                <input
-                  type="url"
-                  value={form.externalUrl}
-                  onChange={handleFormChange('externalUrl')}
-                  placeholder="https://example.com/resource"
-                  className="w-full bg-white border border-gray-300 rounded-md py-2.5 px-3 text-sm md:text-base text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              ) : (
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  onChange={handleFileChange}
-                  className="w-full bg-white border border-gray-300 rounded-md py-2.5 px-3 text-sm md:text-base text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              )}
-              <p className="mt-1 text-xs md:text-sm text-gray-500">Maximum file size: 10MB.</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              value={form.description}
-              onChange={handleFormChange('description')}
-              placeholder="Add a brief description to help others understand this resource"
-              rows={3}
-              className="w-full bg-white border border-gray-300 rounded-md py-2.5 px-3 text-sm md:text-base text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              maxLength={5000}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma separated)</label>
-            <input
-              type="text"
-              value={form.tagsInput}
-              onChange={handleFormChange('tagsInput')}
-              placeholder="math, exam prep, tutorial"
-              className="w-full bg-white border border-gray-300 rounded-md py-2.5 px-3 text-sm md:text-base text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          {selectedFile && form.type !== 'LINK' && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700">
-              Selected: <span className="font-medium">{selectedFile.name}</span> ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-            </div>
-          )}
-
-          {formError && (
-            <div className="bg-red-100 text-red-600 border border-red-400 font-medium rounded-md px-3 py-2 text-sm">
-              {formError}
-            </div>
-          )}
-
-          {formSuccess && (
-            <div className="bg-green-100 text-green-600 border border-green-400 font-medium rounded-md px-3 py-2 text-sm">
-              {formSuccess}
-            </div>
-          )}
-
-          <div className="flex justify-end">
             <button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 font-medium rounded-lg shadow-sm transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 px-5 py-2.5 text-sm md:text-base"
+              type="button"
+              onClick={() => {
+                setFormError('');
+                setFormSuccess('');
+                setIsUploadModalOpen(true);
+              }}
+              className="bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 font-medium rounded-lg shadow-sm transition-colors duration-200 px-4 py-2.5 text-sm inline-flex items-center gap-2"
             >
-              {isSubmitting ? 'Uploading...' : 'Upload Resource'}
+              <Plus className="w-4 h-4" />
+              Upload New Resource
             </button>
           </div>
-        </form>
+        </div>
       </section>
 
       <section className="bg-white rounded-lg shadow-md border border-gray-100 p-4 md:p-6">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="w-5 h-5 text-blue-600" />
-          <h2 className="text-lg md:text-xl font-semibold font-manrope text-gray-900">Filter & Search</h2>
+          <h2 className="text-lg md:text-xl font-semibold font-manrope text-gray-900">Search & Filters</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Search Title</label>
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_auto_auto] gap-3 items-end">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Search by title</label>
             <div className="relative">
               <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -515,31 +406,41 @@ const ResourceHub = () => {
               ))}
             </select>
           </div>
-        </div>
 
-        <div className="flex flex-wrap gap-3 mt-4">
           <button
             type="button"
             onClick={handleApplyFilters}
-            className="bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 font-medium rounded-lg shadow-sm transition-colors duration-200 px-4 py-2 text-sm"
+            className="bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 font-medium rounded-lg shadow-sm transition-colors duration-200 px-4 py-2.5 text-sm"
           >
             Apply Filters
           </button>
           <button
             type="button"
             onClick={handleResetFilters}
-            className="bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-medium rounded-lg shadow-sm transition-colors duration-200 px-4 py-2 text-sm"
+            className="bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-medium rounded-lg shadow-sm transition-colors duration-200 px-4 py-2.5 text-sm"
           >
             Reset
           </button>
         </div>
       </section>
 
+      {formSuccess && (
+        <div className="bg-green-100 text-green-700 border border-green-300 font-medium rounded-md px-3 py-2 text-sm">
+          {formSuccess}
+        </div>
+      )}
+
+      {formError && (
+        <div className="bg-red-100 text-red-700 border border-red-300 font-medium rounded-md px-3 py-2 text-sm">
+          {formError}
+        </div>
+      )}
+
       <section className="space-y-4 md:space-y-6">
         {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((item) => (
-              <div key={item} className="animate-pulse bg-gray-200 rounded-md h-28" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
+            {[1, 2, 3, 4, 5, 6].map((item) => (
+              <div key={item} className="animate-pulse bg-gray-200 rounded-xl h-64" />
             ))}
           </div>
         ) : fetchError ? (
@@ -569,87 +470,20 @@ const ResourceHub = () => {
           </div>
         ) : (
           <>
-            {resources.map((resource) => {
-              const isOwner = user?.id && resource.uploadedBy?.id === user.id;
-
-              return (
-                <article
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
+              {resources.map((resource) => (
+                <ResourceCard
                   key={resource.id}
-                  className="bg-white rounded-lg shadow-md border border-gray-100 p-4 md:p-6 transition-colors duration-200 hover:border-blue-100"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg md:text-xl font-semibold font-manrope text-gray-900">{resource.title}</h3>
-                      <p className="text-xs md:text-sm text-gray-500 mt-1">
-                        Uploaded by <span className="font-medium text-gray-700">{resource.uploadedBy?.username || 'Unknown'}</span>
-                        {' '}({normalizeRoleLabel(resource.uploadedBy?.role)})
-                        {' '}on {formatDate(resource.createdAt)}
-                      </p>
-                    </div>
-
-                    {isOwner && (
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(resource.id)}
-                        disabled={deleteTarget === resource.id}
-                        className="bg-red-600 text-white border border-red-600 hover:bg-red-700 font-medium rounded-md shadow-sm transition-colors duration-200 px-3 py-1.5 text-xs md:text-sm disabled:opacity-50"
-                      >
-                        {deleteTarget === resource.id ? 'Deleting...' : (
-                          <span className="inline-flex items-center gap-1.5">
-                            <Trash2 className="w-3.5 h-3.5" />
-                            Delete
-                          </span>
-                        )}
-                      </button>
-                    )}
-                  </div>
-
-                  {resource.description && (
-                    <p className="text-sm md:text-base text-gray-700 mt-3 whitespace-pre-wrap font-dm-sans">{resource.description}</p>
-                  )}
-
-                  <div className="flex flex-wrap items-center gap-2 mt-4">
-                    <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 uppercase tracking-wide">
-                      {prettyLabel(resource.category)}
-                    </span>
-                    <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 uppercase tracking-wide">
-                      {prettyLabel(resource.type)}
-                    </span>
-                    {Array.isArray(resource.tags) && resource.tags.map((tag) => (
-                      <span key={`${resource.id}-${tag}`} className="text-xs px-2 py-1 rounded-full bg-gray-50 border border-gray-200 text-gray-600">
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap items-center gap-3">
-                    {resource.fileUrl && (
-                      <a
-                        href={resource.fileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-medium rounded-lg shadow-sm transition-colors duration-200 px-4 py-2 text-sm inline-flex items-center gap-2"
-                      >
-                        <Download className="w-4 h-4" />
-                        Open File
-                      </a>
-                    )}
-
-                    {resource.externalUrl && (
-                      <a
-                        href={resource.externalUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-medium rounded-lg shadow-sm transition-colors duration-200 px-4 py-2 text-sm inline-flex items-center gap-2"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        Visit Link
-                      </a>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
+                  resource={resource}
+                  user={user}
+                  deleteTarget={deleteTarget}
+                  onDelete={handleDelete}
+                  prettyLabel={prettyLabel}
+                  normalizeRoleLabel={normalizeRoleLabel}
+                  formatDate={formatDate}
+                />
+              ))}
+            </div>
 
             {hasMore ? (
               <div className="text-center pt-2">
@@ -675,6 +509,23 @@ const ResourceHub = () => {
           </>
         )}
       </section>
+
+      <ResourceUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        form={form}
+        selectedFile={selectedFile}
+        fileInputRef={fileInputRef}
+        isSubmitting={isSubmitting}
+        formError={formError}
+        onSubmit={handleUploadSubmit}
+        onFormChange={handleFormChange}
+        onTypeChange={handleTypeChange}
+        onFileChange={handleFileChange}
+        categories={RESOURCE_CATEGORIES}
+        types={RESOURCE_TYPES}
+        prettyLabel={prettyLabel}
+      />
     </div>
   );
 };

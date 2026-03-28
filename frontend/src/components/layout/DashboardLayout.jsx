@@ -13,6 +13,8 @@ const DashboardLayout = () => {
   const location = useLocation();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const isResourceHubRoute = location.pathname === '/resource-hub';
+  const showSocialSidebars = !isResourceHubRoute;
   const showCreatePost = location.pathname === '/feed';
 
   const showToast = (message, type = 'success') => {
@@ -59,12 +61,12 @@ const DashboardLayout = () => {
       <TopNavbar />
 
       <div className="flex-1 overflow-hidden">
-        <div className="h-full max-w-[1600px] mx-auto px-4 lg:px-6 py-6">
-          <div className="h-full grid grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)_320px] gap-6">
-            <FeedLeftRail />
+        <div className={`h-full ${showSocialSidebars ? 'max-w-[1600px] mx-auto px-4 lg:px-6 py-6' : 'w-full px-4 lg:px-8 py-6'}`}>
+          <div className={showSocialSidebars ? 'h-full grid grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)_320px] gap-6' : 'h-full'}>
+            {showSocialSidebars && <FeedLeftRail />}
 
             <main className="min-w-0 h-full overflow-y-auto">
-              <div className="max-w-3xl mx-auto pb-8">
+              <div className={isResourceHubRoute ? 'max-w-7xl mx-auto pb-8' : 'max-w-3xl mx-auto pb-8'}>
                 {showCreatePost && (
                   <div className="bg-white rounded-[24px] md:rounded-[32px] shadow-sm p-4 md:p-6 mb-8 border border-gray-100 flex gap-4 items-center">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
@@ -103,7 +105,7 @@ const DashboardLayout = () => {
               </div>
             </main>
 
-            <RightSidebar />
+            {showSocialSidebars && <RightSidebar />}
           </div>
         </div>
       </div>
