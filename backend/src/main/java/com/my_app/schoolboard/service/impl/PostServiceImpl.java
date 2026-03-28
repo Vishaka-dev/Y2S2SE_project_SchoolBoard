@@ -215,7 +215,8 @@ public class PostServiceImpl implements PostService {
         // Load profile to get fullName
         String fullName = author.getUsername();
         Object profileDTO = switch (author.getRole()) {
-            case STUDENT -> studentProfileRepository.findByUser(author).map(p -> p.getFullName()).orElse(null);
+            case SCHOOL_STUDENT, UNIVERSITY_STUDENT, STUDENT ->
+                studentProfileRepository.findByUser(author).map(p -> p.getFullName()).orElse(null);
             case TEACHER -> teacherProfileRepository.findByUser(author).map(p -> p.getFullName()).orElse(null);
             case INSTITUTE ->
                 instituteProfileRepository.findByUser(author).map(p -> p.getInstitutionName()).orElse(null);
