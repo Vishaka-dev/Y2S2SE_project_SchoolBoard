@@ -10,6 +10,7 @@ import Profile from './pages/Profile';
 import Connections from './pages/Connections';
 import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
+import ResourceHub from './pages/ResourceHub';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -119,6 +120,17 @@ function AppRoutes() {
         }
       >
         <Route index element={<Notifications />} />
+      </Route>
+
+      <Route
+        path="/resource-hub"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<ResourceHub />} />
       </Route>
       
       {/* Account Management Routes - Also in DashboardLayout */}
