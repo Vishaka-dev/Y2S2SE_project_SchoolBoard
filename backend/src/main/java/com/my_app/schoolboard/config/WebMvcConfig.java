@@ -17,6 +17,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Value("${file.profile-image-dir:uploads/profile-images}")
     private String profileImageDir;
 
+    @Value("${file.resource-dir:uploads/resources}")
+    private String resourceDir;
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // Serve post files from the upload directory via /uploads/posts/** URL
@@ -31,5 +34,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
         String profileImageAbsolutePath = profileImagePath.toFile().getAbsolutePath();
         registry.addResourceHandler("/uploads/profile-images/**")
                 .addResourceLocations("file:" + profileImageAbsolutePath + "/");
+
+        Path resourcePath = Paths.get(resourceDir);
+        String resourceAbsolutePath = resourcePath.toFile().getAbsolutePath();
+        registry.addResourceHandler("/uploads/resources/**")
+                .addResourceLocations("file:" + resourceAbsolutePath + "/");
     }
 }
