@@ -73,7 +73,7 @@ public class User {
             this.provider = AuthProvider.LOCAL;
         }
         if (this.role == null) {
-            this.role = Role.STUDENT; // Default role for OAuth2 users
+            this.role = Role.SCHOOL_STUDENT; // Default role for OAuth2 users
         }
         if (this.isActive == null) {
             this.isActive = true;

@@ -52,7 +52,7 @@ public class SecurityConfig {
                                                 // Public endpoints
                                                 .requestMatchers("/api/auth/**", "/api/health/**", "/oauth2/**",
                                                                 "/login/oauth2/**", "/uploads/posts/**",
-                                                                "/uploads/profile-images/**")
+                                                                "/uploads/profile-images/**", "/uploads/resources/**")
                                                 .permitAll()
                                                 // Swagger/OpenAPI endpoints
                                                 .requestMatchers("/api-docs", "/api-docs/**", "/swagger-ui/**",
@@ -63,10 +63,14 @@ public class SecurityConfig {
                                                                 "/api/users/*/following",
                                                                 "/api/users/*/follow-stats",
                                                                 "/api/users/*/relationship",
-                                                                "/api/users/search")
+                                                                "/api/users/search",
+                                                                "/api/resources",
+                                                                "/api/resources/**")
                                                 .permitAll()
                                                 // Protected endpoints - require authentication
-                                                .requestMatchers("/api/users/**", "/api/account/**").authenticated()
+                                                .requestMatchers("/api/users/**", "/api/account/**",
+                                                                "/api/resources/**")
+                                                .authenticated()
                                                 // All other endpoints require authentication
                                                 .anyRequest().authenticated())
                                 // OAuth2 login configuration (stateless with JWT)

@@ -31,6 +31,7 @@ import java.util.Objects;
 public class LocalFileStorageService implements FileStorageService {
 
     private final Path profileImagesLocation;
+    private final Path resourceFilesLocation;
     private final String baseUrl;
 
     // Allowed content types for profile images
@@ -44,8 +45,10 @@ public class LocalFileStorageService implements FileStorageService {
 
     public LocalFileStorageService(
             @Value("${file.profile-image-dir:uploads/profile-images}") String uploadDir,
+            @Value("${file.resource-dir:uploads/resources}") String resourceDir,
             @Value("${app.base-url:http://localhost:8080}") String baseUrl) {
         this.profileImagesLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
+        this.resourceFilesLocation = Paths.get(resourceDir).toAbsolutePath().normalize();
         this.baseUrl = baseUrl;
     }
 
@@ -54,7 +57,9 @@ public class LocalFileStorageService implements FileStorageService {
     public void init() {
         try {
             Files.createDirectories(this.profileImagesLocation);
+            Files.createDirectories(this.resourceFilesLocation);
             log.info("Profile images directory initialized at: {}", this.profileImagesLocation);
+            log.info("Resource files directory initialized at: {}", this.resourceFilesLocation);
         } catch (IOException e) {
             throw new FileStorageException("Could not create profile images directory", e);
         }
@@ -95,6 +100,37 @@ public class LocalFileStorageService implements FileStorageService {
         } catch (IOException e) {
             log.error("Failed to upload profile image for user ID: {}", userId, e);
             throw new FileStorageException("Failed to store profile image", e);
+        }
+    }
+
+    @Override
+    public String uploadResourceFile(Long userId, MultipartFile file) {
+        log.info("Uploading resource file for user ID: {}", userId);
+
+        validateGenericUploadFile(file);
+
+        try {
+            String originalFilename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
+            String fileExtension = getFileExtension(originalFilename);
+            String newFilename = String.format("resource_%d_%d%s", userId, System.currentTimeMillis(), fileExtension);
+
+            Path targetLocation = this.resourceFilesLocation.resolve(newFilename);
+            if (!targetLocation.getParent().equals(this.resourceFilesLocation)) {
+                throw new FileStorageException("Cannot store file outside designated directory");
+            }
+
+            try (InputStream inputStream = file.getInputStream()) {
+                Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            String fileUrl = String.format("%s/uploads/resources/%s", baseUrl, newFilename);
+
+            log.info("Resource file uploaded successfully: {}", fileUrl);
+            return fileUrl;
+
+        } catch (IOException e) {
+            log.error("Failed to upload resource file for user ID: {}", userId, e);
+            throw new FileStorageException("Failed to store resource file", e);
         }
     }
 
@@ -150,6 +186,21 @@ public class LocalFileStorageService implements FileStorageService {
         }
 
         // Check filename
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.contains("..")) {
+            throw new InvalidFileException("Invalid file name");
+        }
+    }
+
+    /**
+     * Generic validation for non-profile uploads. Domain-specific MIME checks are
+     * handled by the resource service.
+     */
+    private void validateGenericUploadFile(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new InvalidFileException("Cannot upload empty file");
+        }
+
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.contains("..")) {
             throw new InvalidFileException("Invalid file name");

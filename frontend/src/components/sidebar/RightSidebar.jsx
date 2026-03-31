@@ -1,9 +1,6 @@
-import { Users, Calendar, TrendingUp, UserPlus } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { Users, Calendar, UserPlus } from 'lucide-react';
 
 const RightSidebar = () => {
-  const { user } = useAuth();
-
   // Mock data - Replace with real API calls in production
   const suggestedConnections = [
     {
@@ -50,12 +47,6 @@ const RightSidebar = () => {
     }
   ];
 
-  const stats = {
-    connections: 156,
-    posts: 23,
-    profileViews: 89
-  };
-
   const getInitials = (name) => {
     return name
       .split(' ')
@@ -66,29 +57,8 @@ const RightSidebar = () => {
   };
 
   return (
-    <aside className="hidden xl:block w-80 bg-gray-50 border-l border-gray-200 overflow-y-auto">
-      <div className="p-6 space-y-6">
-        {/* Quick Stats */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-blue-600" />
-            Your Stats
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Connections</span>
-              <span className="text-sm font-semibold text-gray-900">{stats.connections}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Posts</span>
-              <span className="text-sm font-semibold text-gray-900">{stats.posts}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Profile Views</span>
-              <span className="text-sm font-semibold text-gray-900">{stats.profileViews}</span>
-            </div>
-          </div>
-        </div>
+    <aside className="hidden xl:block h-full overflow-y-auto">
+      <div className="space-y-6">
 
         {/* Suggested Connections */}
         <div className="bg-white rounded-xl shadow-sm p-6">

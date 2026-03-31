@@ -9,6 +9,9 @@ const AccountOverview = ({ accountData, onEmailChange }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const provider = accountData?.provider?.toUpperCase?.() || '';
+  const isLocalAccount = provider === 'LOCAL';
+  const isGoogleAccount = provider === 'GOOGLE';
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -111,7 +114,7 @@ const AccountOverview = ({ accountData, onEmailChange }) => {
                   <p className="text-sm font-semibold text-gray-900 break-all">
                     {accountData.email}
                   </p>
-                  {accountData.provider === 'local' && (
+                  {isLocalAccount && (
                     <button
                       onClick={() => setIsChangingEmail(true)}
                       className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
@@ -215,9 +218,9 @@ const AccountOverview = ({ accountData, onEmailChange }) => {
               </p>
               <div className="flex items-center gap-2">
                 <p className="text-sm font-semibold text-gray-900 capitalize">
-                  {accountData.provider === 'local' ? 'Local Account' : 'Google Account'}
+                  {isLocalAccount ? 'Local Account' : 'Google Account'}
                 </p>
-                {accountData.provider === 'google' && (
+                {isGoogleAccount && (
                   <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
                     OAuth2
                   </span>

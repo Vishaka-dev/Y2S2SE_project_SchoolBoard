@@ -286,8 +286,8 @@ const Register = () => {
       // Refresh user data in AuthContext
       await refreshUser();
       
-      // Navigate to dashboard
-      navigate('/dashboard');
+      // Navigate to feed
+      navigate('/feed');
     } catch (error) {
       console.error('Registration error:', error);
       

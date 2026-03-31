@@ -54,6 +54,11 @@ const authService = {
   getGoogleAuthUrl: () => {
     return `${API_BASE_URL}/oauth2/authorization/google`;
   },
+
+  getAuthStatus: async () => {
+    const response = await apiClient.get('/auth/status');
+    return response.data;
+  },
 };
 
 export default authService;

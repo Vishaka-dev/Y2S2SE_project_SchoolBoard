@@ -44,16 +44,16 @@ public class AccountServiceImpl implements AccountService {
         return buildAccountResponse(user);
     }
 
-        @Override
-        @Transactional(readOnly = true)
-        public AccountResponseDTO getAccountByUserId(Long userId) {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-            if (user.isDeleted()) {
-                throw new AccountDeletedException();
-            }
-            return buildAccountResponse(user);
+    @Override
+    @Transactional(readOnly = true)
+    public AccountResponseDTO getAccountByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        if (user.isDeleted()) {
+            throw new AccountDeletedException();
         }
+        return buildAccountResponse(user);
+    }
 
     @Override
     public AccountResponseDTO updateProfile(UpdateProfileRequestDTO request) {
@@ -63,7 +63,7 @@ public class AccountServiceImpl implements AccountService {
 
         // Delegate to role-specific update methods
         switch (user.getRole()) {
-            case STUDENT -> updateStudentProfile(user, request);
+            case SCHOOL_STUDENT, UNIVERSITY_STUDENT, STUDENT -> updateStudentProfile(user, request);
             case TEACHER -> updateTeacherProfile(user, request);
             case INSTITUTE -> updateInstituteProfile(user, request);
             default ->
@@ -193,7 +193,7 @@ public class AccountServiceImpl implements AccountService {
     private AccountResponseDTO buildAccountResponse(User user) {
         // Load and attach role-specific profile
         Object profileDTO = switch (user.getRole()) {
-            case STUDENT -> getStudentProfileDTO(user);
+            case SCHOOL_STUDENT, UNIVERSITY_STUDENT, STUDENT -> getStudentProfileDTO(user);
             case TEACHER -> getTeacherProfileDTO(user);
             case INSTITUTE -> getInstituteProfileDTO(user);
             default -> null;
