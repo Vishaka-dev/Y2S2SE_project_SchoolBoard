@@ -64,4 +64,10 @@ public interface AccountService {
      * @return URL of the uploaded profile image
      */
     String updateProfileImage(MultipartFile file);
+
+    /**
+     * Increment the profile views count for a specific user
+     * @param username the username representing the profile viewed
+     */
+    void incrementProfileViews(String username, String viewerUsername);
 }

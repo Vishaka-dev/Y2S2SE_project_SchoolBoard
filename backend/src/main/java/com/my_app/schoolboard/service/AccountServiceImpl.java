@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +32,7 @@ public class AccountServiceImpl implements AccountService {
     private final InstituteProfileRepository instituteProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final FileStorageService fileStorageService;
+    private final ProfileViewRepository profileViewRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -214,6 +214,7 @@ public class AccountServiceImpl implements AccountService {
                 .provider(user.getProvider())
                 .createdAt(user.getCreatedAt())
                 .imageUrl(displayImageUrl)
+                .profileViews(user.getProfileViews())
                 .profile(profileDTO)
                 .build();
 
@@ -441,5 +442,27 @@ public class AccountServiceImpl implements AccountService {
         log.info("Profile image updated successfully for user: {}. New URL: {}", user.getEmail(), profileImageUrl);
 
         return profileImageUrl;
+    }
+
+    @Override
+    @Transactional
+    public void incrementProfileViews(String username, String viewerUsername) {
+        if (username.equals(viewerUsername)) return;
+
+        userRepository.findByUsername(username).ifPresent(user -> {
+            userRepository.findByUsername(viewerUsername).ifPresent(viewer -> {
+                if (!profileViewRepository.existsByViewerIdAndViewedId(viewer.getId(), user.getId())) {
+                    ProfileView profileView = ProfileView.builder()
+                            .viewerId(viewer.getId())
+                            .viewedId(user.getId())
+                            .build();
+                    profileViewRepository.save(profileView);
+
+                    user.setProfileViews((user.getProfileViews() != null ? user.getProfileViews() : 0) + 1);
+                    userRepository.save(user);
+                    log.info("Incremented unique profile views for user: {} by {}", username, viewerUsername);
+                }
+            });
+        });
     }
 }

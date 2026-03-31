@@ -21,6 +21,7 @@ public class CorsConfig {
         private String frontendUrl;
 
         @Bean
+        @org.springframework.context.annotation.Primary
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
 

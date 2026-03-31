@@ -1,6 +1,10 @@
 import { Users, FileText, Eye, Layers, Building2, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { getFollowStats } from '../../services/followService';
+import postService from '../../services/postService';
+import accountService from '../../services/accountService';
 
 const FeedLeftRail = () => {
   const { user, getAvatarUrl, getUserInitials } = useAuth();
@@ -12,12 +16,53 @@ const FeedLeftRail = () => {
     user?.profile?.universityName ||
     'Institution not set';
 
-  // Placeholder stats until dedicated analytics endpoints are wired.
-  const stats = {
-    connections: user?.followStats?.followingCount ?? 0,
-    posts: user?.postCount ?? 0,
-    views: user?.profileViews ?? 0,
-  };
+  const [connections, setConnections] = useState(user?.followStats?.followingCount || 0);
+  const [posts, setPosts] = useState(user?.postCount || 0);
+  const [views, setViews] = useState(user?.profileViews || 0);
+
+  useEffect(() => {
+    if (!user?.id || !user?.username) return;
+
+    let isMounted = true;
+
+    // Fetch initial stats
+    getFollowStats(user.id)
+      .then((res) => {
+        if (isMounted) setConnections(res.data?.followingCount || 0);
+      })
+      .catch((err) => console.error('Failed to fetch follow stats for FeedLeftRail:', err));
+
+    postService.getUserPosts(user.username)
+      .then((res) => {
+        if (isMounted) setPosts(res.length || 0);
+      })
+      .catch((err) => console.error('Failed to fetch user posts for FeedLeftRail:', err));
+
+    accountService.getAccountDetails()
+      .then((res) => {
+        if (isMounted) setViews(res.profileViews || 0);
+      })
+      .catch((err) => console.error('Failed to fetch account details for views:', err));
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    const handlePostCreated = () => setPosts((prev) => prev + 1);
+    const handleFollowChanged = (e) => {
+      setConnections((prev) => (e.detail.isFollowing ? prev + 1 : Math.max(0, prev - 1)));
+    };
+
+    window.addEventListener('postCreated', handlePostCreated);
+    window.addEventListener('followChanged', handleFollowChanged);
+
+    return () => {
+      window.removeEventListener('postCreated', handlePostCreated);
+      window.removeEventListener('followChanged', handleFollowChanged);
+    };
+  }, []);
 
   return (
     <aside className="hidden xl:flex flex-col gap-6 h-full overflow-y-auto pr-1">
@@ -58,15 +103,15 @@ const FeedLeftRail = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600 flex items-center gap-2"><Users className="w-4 h-4 text-blue-600" />Connections</span>
-            <span className="font-semibold text-gray-900">{stats.connections}</span>
+            <span className="font-semibold text-gray-900">{connections}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600 flex items-center gap-2"><FileText className="w-4 h-4 text-blue-600" />Posts</span>
-            <span className="font-semibold text-gray-900">{stats.posts}</span>
+            <span className="font-semibold text-gray-900">{posts}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600 flex items-center gap-2"><Eye className="w-4 h-4 text-blue-600" />Views</span>
-            <span className="font-semibold text-gray-900">{stats.views}</span>
+            <span className="font-semibold text-gray-900">{views}</span>
           </div>
         </div>
       </div>
