@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { postService } from '../services/postService';
+import EmojiPicker from 'emoji-picker-react';
+import { Smile } from 'lucide-react';
 
 const EditPostModal = ({ isOpen, onClose, post, onPostCompleted }) => {
     const [content, setContent] = useState('');
     const [image, setImage] = useState(null);
     const [imagePreview, setImagePreview] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     // Load post data when modal opens
     useEffect(() => {
@@ -13,6 +16,7 @@ const EditPostModal = ({ isOpen, onClose, post, onPostCompleted }) => {
             setContent(post.content || '');
             setImagePreview(post.imageUrl || '');
             setImage(null);
+            setShowEmojiPicker(false);
         }
     }, [post, isOpen]);
 
@@ -125,11 +129,34 @@ const EditPostModal = ({ isOpen, onClose, post, onPostCompleted }) => {
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white">
+                <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white relative z-10">
+                    <div className="relative flex items-center">
                     <label htmlFor="edit-image-upload" className="flex items-center justify-center p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full cursor-pointer transition-colors">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         <input id="edit-image-upload" type="file" accept="image/*" className="sr-only" onChange={handleImageChange} disabled={isSubmitting} />
                     </label>
+
+                    <button
+                        type="button"
+                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                        className="flex items-center justify-center p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors ml-2 cursor-pointer"
+                        title="Add an emoji"
+                        disabled={isSubmitting}
+                    >
+                        <Smile className="w-6 h-6" />
+                    </button>
+
+                    {showEmojiPicker && (
+                        <div className="absolute bottom-full left-0 mb-2 shadow-xl rounded-lg">
+                            <EmojiPicker 
+                                onEmojiClick={(emojiObject) => {
+                                    setContent(prev => prev + emojiObject.emoji);
+                                }} 
+                                autoFocusSearch={false}
+                            />
+                        </div>
+                    )}
+                    </div>
 
                     <div className="flex gap-3">
                         <button
