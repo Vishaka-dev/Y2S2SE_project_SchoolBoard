@@ -29,7 +29,7 @@ public class FollowController {
 
     @PostMapping("/follow")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, String>> followUser(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> followUser(@PathVariable("id") Long id) {
         Long currentUserId = getCurrentAuthenticatedUserId();
         followService.followUser(currentUserId, id);
         return ResponseEntity.ok(Map.of("message", "Successfully followed user"));
@@ -37,7 +37,7 @@ public class FollowController {
 
     @DeleteMapping("/follow")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, String>> unfollowUser(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> unfollowUser(@PathVariable("id") Long id) {
         Long currentUserId = getCurrentAuthenticatedUserId();
         followService.unfollowUser(currentUserId, id);
         return ResponseEntity.ok(Map.of("message", "Successfully unfollowed user"));
@@ -45,22 +45,22 @@ public class FollowController {
 
     @GetMapping("/followers")
     public ResponseEntity<FollowPageDTO> getFollowers(
-            @PathVariable Long id,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @PathVariable("id") Long id,
+            @RequestParam(name="page", defaultValue = "0") int page,
+            @RequestParam(name="size", defaultValue = "20") int size) {
         return ResponseEntity.ok(followService.getFollowers(id, page, size));
     }
 
     @GetMapping("/following")
     public ResponseEntity<FollowPageDTO> getFollowing(
-            @PathVariable Long id,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @PathVariable("id") Long id,
+            @RequestParam(name="page", defaultValue = "0") int page,
+            @RequestParam(name="size", defaultValue = "20") int size) {
         return ResponseEntity.ok(followService.getFollowing(id, page, size));
     }
 
     @GetMapping("/relationship")
-    public ResponseEntity<FollowRelationshipDTO> getRelationship(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<FollowRelationshipDTO> getRelationship(@PathVariable("id") Long id, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()
                 || "anonymousUser".equals(authentication.getName())) {
             return ResponseEntity.ok(new FollowRelationshipDTO(false, false, false));
@@ -71,7 +71,7 @@ public class FollowController {
     }
 
     @GetMapping("/follow-stats")
-    public ResponseEntity<FollowStatsDTO> getStats(@PathVariable Long id) {
+    public ResponseEntity<FollowStatsDTO> getStats(@PathVariable("id") Long id) {
         return ResponseEntity.ok(followService.getStats(id));
     }
 
