@@ -268,8 +268,8 @@ const CompleteProfile = () => {
       // Call the completeProfile service
       await authService.completeProfile(profileData);
 
-      // Success - redirect to dashboard
-      navigate('/dashboard', {
+      // Success - redirect to feed
+      navigate('/feed', {
         state: {
           message: 'Profile completed successfully! Welcome to LearnLink.',
         },

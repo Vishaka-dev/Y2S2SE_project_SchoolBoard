@@ -29,7 +29,7 @@ public class RegistrationStrategyFactory {
      */
     public RegistrationStrategy getStrategy(Role role) {
         return switch (role) {
-            case STUDENT -> studentStrategy;
+            case SCHOOL_STUDENT, UNIVERSITY_STUDENT, STUDENT -> studentStrategy;
             case TEACHER -> teacherStrategy;
             case INSTITUTE -> instituteStrategy;
             case ADMIN -> throw new IllegalArgumentException(

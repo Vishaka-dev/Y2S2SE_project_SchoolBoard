@@ -1,11 +1,39 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import authService from '../services/authService';
 import logo from '../../logos/learnlink_logo-transparent.png';
 import uniStudents from '../../photos/uni_students.webp';
 import school from '../../photos/school.webp';
 
 const Landing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const isAuthenticated = !!user || authService.isAuthenticated();
+  const logoPath = isAuthenticated ? '/feed' : '/';
+
+  const handleGetStarted = async (event) => {
+    event.preventDefault();
+    if (!isAuthenticated) {
+      navigate('/register');
+      return;
+    }
+
+    try {
+      const status = await authService.getAuthStatus();
+      if (status?.authenticated) {
+        navigate('/feed');
+      } else {
+        authService.logout();
+        navigate('/register');
+      }
+    } catch (error) {
+      authService.logout();
+      navigate('/register');
+    }
+  };
 
   const features = [
     {
@@ -65,7 +93,7 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
+            <Link to={logoPath} className="flex items-center space-x-2">
               <img src={logo} alt="LearnLink Logo" className="h-10 w-auto" />
               <span className="text-xl font-bold text-gray-900">LearnLink</span>
             </Link>
@@ -78,12 +106,13 @@ const Landing = () => {
               <a href="#about" className="text-gray-700 hover:text-blue-600 transition-colors">About Us</a>
               <div className="flex items-center gap-4 ml-8 pl-8 border-l border-gray-300">
                 <Link to="/login" className="text-gray-700 hover:text-blue-600 transition-colors font-medium">Log in</Link>
-                <Link 
-                  to="/register" 
+                <button
+                  type="button"
+                  onClick={handleGetStarted}
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
                   Sign Up
-                </Link>
+                </button>
               </div>
             </div>
 
@@ -108,7 +137,13 @@ const Landing = () => {
               <a href="#community" className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md">Community</a>
               <a href="#about" className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md">About Us</a>
               <Link to="/login" className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md">Log in</Link>
-              <Link to="/register" className="block px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md text-center">Sign Up</Link>
+              <button
+                type="button"
+                onClick={handleGetStarted}
+                className="w-full block px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md text-center"
+              >
+                Sign Up
+              </button>
             </div>
           </div>
         )}
@@ -142,12 +177,13 @@ const Landing = () => {
                 Join Sri Lanka's fastest-growing digital platform to share past papers, discover insightful articles, and connect with peers from across the island.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link 
-                  to="/register" 
+                <button
+                  type="button"
+                  onClick={handleGetStarted}
                   className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors text-center font-medium shadow-lg hover:shadow-xl"
                 >
                   Join Now
-                </Link>
+                </button>
                 <a 
                   href="#resources" 
                   className="bg-white text-blue-600 px-8 py-3 rounded-lg border-2 border-blue-600 hover:bg-blue-50 transition-colors text-center font-medium flex items-center justify-center gap-2"
@@ -326,12 +362,13 @@ const Landing = () => {
             Join thousands of Sri Lankan students who are learning smarter, not harder. Sign up today for free access.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              to="/register" 
+            <button
+              type="button"
+              onClick={handleGetStarted}
               className="bg-white text-blue-600 px-8 py-3 rounded-lg hover:bg-gray-100 transition-colors font-medium shadow-lg"
             >
               Get Started Free
-            </Link>
+            </button>
             <a 
               href="#resources" 
               className="bg-transparent text-white px-8 py-3 rounded-lg border-2 border-white hover:bg-white hover:text-blue-600 transition-colors font-medium"

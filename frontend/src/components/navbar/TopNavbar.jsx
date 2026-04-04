@@ -1,4 +1,4 @@
-import { Bell, MessageSquare, ChevronDown, Home } from 'lucide-react';
+import { Bell, MessageSquare, ChevronDown, Home, BookOpenText } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -40,7 +40,7 @@ const TopNavbar = () => {
   return (
     <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
       <div 
-        onClick={() => navigate('/')} 
+        onClick={() => navigate(user ? '/feed' : '/')} 
         className="flex items-center gap-3 cursor-pointer select-none"
       >
         <img src={learnlinkLogo} alt="LearnLink" className="h-8 w-auto" />
@@ -56,11 +56,20 @@ const TopNavbar = () => {
       <div className="flex items-center gap-3 ml-6">
         {/* Home */}
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/feed')}
           className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
           title="Home"
         >
           <Home className="h-5 w-5 group-hover:text-blue-600 transition" />
+        </button>
+
+        {/* Resource Hub */}
+        <button
+          onClick={() => navigate('/resource-hub')}
+          className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
+          title="Resource Hub"
+        >
+          <BookOpenText className="h-5 w-5 group-hover:text-blue-600 transition" />
         </button>
 
         {/* Notification Bell */}
