@@ -19,6 +19,9 @@ public class PostResponseDTO {
     private AuthorDTO author;
     private Set<String> hashtags;
     private LocalDateTime createdAt;
+    private Long likeCount;
+    @com.fasterxml.jackson.annotation.JsonProperty("isLiked")
+    private Boolean isLiked;
 
     @Data
     @Builder

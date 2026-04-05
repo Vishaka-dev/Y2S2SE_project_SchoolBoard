@@ -26,6 +26,8 @@ import com.my_app.schoolboard.repository.TeacherProfileRepository;
 import com.my_app.schoolboard.repository.UserRepository;
 import com.my_app.schoolboard.service.PostService;
 import com.my_app.schoolboard.service.StorageService;
+import com.my_app.schoolboard.model.PostLike;
+import com.my_app.schoolboard.repository.PostLikeRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +43,7 @@ public class PostServiceImpl implements PostService {
     private final TeacherProfileRepository teacherProfileRepository;
     private final InstituteProfileRepository instituteProfileRepository;
     private final FollowRepository followRepository;
+    private final PostLikeRepository postLikeRepository;
     private final StorageService storageService;
 
     @Value("${app.frontend-url:http://localhost:5173}")
@@ -209,6 +212,55 @@ public class PostServiceImpl implements PostService {
                 .toList();
     }
 
+    @Override
+    @Transactional
+    public void likePost(Long postId, String username) {
+        log.info("User {} liking post {}", username, postId);
+        
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+        
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        if (postLikeRepository.existsByPostIdAndUserId(postId, user.getId())) {
+            log.warn("User {} already liked post {}", username, postId);
+            return;
+        }
+        
+        PostLike postLike = PostLike.builder()
+                .post(post)
+                .user(user)
+                .build();
+        
+        postLikeRepository.save(postLike);
+    }
+
+    @Override
+    @Transactional
+    public void unlikePost(Long postId, String username) {
+        log.info("User {} unliking post {}", username, postId);
+        
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        postLikeRepository.deleteByPostIdAndUserId(postId, user.getId());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long getLikeCount(Long postId) {
+        return postLikeRepository.countByPostId(postId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isLikedByUser(Long postId, String username) {
+        return userRepository.findByUsername(username)
+                .map(user -> postLikeRepository.existsByPostIdAndUserId(postId, user.getId()))
+                .orElse(false);
+    }
+
     private PostResponseDTO mapToDTO(Post post, Long currentUserId) {
         User author = post.getAuthor();
 
@@ -264,6 +316,8 @@ public class PostServiceImpl implements PostService {
                 .author(authorDTO)
                 .hashtags(post.getHashtags())
                 .createdAt(post.getCreatedAt())
+                .likeCount(postLikeRepository.countByPostId(post.getId()))
+                .isLiked(currentUserId != null ? postLikeRepository.existsByPostIdAndUserId(post.getId(), currentUserId) : false)
                 .build();
     }
 }
