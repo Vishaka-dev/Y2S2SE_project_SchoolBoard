@@ -120,6 +120,34 @@ export const postService = {
             console.error('Error fetching user posts:', error);
             throw error.response?.data || new Error('Network error fetching user posts');
         }
+    },
+
+    /**
+     * Like a post
+     * @param {string|number} postId Post ID
+     */
+    likePost: async (postId) => {
+        try {
+            const response = await apiClient.post(`/posts/${postId}/like`);
+            return response.data;
+        } catch (error) {
+            console.error('Error liking post:', error);
+            throw error.response?.data || new Error('Network error liking post');
+        }
+    },
+
+    /**
+     * Unlike a post
+     * @param {string|number} postId Post ID
+     */
+    unlikePost: async (postId) => {
+        try {
+            const response = await apiClient.delete(`/posts/${postId}/like`);
+            return response.data;
+        } catch (error) {
+            console.error('Error unliking post:', error);
+            throw error.response?.data || new Error('Network error unliking post');
+        }
     }
 };
 

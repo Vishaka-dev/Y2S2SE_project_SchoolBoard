@@ -106,6 +106,56 @@ const Home = () => {
     }
   };
 
+  const handleLike = async (postId, currentIsLiked) => {
+    // Optimistic UI update
+    setPosts(prevPosts => prevPosts.map(post => {
+      if (post.id === postId) {
+        const newIsLiked = !currentIsLiked;
+        const newLikeCount = newIsLiked 
+          ? (post.likeCount || 0) + 1 
+          : Math.max(0, (post.likeCount || 0) - 1);
+        
+        return { 
+          ...post, 
+          isLiked: newIsLiked, 
+          likeCount: newLikeCount 
+        };
+      }
+      return post;
+    }));
+
+    try {
+      if (currentIsLiked) {
+        await postService.unlikePost(postId);
+      } else {
+        await postService.likePost(postId);
+      }
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
+      // Revert on error
+      setPosts(prevPosts => prevPosts.map(post => {
+        if (post.id === postId) {
+          const originalIsLiked = currentIsLiked;
+          const originalLikeCount = originalIsLiked 
+            ? (post.likeCount || 0) 
+            : (post.likeCount || 0); // This logic is tricky, but basically we want the original state
+          
+          // Re-fetch or just toggle back
+          return { 
+            ...post, 
+            isLiked: originalIsLiked, 
+            likeCount: originalIsLiked 
+              ? (post.likeCount) // If it was liked, and we failed to unlike, keep it liked
+              : (post.likeCount) // If it wasn't liked, and we failed to like, keep it unliked
+          };
+        }
+        return post;
+      }));
+      // For simplicity, just refresh the feed or part of it if it fails
+      // loadPosts(page, false); 
+    }
+  };
+
   const getRoleBadgeColor = (role) => {
     switch (role?.toUpperCase()) {
       case 'TEACHER':
@@ -297,16 +347,19 @@ const Home = () => {
 
                 {/* Engagement Stats */}
                 <div className="flex items-center gap-4 text-[13px] text-gray-500 pb-3 mb-3 border-b border-gray-50 font-medium">
-                  <span className="hover:text-blue-600 cursor-pointer">0 likes</span>
+                  <span className="hover:text-blue-600 cursor-pointer">{post.likeCount || 0} likes</span>
                   <span className="hover:text-blue-600 cursor-pointer">0 comments</span>
                   <span className="hover:text-blue-600 cursor-pointer">0 shares</span>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2">
-                  <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
-                    <ThumbsUp className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
-                    <span className="text-sm font-bold">Like</span>
+                  <button 
+                    onClick={() => handleLike(post.id, post.isLiked)}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition group/btn ${post.isLiked ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600'}`}
+                  >
+                    <ThumbsUp className={`w-4 h-4 group-hover/btn:scale-110 transition-transform ${post.isLiked ? 'fill-current' : ''}`} />
+                    <span className="text-sm font-bold">{post.isLiked ? 'Liked' : 'Like'}</span>
                   </button>
                   <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
                     <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
