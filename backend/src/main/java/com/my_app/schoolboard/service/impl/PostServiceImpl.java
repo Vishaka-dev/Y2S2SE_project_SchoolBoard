@@ -18,6 +18,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.my_app.schoolboard.dto.PostResponseDTO;
 import com.my_app.schoolboard.model.Post;
 import com.my_app.schoolboard.model.User;
+import com.my_app.schoolboard.repository.CommentRepository;
 import com.my_app.schoolboard.repository.FollowRepository;
 import com.my_app.schoolboard.repository.InstituteProfileRepository;
 import com.my_app.schoolboard.repository.PostRepository;
@@ -44,6 +45,7 @@ public class PostServiceImpl implements PostService {
     private final TeacherProfileRepository teacherProfileRepository;
     private final InstituteProfileRepository instituteProfileRepository;
     private final FollowRepository followRepository;
+    private final CommentRepository commentRepository;
     private final StorageService storageService;
     private final ReactionService reactionService;
 
@@ -301,6 +303,7 @@ public class PostServiceImpl implements PostService {
                 .author(authorDTO)
                 .hashtags(post.getHashtags())
                 .createdAt(post.getCreatedAt())
+                .commentCount(commentRepository.countByPostId(post.getId()))
                 .reactionCounts(reactionSummary != null && reactionSummary.getReactionCounts() != null
                         ? reactionSummary.getReactionCounts()
                         : java.util.Collections.emptyMap())

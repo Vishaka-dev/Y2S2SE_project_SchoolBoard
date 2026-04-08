@@ -22,6 +22,10 @@ const Home = () => {
   const [activeMenu, setActiveMenu] = useState(null);
   const [isDeleting, setIsDeleting] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
+  const [expandedComments, setExpandedComments] = useState(new Set());
+  const [commentsByPost, setCommentsByPost] = useState({});
+  const [commentInputs, setCommentInputs] = useState({});
+  const [isSubmittingComment, setIsSubmittingComment] = useState({});
   const POSTS_PER_PAGE = 10;
 
   const loadPosts = async (pageToLoad, isInitial = false) => {
@@ -148,6 +152,77 @@ const Home = () => {
     }
   };
 
+  const handleToggleComments = async (postId) => {
+    const isExpanded = expandedComments.has(postId);
+    const newExpanded = new Set(expandedComments);
+
+    if (isExpanded) {
+      newExpanded.delete(postId);
+    } else {
+      newExpanded.add(postId);
+      // Fetch comments if not already loaded or to refresh
+      try {
+        const comments = await postService.getCommentsByPost(postId);
+        setCommentsByPost(prev => ({ ...prev, [postId]: comments }));
+      } catch (error) {
+        console.error('Failed to load comments:', error);
+      }
+    }
+    setExpandedComments(newExpanded);
+  };
+
+  const handleSubmitComment = async (postId) => {
+    const content = commentInputs[postId]?.trim();
+    if (!content) return;
+
+    setIsSubmittingComment(prev => ({ ...prev, [postId]: true }));
+    try {
+      const newComment = await postService.createComment(postId, content);
+      
+      // Update comments list
+      setCommentsByPost(prev => ({
+        ...prev,
+        [postId]: [...(prev[postId] || []), newComment]
+      }));
+
+      // Clear input
+      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+
+      // Increment comment count in posts state
+      setPosts(prevPosts => prevPosts.map(post => {
+        if (post.id === postId) {
+          return { ...post, commentCount: (post.commentCount || 0) + 1 };
+        }
+        return post;
+      }));
+    } catch (error) {
+      alert('Failed to post comment: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsSubmittingComment(prev => ({ ...prev, [postId]: false }));
+    }
+  };
+
+  const handleDeleteComment = async (commentId, postId) => {
+    if (!window.confirm('Delete this comment?')) return;
+
+    try {
+      await postService.deleteComment(commentId);
+      
+      // Update comments list
+      setCommentsByPost(prev => ({
+        ...prev,
+        [postId]: prev[postId].filter(c => c.id !== commentId)
+      }));
+
+      // Decrement comment count
+      setPosts(prevPosts => prevPosts.map(post => {
+        if (post.id === postId) {
+          return { ...post, commentCount: Math.max(0, (post.commentCount || 0) - 1) };
+        }
+        return post;
+      }));
+    } catch (error) {
+      alert('Failed to delete comment: ' + (error.message || 'Unknown error'));
   const handleReact = async (postId, reactionType) => {
     try {
       const summary = await postService.reactToPost(postId, reactionType);

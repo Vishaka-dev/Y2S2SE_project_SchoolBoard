@@ -1,5 +1,8 @@
 package com.my_app.schoolboard.dto;
 
+import java.time.LocalDateTime;
+import java.util.Set;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +24,7 @@ public class PostResponseDTO {
     private AuthorDTO author;
     private Set<String> hashtags;
     private LocalDateTime createdAt;
+    private Long commentCount;
     private Map<ReactionType, Long> reactionCounts;
     private Long totalReactions;
     private ReactionType currentUserReaction;

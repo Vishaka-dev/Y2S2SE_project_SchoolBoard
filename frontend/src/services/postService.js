@@ -132,6 +132,44 @@ export const postService = {
     },
 
     /**
+     * Get all comments for a post
+     * @param {string|number} postId Post ID
+     */
+    getCommentsByPost: async (postId) => {
+        try {
+            const response = await apiClient.get(`/posts/${postId}/comments`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching comments:', error);
+            throw error.response?.data || new Error('Network error fetching comments');
+        }
+    },
+
+    /**
+     * Create a new comment on a post
+     * @param {string|number} postId Post ID
+     * @param {string} content Comment content
+     */
+    createComment: async (postId, content) => {
+        try {
+            const response = await apiClient.post(`/posts/${postId}/comments`, { content });
+            return response.data;
+        } catch (error) {
+            console.error('Error creating comment:', error);
+            throw error.response?.data || new Error('Network error creating comment');
+        }
+    },
+
+    /**
+     * Delete a comment
+     * @param {string|number} commentId Comment ID
+     */
+    deleteComment: async (commentId) => {
+        try {
+            await apiClient.delete(`/comments/${commentId}`);
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+            throw error.response?.data || new Error('Network error deleting comment');
      * React to a post
      * @param {number|string} postId Post ID
      * @param {string} reactionType Reaction type enum value
