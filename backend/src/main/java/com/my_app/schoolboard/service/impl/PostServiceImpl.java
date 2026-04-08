@@ -25,7 +25,10 @@ import com.my_app.schoolboard.repository.StudentProfileRepository;
 import com.my_app.schoolboard.repository.TeacherProfileRepository;
 import com.my_app.schoolboard.repository.UserRepository;
 import com.my_app.schoolboard.service.PostService;
+import com.my_app.schoolboard.service.ReactionService;
 import com.my_app.schoolboard.service.StorageService;
+import com.my_app.schoolboard.dto.ReactionSummaryDTO;
+import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +45,7 @@ public class PostServiceImpl implements PostService {
     private final InstituteProfileRepository instituteProfileRepository;
     private final FollowRepository followRepository;
     private final StorageService storageService;
+    private final ReactionService reactionService;
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
@@ -86,7 +90,8 @@ public class PostServiceImpl implements PostService {
                 .build();
 
         Post savedPost = postRepository.save(post);
-        return mapToDTO(savedPost, author.getId());
+        ReactionSummaryDTO emptySummary = ReactionSummaryDTO.builder().reactionCounts(Map.of()).totalReactions(0L).build();
+        return mapToDTO(savedPost, author.getId(), emptySummary);
     }
 
     @Override
@@ -94,8 +99,13 @@ public class PostServiceImpl implements PostService {
     public List<PostResponseDTO> getAllPosts(int page, int size) {
         Long currentUserId = getCurrentUserIdOrNull();
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
-        return postRepository.findAllByOrderByCreatedAtDesc(pageable).stream()
-                .map(post -> mapToDTO(post, currentUserId))
+        List<Post> posts = postRepository.findAllByOrderByCreatedAtDesc(pageable);
+        
+        List<Long> postIds = posts.stream().map(Post::getId).collect(Collectors.toList());
+        Map<Long, ReactionSummaryDTO> reactionMap = reactionService.getReactionSummaryMapForPosts(postIds, currentUserId);
+
+        return posts.stream()
+                .map(post -> mapToDTO(post, currentUserId, reactionMap.get(post.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -139,7 +149,8 @@ public class PostServiceImpl implements PostService {
         }
 
         Post updatedPost = postRepository.save(post);
-        return mapToDTO(updatedPost, user.getId());
+        ReactionSummaryDTO summary = reactionService.getReactionSummary(updatedPost.getId(), user.getId());
+        return mapToDTO(updatedPost, user.getId(), summary);
     }
 
     @Override
@@ -171,8 +182,13 @@ public class PostServiceImpl implements PostService {
     public List<PostResponseDTO> getPostsByUsername(String username) {
         log.info("Fetching all posts for user: {}", username);
         Long currentUserId = getCurrentUserIdOrNull();
-        return postRepository.findAllByAuthorUsernameOrderByCreatedAtDesc(username).stream()
-                .map(post -> mapToDTO(post, currentUserId))
+        List<Post> posts = postRepository.findAllByAuthorUsernameOrderByCreatedAtDesc(username);
+        
+        List<Long> postIds = posts.stream().map(Post::getId).collect(Collectors.toList());
+        Map<Long, ReactionSummaryDTO> reactionMap = reactionService.getReactionSummaryMapForPosts(postIds, currentUserId);
+
+        return posts.stream()
+                .map(post -> mapToDTO(post, currentUserId, reactionMap.get(post.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -203,9 +219,13 @@ public class PostServiceImpl implements PostService {
         }
 
         List<Post> posts = postRepository.searchByContentKeyword(keyword.trim());
+        Long currentUserId = getCurrentUserIdOrNull();
+        
+        List<Long> postIds = posts.stream().map(Post::getId).collect(Collectors.toList());
+        Map<Long, ReactionSummaryDTO> reactionMap = reactionService.getReactionSummaryMapForPosts(postIds, currentUserId);
 
         return posts.stream()
-                .map(post -> mapToDTO(post, getCurrentUserIdOrNull()))
+                .map(post -> mapToDTO(post, currentUserId, reactionMap.get(post.getId())))
                 .toList();
     }
 
@@ -226,7 +246,8 @@ public class PostServiceImpl implements PostService {
         // Load profile to get fullName
         String fullName = author.getUsername();
         Object profileDTO = switch (author.getRole()) {
-            case STUDENT -> studentProfileRepository.findByUser(author).map(p -> p.getFullName()).orElse(null);
+            case SCHOOL_STUDENT, UNIVERSITY_STUDENT, STUDENT ->
+                studentProfileRepository.findByUser(author).map(p -> p.getFullName()).orElse(null);
             case TEACHER -> teacherProfileRepository.findByUser(author).map(p -> p.getFullName()).orElse(null);
             case INSTITUTE ->
                 instituteProfileRepository.findByUser(author).map(p -> p.getInstitutionName()).orElse(null);
@@ -274,6 +295,9 @@ public class PostServiceImpl implements PostService {
                 .author(authorDTO)
                 .hashtags(post.getHashtags())
                 .createdAt(post.getCreatedAt())
+                .reactionCounts(reactionSummary != null && reactionSummary.getReactionCounts() != null ? reactionSummary.getReactionCounts() : java.util.Collections.emptyMap())
+                .totalReactions(reactionSummary != null && reactionSummary.getTotalReactions() != null ? reactionSummary.getTotalReactions() : 0L)
+                .currentUserReaction(reactionSummary != null ? reactionSummary.getCurrentUserReaction() : null)
                 .build();
     }
 }

@@ -26,6 +26,7 @@ public class AccountResponseDTO {
     private AuthProvider provider;
     private LocalDateTime createdAt;
     private String imageUrl;
+    private Integer profileViews;
 
     // Profile data - only populated based on role
     private Object profile;

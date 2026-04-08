@@ -55,8 +55,8 @@ public class PostController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<PostResponseDTO>> getAllPosts(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(name="page", defaultValue = "0") int page,
+            @RequestParam(name="size", defaultValue = "10") int size) {
 
         log.info("Fetching all posts for feed - page: {}, size: {}", page, size);
 
@@ -84,7 +84,7 @@ public class PostController {
     @PatchMapping(value = "/{id:\\d+}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<PostResponseDTO> updatePost(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestParam(value = "content", required = false) String content,
             @RequestParam(value = "image", required = false) MultipartFile image,
             Authentication authentication) {
@@ -103,7 +103,7 @@ public class PostController {
     @DeleteMapping("/{id:\\d+}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deletePost(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             Authentication authentication) {
 
         log.info("Received request to delete post {} from user: {}", id, authentication.getName());
@@ -119,7 +119,7 @@ public class PostController {
      */
     @GetMapping("/user/{username}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<PostResponseDTO>> getUserPosts(@PathVariable String username) {
+    public ResponseEntity<List<PostResponseDTO>> getUserPosts(@PathVariable("username") String username) {
 
         log.info("Fetching all posts for user: {}", username);
 

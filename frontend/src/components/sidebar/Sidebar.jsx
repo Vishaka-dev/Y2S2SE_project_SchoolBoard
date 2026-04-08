@@ -19,7 +19,7 @@ const Sidebar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { name: 'Home', icon: Home, path: '/dashboard' },
+    { name: 'Home', icon: Home, path: '/feed' },
     { name: 'My Profile', icon: User, path: '/profile' },
     { name: 'Connections', icon: Users, path: '/connections' },
     { name: 'Messages', icon: MessageSquare, path: '/messages' },

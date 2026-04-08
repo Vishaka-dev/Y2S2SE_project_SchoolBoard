@@ -129,6 +129,35 @@ export const postService = {
             console.error('Error fetching user posts:', error);
             throw error.response?.data || new Error('Network error fetching user posts');
         }
+    },
+
+    /**
+     * React to a post
+     * @param {number|string} postId Post ID
+     * @param {string} reactionType Reaction type enum value
+     */
+    reactToPost: async (postId, reactionType) => {
+        try {
+            const response = await apiClient.post(`/posts/${postId}/reactions`, { reactionType });
+            return response.data;
+        } catch (error) {
+            console.error('Error reacting to post:', error);
+            throw error.response?.data || new Error('Network error reacting to post');
+        }
+    },
+
+    /**
+     * Get reactions for a post
+     * @param {number|string} postId Post ID
+     */
+    getPostReactions: async (postId) => {
+        try {
+            const response = await apiClient.get(`/posts/${postId}/reactions`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching post reactions:', error);
+            throw error.response?.data || new Error('Network error fetching post reactions');
+        }
     }
 };
 

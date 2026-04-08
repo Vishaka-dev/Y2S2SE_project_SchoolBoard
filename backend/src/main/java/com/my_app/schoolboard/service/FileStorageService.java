@@ -19,6 +19,15 @@ public interface FileStorageService {
     String uploadProfileImage(Long userId, MultipartFile file);
 
     /**
+     * Upload a resource file for a user
+     *
+     * @param userId ID of the user uploading the file
+     * @param file   MultipartFile to upload
+     * @return Public URL of the uploaded file
+     */
+    String uploadResourceFile(Long userId, MultipartFile file);
+
+    /**
      * Delete a file from storage
      * 
      * @param fileUrl URL or filename of the file to delete

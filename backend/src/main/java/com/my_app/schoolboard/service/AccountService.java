@@ -24,6 +24,12 @@ public interface AccountService {
      * @return Updated account information
      */
     AccountResponseDTO updateProfile(UpdateProfileRequestDTO request);
+        /**
+         * Get any user's account details with profile by user ID
+         * @param userId the user ID
+         * @return AccountResponseDTO containing user and profile information
+         */
+        AccountResponseDTO getAccountByUserId(Long userId);
 
     /**
      * Change user's password
@@ -58,4 +64,10 @@ public interface AccountService {
      * @return URL of the uploaded profile image
      */
     String updateProfileImage(MultipartFile file);
+
+    /**
+     * Increment the profile views count for a specific user
+     * @param username the username representing the profile viewed
+     */
+    void incrementProfileViews(String username, String viewerUsername);
 }

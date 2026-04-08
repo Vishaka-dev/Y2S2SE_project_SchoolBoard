@@ -1,8 +1,9 @@
-import { Users, Calendar, TrendingUp, UserPlus } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useState } from 'react';
+import { Users, Calendar as CalendarIcon, UserPlus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const RightSidebar = () => {
-  const { user } = useAuth();
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   // Mock data - Replace with real API calls in production
   const suggestedConnections = [
@@ -50,12 +51,6 @@ const RightSidebar = () => {
     }
   ];
 
-  const stats = {
-    connections: 156,
-    posts: 23,
-    profileViews: 89
-  };
-
   const getInitials = (name) => {
     return name
       .split(' ')
@@ -66,29 +61,8 @@ const RightSidebar = () => {
   };
 
   return (
-    <aside className="hidden xl:block w-80 bg-gray-50 border-l border-gray-200 overflow-y-auto">
-      <div className="p-6 space-y-6">
-        {/* Quick Stats */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-blue-600" />
-            Your Stats
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Connections</span>
-              <span className="text-sm font-semibold text-gray-900">{stats.connections}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Posts</span>
-              <span className="text-sm font-semibold text-gray-900">{stats.posts}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Profile Views</span>
-              <span className="text-sm font-semibold text-gray-900">{stats.profileViews}</span>
-            </div>
-          </div>
-        </div>
+    <aside className="hidden xl:block h-full overflow-y-auto">
+      <div className="space-y-6">
 
         {/* Suggested Connections */}
         <div className="bg-white rounded-xl shadow-sm p-6">
@@ -136,7 +110,7 @@ const RightSidebar = () => {
         {/* Upcoming Events */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-blue-600" />
+            <CalendarIcon className="w-4 h-4 text-blue-600" />
             Upcoming Events
           </h3>
           <div className="space-y-4">
@@ -159,9 +133,68 @@ const RightSidebar = () => {
               </div>
             ))}
           </div>
-          <button className="w-full mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium">
-            View calendar →
+          
+          <button 
+            onClick={() => setShowCalendar(!showCalendar)}
+            className="w-full mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium transition"
+          >
+            {showCalendar ? 'Hide calendar ↑' : 'View calendar →'}
           </button>
+
+          {showCalendar && (
+            <div className="mt-4 border-t pt-4">
+              <div className="flex items-center justify-between mb-4">
+                <button 
+                  onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} 
+                  className="p-1 hover:bg-gray-100 rounded-full transition"
+                >
+                  <ChevronLeft className="w-4 h-4 text-gray-600" />
+                </button>
+                <span className="text-sm font-semibold text-gray-900">
+                  {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][currentDate.getMonth()]} {currentDate.getFullYear()}
+                </span>
+                <button 
+                  onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} 
+                  className="p-1 hover:bg-gray-100 rounded-full transition"
+                >
+                  <ChevronRight className="w-4 h-4 text-gray-600" />
+                </button>
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                  <div key={day} className="text-xs font-medium text-gray-500">{day}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-center">
+                {Array.from({ length: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() }).map((_, i) => (
+                  <div key={`pad-${i}`} className="h-8"></div>
+                ))}
+                {Array.from({ length: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
+                  const day = i + 1;
+                  const monthName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][currentDate.getMonth()];
+                  const eventForDay = upcomingEvents.find(event => event.date === `${monthName} ${day}`);
+                  const isToday = new Date().getDate() === day && new Date().getMonth() === currentDate.getMonth() && new Date().getFullYear() === currentDate.getFullYear();
+                  
+                  return (
+                    <div 
+                      key={day} 
+                      className={`
+                        h-8 w-8 mx-auto flex flex-col items-center justify-center rounded-full text-sm relative transition
+                        ${eventForDay ? 'bg-blue-50 text-blue-700 font-semibold cursor-pointer hover:bg-blue-100' : 'text-gray-700 hover:bg-gray-50 cursor-pointer'}
+                        ${isToday && !eventForDay ? 'ring-2 ring-blue-500' : ''}
+                      `}
+                      title={eventForDay ? eventForDay.title : undefined}
+                    >
+                      <span className="z-10">{day}</span>
+                      {eventForDay && (
+                        <span className="absolute bottom-1 w-1 h-1 bg-blue-600 rounded-full"></span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer Links */}

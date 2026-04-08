@@ -32,7 +32,7 @@ const Profile = () => {
     setToast({ message, type });
   };
 
-  const isOwnProfile = !userId || String(currentUser?.id) === String(userId);
+  const isOwnProfile = !userId || String(currentUser?.id) === String(userId) || currentUser?.username === userId;
 
   useEffect(() => {
     const loadProfilePage = async () => {
@@ -46,8 +46,18 @@ const Profile = () => {
         if (isOwnProfile) {
           activeProfileUser = await refreshUser();
         } else {
-          const profileResponse = await apiClient.get(`/users/${userId}`);
+          let profileResponse;
+          if (/^\d+$/.test(userId)) {
+            profileResponse = await apiClient.get(`/users/${userId}`);
+          } else {
+            profileResponse = await apiClient.get(`/users/username/${userId}`);
+          }
           activeProfileUser = profileResponse.data;
+          
+          // Increment profile views
+          if (activeProfileUser?.username) {
+             apiClient.post(`/users/${activeProfileUser.username}/view`).catch(err => console.error('Error incrementing views:', err));
+          }
         }
         setProfileUser(activeProfileUser);
 
