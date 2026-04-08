@@ -1,5 +1,5 @@
 import { useAuth } from '../context/AuthContext';
-import { MapPin, Briefcase, Calendar, Mail, Edit, BookOpen, Award, MessageSquare, ThumbsUp, Share2, X } from 'lucide-react';
+import { MapPin, Briefcase, Calendar, Mail, Edit, BookOpen, Award, MessageSquare, Share2, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import TopNavbar from '../components/navbar/TopNavbar';
 import postService from '../services/postService';
@@ -467,9 +467,6 @@ const Profile = () => {
                           />
                         )}
                         <div className="flex items-center gap-4 text-gray-400 text-xs font-bold mb-4">
-                          <button className="flex items-center gap-1.5 hover:text-blue-600 transition-colors">
-                            <ThumbsUp className="w-3.5 h-3.5" /> Like
-                          </button>
                           <button 
                             onClick={() => handleToggleComments(post.id)}
                             className="flex items-center gap-1.5 hover:text-blue-600 transition-colors"

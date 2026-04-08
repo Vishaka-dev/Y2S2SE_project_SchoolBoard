@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ThumbsUp, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react';
+import { MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { postService } from '../services/postService';
 import RoleBasedWidget from '../components/widgets/RoleBasedWidget';
@@ -107,56 +107,6 @@ const Home = () => {
       alert('Failed to delete post: ' + (error.message || 'Unknown error'));
     } finally {
       setIsDeleting(null);
-    }
-  };
-
-  const handleLike = async (postId, currentIsLiked) => {
-    // Optimistic UI update
-    setPosts(prevPosts => prevPosts.map(post => {
-      if (post.id === postId) {
-        const newIsLiked = !currentIsLiked;
-        const newLikeCount = newIsLiked 
-          ? (post.likeCount || 0) + 1 
-          : Math.max(0, (post.likeCount || 0) - 1);
-        
-        return { 
-          ...post, 
-          isLiked: newIsLiked, 
-          likeCount: newLikeCount 
-        };
-      }
-      return post;
-    }));
-
-    try {
-      if (currentIsLiked) {
-        await postService.unlikePost(postId);
-      } else {
-        await postService.likePost(postId);
-      }
-    } catch (error) {
-      console.error('Failed to toggle like:', error);
-      // Revert on error
-      setPosts(prevPosts => prevPosts.map(post => {
-        if (post.id === postId) {
-          const originalIsLiked = currentIsLiked;
-          const originalLikeCount = originalIsLiked 
-            ? (post.likeCount || 0) 
-            : (post.likeCount || 0); // This logic is tricky, but basically we want the original state
-          
-          // Re-fetch or just toggle back
-          return { 
-            ...post, 
-            isLiked: originalIsLiked, 
-            likeCount: originalIsLiked 
-              ? (post.likeCount) // If it was liked, and we failed to unlike, keep it liked
-              : (post.likeCount) // If it wasn't liked, and we failed to like, keep it unliked
-          };
-        }
-        return post;
-      }));
-      // For simplicity, just refresh the feed or part of it if it fails
-      // loadPosts(page, false); 
     }
   };
 
@@ -425,7 +375,6 @@ const Home = () => {
 
                 {/* Engagement Stats */}
                 <div className="flex items-center gap-4 text-[13px] text-gray-500 pb-3 mb-3 border-b border-gray-50 font-medium">
-                  <span className="hover:text-blue-600 cursor-pointer">{post.likeCount || 0} likes</span>
                   <span className="hover:text-blue-600 cursor-pointer" onClick={() => handleToggleComments(post.id)}>
                     {post.commentCount || 0} comments
                   </span>
@@ -434,13 +383,6 @@ const Home = () => {
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => handleLike(post.id, post.isLiked)}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition group/btn ${post.isLiked ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600'}`}
-                  >
-                    <ThumbsUp className={`w-4 h-4 group-hover/btn:scale-110 transition-transform ${post.isLiked ? 'fill-current' : ''}`} />
-                    <span className="text-sm font-bold">{post.isLiked ? 'Liked' : 'Like'}</span>
-                  </button>
                   <button 
                     onClick={() => handleToggleComments(post.id)}
                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition group/btn ${expandedComments.has(post.id) ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600'}`}

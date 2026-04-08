@@ -1,12 +1,12 @@
 package com.my_app.schoolboard.dto;
 
+import java.time.LocalDateTime;
+import java.util.Set;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-import java.util.Set;
 
 @Data
 @Builder
@@ -19,9 +19,6 @@ public class PostResponseDTO {
     private AuthorDTO author;
     private Set<String> hashtags;
     private LocalDateTime createdAt;
-    private Long likeCount;
-    @com.fasterxml.jackson.annotation.JsonProperty("isLiked")
-    private Boolean isLiked;
     private Long commentCount;
 
     @Data

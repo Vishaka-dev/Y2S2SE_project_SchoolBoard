@@ -136,38 +136,4 @@ public class PostController {
 
         return ResponseEntity.ok(posts);
     }
-
-    /**
-     * Like a post
-     * POST /api/posts/{postId}/like
-     */
-    @PostMapping("/{postId}/like")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> likePost(
-            @PathVariable Long postId,
-            Authentication authentication) {
-
-        log.info("Received request to like post {} from user: {}", postId, authentication.getName());
-
-        postService.likePost(postId, authentication.getName());
-
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * Unlike a post
-     * DELETE /api/posts/{postId}/like
-     */
-    @DeleteMapping("/{postId}/like")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> unlikePost(
-            @PathVariable Long postId,
-            Authentication authentication) {
-
-        log.info("Received request to unlike post {} from user: {}", postId, authentication.getName());
-
-        postService.unlikePost(postId, authentication.getName());
-
-        return ResponseEntity.noContent().build();
-    }
 }
