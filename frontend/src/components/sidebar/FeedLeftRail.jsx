@@ -122,12 +122,22 @@ const FeedLeftRail = () => {
           Groups
         </h3>
         <p className="text-sm text-gray-600 mb-4">Discover and join study communities from your institution.</p>
-        <button
-          type="button"
-          className="w-full rounded-lg border border-dashed border-blue-200 text-blue-700 py-2 text-sm font-medium hover:bg-blue-50 transition"
-        >
-          Coming Soon
-        </button>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => navigate('/my-groups')}
+            className="w-full rounded-lg bg-blue-600 text-white py-2 text-sm font-medium hover:bg-blue-700 transition"
+          >
+            View My Groups
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/groups/create')}
+            className="w-full rounded-lg border border-dashed border-blue-200 text-blue-700 py-2 text-sm font-medium hover:bg-blue-50 transition"
+          >
+            Create New Group
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
