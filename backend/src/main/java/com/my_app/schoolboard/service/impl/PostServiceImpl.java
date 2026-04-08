@@ -90,7 +90,8 @@ public class PostServiceImpl implements PostService {
                 .build();
 
         Post savedPost = postRepository.save(post);
-        ReactionSummaryDTO emptySummary = ReactionSummaryDTO.builder().reactionCounts(Map.of()).totalReactions(0L).build();
+        ReactionSummaryDTO emptySummary = ReactionSummaryDTO.builder().reactionCounts(Map.of()).totalReactions(0L)
+                .build();
         return mapToDTO(savedPost, author.getId(), emptySummary);
     }
 
@@ -100,9 +101,10 @@ public class PostServiceImpl implements PostService {
         Long currentUserId = getCurrentUserIdOrNull();
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
         List<Post> posts = postRepository.findAllByOrderByCreatedAtDesc(pageable);
-        
+
         List<Long> postIds = posts.stream().map(Post::getId).collect(Collectors.toList());
-        Map<Long, ReactionSummaryDTO> reactionMap = reactionService.getReactionSummaryMapForPosts(postIds, currentUserId);
+        Map<Long, ReactionSummaryDTO> reactionMap = reactionService.getReactionSummaryMapForPosts(postIds,
+                currentUserId);
 
         return posts.stream()
                 .map(post -> mapToDTO(post, currentUserId, reactionMap.get(post.getId())))
@@ -183,9 +185,10 @@ public class PostServiceImpl implements PostService {
         log.info("Fetching all posts for user: {}", username);
         Long currentUserId = getCurrentUserIdOrNull();
         List<Post> posts = postRepository.findAllByAuthorUsernameOrderByCreatedAtDesc(username);
-        
+
         List<Long> postIds = posts.stream().map(Post::getId).collect(Collectors.toList());
-        Map<Long, ReactionSummaryDTO> reactionMap = reactionService.getReactionSummaryMapForPosts(postIds, currentUserId);
+        Map<Long, ReactionSummaryDTO> reactionMap = reactionService.getReactionSummaryMapForPosts(postIds,
+                currentUserId);
 
         return posts.stream()
                 .map(post -> mapToDTO(post, currentUserId, reactionMap.get(post.getId())))
@@ -220,9 +223,10 @@ public class PostServiceImpl implements PostService {
 
         List<Post> posts = postRepository.searchByContentKeyword(keyword.trim());
         Long currentUserId = getCurrentUserIdOrNull();
-        
+
         List<Long> postIds = posts.stream().map(Post::getId).collect(Collectors.toList());
-        Map<Long, ReactionSummaryDTO> reactionMap = reactionService.getReactionSummaryMapForPosts(postIds, currentUserId);
+        Map<Long, ReactionSummaryDTO> reactionMap = reactionService.getReactionSummaryMapForPosts(postIds,
+                currentUserId);
 
         return posts.stream()
                 .map(post -> mapToDTO(post, currentUserId, reactionMap.get(post.getId())))
@@ -233,14 +237,16 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     public PostResponseDTO getPostById(Long id) {
         log.info("Fetching post by ID: {}", id);
-        
+
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
-        
-        return mapToDTO(post, getCurrentUserIdOrNull());
+
+        Long currentUserId = getCurrentUserIdOrNull();
+        ReactionSummaryDTO summary = reactionService.getReactionSummary(post.getId(), currentUserId);
+        return mapToDTO(post, currentUserId, summary);
     }
 
-    private PostResponseDTO mapToDTO(Post post, Long currentUserId) {
+    private PostResponseDTO mapToDTO(Post post, Long currentUserId, ReactionSummaryDTO reactionSummary) {
         User author = post.getAuthor();
 
         // Load profile to get fullName
@@ -295,8 +301,12 @@ public class PostServiceImpl implements PostService {
                 .author(authorDTO)
                 .hashtags(post.getHashtags())
                 .createdAt(post.getCreatedAt())
-                .reactionCounts(reactionSummary != null && reactionSummary.getReactionCounts() != null ? reactionSummary.getReactionCounts() : java.util.Collections.emptyMap())
-                .totalReactions(reactionSummary != null && reactionSummary.getTotalReactions() != null ? reactionSummary.getTotalReactions() : 0L)
+                .reactionCounts(reactionSummary != null && reactionSummary.getReactionCounts() != null
+                        ? reactionSummary.getReactionCounts()
+                        : java.util.Collections.emptyMap())
+                .totalReactions(reactionSummary != null && reactionSummary.getTotalReactions() != null
+                        ? reactionSummary.getTotalReactions()
+                        : 0L)
                 .currentUserReaction(reactionSummary != null ? reactionSummary.getCurrentUserReaction() : null)
                 .build();
     }
