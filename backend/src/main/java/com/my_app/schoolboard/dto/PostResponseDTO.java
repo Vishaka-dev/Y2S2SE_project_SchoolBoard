@@ -8,6 +8,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.Map;
+import com.my_app.schoolboard.model.ReactionType;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -20,6 +25,9 @@ public class PostResponseDTO {
     private Set<String> hashtags;
     private LocalDateTime createdAt;
     private Long commentCount;
+    private Map<ReactionType, Long> reactionCounts;
+    private Long totalReactions;
+    private ReactionType currentUserReaction;
 
     @Data
     @Builder

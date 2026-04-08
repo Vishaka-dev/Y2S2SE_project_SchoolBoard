@@ -49,12 +49,6 @@ export const postService = {
         }
     },
 
-    /**
-     * Get all posts for feed
-     * @param {number} page Page number
-     * @param {number} size Page size
-     * @returns {Promise<Array>} Array of post objects
-     */
     getAllPosts: async (page = 0, size = 10) => {
         try {
             const response = await apiClient.get(`/posts?page=${page}&size=${size}`);
@@ -62,6 +56,21 @@ export const postService = {
         } catch (error) {
             console.error('Error fetching posts:', error);
             throw error.response?.data || new Error('Network error fetching posts');
+        }
+    },
+
+    /**
+     * Get a single post by ID
+     * @param {string|number} id Post ID
+     * @returns {Promise<Object>} Post object
+     */
+    getPostById: async (id) => {
+        try {
+            const response = await apiClient.get(`/posts/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching post by ID:', id, error);
+            throw error.response?.data || new Error('Network error fetching post');
         }
     },
 
@@ -161,6 +170,31 @@ export const postService = {
         } catch (error) {
             console.error('Error deleting comment:', error);
             throw error.response?.data || new Error('Network error deleting comment');
+     * React to a post
+     * @param {number|string} postId Post ID
+     * @param {string} reactionType Reaction type enum value
+     */
+    reactToPost: async (postId, reactionType) => {
+        try {
+            const response = await apiClient.post(`/posts/${postId}/reactions`, { reactionType });
+            return response.data;
+        } catch (error) {
+            console.error('Error reacting to post:', error);
+            throw error.response?.data || new Error('Network error reacting to post');
+        }
+    },
+
+    /**
+     * Get reactions for a post
+     * @param {number|string} postId Post ID
+     */
+    getPostReactions: async (postId) => {
+        try {
+            const response = await apiClient.get(`/posts/${postId}/reactions`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching post reactions:', error);
+            throw error.response?.data || new Error('Network error fetching post reactions');
         }
     }
 };

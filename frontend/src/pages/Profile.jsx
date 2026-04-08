@@ -36,7 +36,7 @@ const Profile = () => {
     setToast({ message, type });
   };
 
-  const isOwnProfile = !userId || String(currentUser?.id) === String(userId);
+  const isOwnProfile = !userId || String(currentUser?.id) === String(userId) || currentUser?.username === userId;
 
   useEffect(() => {
     const loadProfilePage = async () => {
@@ -50,8 +50,18 @@ const Profile = () => {
         if (isOwnProfile) {
           activeProfileUser = await refreshUser();
         } else {
-          const profileResponse = await apiClient.get(`/users/${userId}`);
+          let profileResponse;
+          if (/^\d+$/.test(userId)) {
+            profileResponse = await apiClient.get(`/users/${userId}`);
+          } else {
+            profileResponse = await apiClient.get(`/users/username/${userId}`);
+          }
           activeProfileUser = profileResponse.data;
+          
+          // Increment profile views
+          if (activeProfileUser?.username) {
+             apiClient.post(`/users/${activeProfileUser.username}/view`).catch(err => console.error('Error incrementing views:', err));
+          }
         }
         setProfileUser(activeProfileUser);
 
@@ -453,9 +463,13 @@ const Profile = () => {
                 ) : (
                   <div className="space-y-6">
                     {posts.map((post) => (
-                      <div key={post.id} className="border-b border-gray-100 last:border-0 pb-6 last:pb-0">
+                      <div 
+                        key={post.id} 
+                        onClick={() => navigate(`/posts/${post.id}`)}
+                        className="border-b border-gray-100 last:border-0 pb-6 last:pb-0 cursor-pointer hover:bg-gray-50/50 transition-colors p-4 rounded-xl -mx-4 group/post"
+                      >
                         {post.content && (
-                          <p className="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap font-dm-sans">
+                          <p className="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap font-dm-sans group-hover/post:text-gray-900 transition-colors">
                             {renderContentWithHashtags(post.content)}
                           </p>
                         )}
@@ -463,17 +477,17 @@ const Profile = () => {
                           <img
                             src={post.imageUrl}
                             alt="Post image"
-                            className="rounded-lg max-h-80 w-full object-cover mb-4"
+                            className="rounded-lg max-h-80 w-full object-cover mb-4 shadow-sm"
                           />
                         )}
-                        <div className="flex items-center gap-4 text-gray-400 text-xs font-bold mb-4">
-                          <button 
-                            onClick={() => handleToggleComments(post.id)}
-                            className="flex items-center gap-1.5 hover:text-blue-600 transition-colors"
-                          >
+                        <div className="flex items-center gap-4 text-gray-400" onClick={(e) => e.stopPropagation()}>
+                          <button className="flex items-center gap-1.5 text-xs font-bold hover:text-blue-600 transition-colors py-1 px-2 hover:bg-blue-50 rounded-lg">
+                            <ThumbsUp className="w-3.5 h-3.5" /> Like
+                          </button>
+                          <button className="flex items-center gap-1.5 text-xs font-bold hover:text-blue-600 transition-colors py-1 px-2 hover:bg-blue-50 rounded-lg">
                             <MessageSquare className="w-3.5 h-3.5" /> Comment
                           </button>
-                          <button className="flex items-center gap-1.5 hover:text-blue-600 transition-colors">
+                          <button className="flex items-center gap-1.5 text-xs font-bold hover:text-blue-600 transition-colors py-1 px-2 hover:bg-blue-50 rounded-lg">
                             <Share2 className="w-3.5 h-3.5" /> Share
                           </button>
                         </div>
