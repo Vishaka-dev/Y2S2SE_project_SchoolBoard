@@ -16,6 +16,8 @@ public interface PostService {
     void deletePost(Long id, String username);
 
     List<PostResponseDTO> searchPosts(String keyword);
+    
+    PostResponseDTO getPostById(Long id);
 
     List<PostResponseDTO> getPostsByUsername(String username);
 }

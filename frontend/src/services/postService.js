@@ -49,12 +49,6 @@ export const postService = {
         }
     },
 
-    /**
-     * Get all posts for feed
-     * @param {number} page Page number
-     * @param {number} size Page size
-     * @returns {Promise<Array>} Array of post objects
-     */
     getAllPosts: async (page = 0, size = 10) => {
         try {
             const response = await apiClient.get(`/posts?page=${page}&size=${size}`);
@@ -62,6 +56,21 @@ export const postService = {
         } catch (error) {
             console.error('Error fetching posts:', error);
             throw error.response?.data || new Error('Network error fetching posts');
+        }
+    },
+
+    /**
+     * Get a single post by ID
+     * @param {string|number} id Post ID
+     * @returns {Promise<Object>} Post object
+     */
+    getPostById: async (id) => {
+        try {
+            const response = await apiClient.get(`/posts/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching post by ID:', id, error);
+            throw error.response?.data || new Error('Network error fetching post');
         }
     },
 
