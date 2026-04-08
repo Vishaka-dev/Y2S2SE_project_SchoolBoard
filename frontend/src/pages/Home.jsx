@@ -6,6 +6,7 @@ import { postService } from '../services/postService';
 import RoleBasedWidget from '../components/widgets/RoleBasedWidget';
 import EditPostModal from '../components/EditPostModal';
 import FollowButton from '../components/FollowButton';
+import ReactionButton from '../components/ReactionButton';
 
 const Home = () => {
   const { user } = useAuth();
@@ -103,6 +104,26 @@ const Home = () => {
       alert('Failed to delete post: ' + (error.message || 'Unknown error'));
     } finally {
       setIsDeleting(null);
+    }
+  };
+
+  const handleReact = async (postId, reactionType) => {
+    try {
+      const summary = await postService.reactToPost(postId, reactionType);
+      
+      setPosts(prevPosts => prevPosts.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            reactionCounts: summary.reactionCounts,
+            totalReactions: summary.totalReactions,
+            currentUserReaction: summary.currentUserReaction
+          };
+        }
+        return p;
+      }));
+    } catch (error) {
+      console.error('Failed to react to post:', error);
     }
   };
 
@@ -297,17 +318,23 @@ const Home = () => {
 
                 {/* Engagement Stats */}
                 <div className="flex items-center gap-4 text-[13px] text-gray-500 pb-3 mb-3 border-b border-gray-50 font-medium">
-                  <span className="hover:text-blue-600 cursor-pointer">0 likes</span>
+                  {post.totalReactions > 0 ? (
+                    <span className="hover:text-blue-600 cursor-pointer flex items-center gap-1">
+                      <span className="text-base">👍</span> {post.totalReactions}
+                    </span>
+                  ) : (
+                    <span className="hover:text-blue-600 cursor-pointer">0 reactions</span>
+                  )}
                   <span className="hover:text-blue-600 cursor-pointer">0 comments</span>
                   <span className="hover:text-blue-600 cursor-pointer">0 shares</span>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2">
-                  <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
-                    <ThumbsUp className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
-                    <span className="text-sm font-bold">Like</span>
-                  </button>
+                  <ReactionButton 
+                    currentUserReaction={post.currentUserReaction} 
+                    onReact={(reactionType) => handleReact(post.id, reactionType)} 
+                  />
                   <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
                     <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                     <span className="text-sm font-bold">Comment</span>
