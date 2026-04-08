@@ -18,6 +18,10 @@ const Home = () => {
   const [activeMenu, setActiveMenu] = useState(null);
   const [isDeleting, setIsDeleting] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
+  const [expandedComments, setExpandedComments] = useState(new Set());
+  const [commentsByPost, setCommentsByPost] = useState({});
+  const [commentInputs, setCommentInputs] = useState({});
+  const [isSubmittingComment, setIsSubmittingComment] = useState({});
   const POSTS_PER_PAGE = 10;
 
   const loadPosts = async (pageToLoad, isInitial = false) => {
@@ -153,6 +157,80 @@ const Home = () => {
       }));
       // For simplicity, just refresh the feed or part of it if it fails
       // loadPosts(page, false); 
+    }
+  };
+
+  const handleToggleComments = async (postId) => {
+    const isExpanded = expandedComments.has(postId);
+    const newExpanded = new Set(expandedComments);
+
+    if (isExpanded) {
+      newExpanded.delete(postId);
+    } else {
+      newExpanded.add(postId);
+      // Fetch comments if not already loaded or to refresh
+      try {
+        const comments = await postService.getCommentsByPost(postId);
+        setCommentsByPost(prev => ({ ...prev, [postId]: comments }));
+      } catch (error) {
+        console.error('Failed to load comments:', error);
+      }
+    }
+    setExpandedComments(newExpanded);
+  };
+
+  const handleSubmitComment = async (postId) => {
+    const content = commentInputs[postId]?.trim();
+    if (!content) return;
+
+    setIsSubmittingComment(prev => ({ ...prev, [postId]: true }));
+    try {
+      const newComment = await postService.createComment(postId, content);
+      
+      // Update comments list
+      setCommentsByPost(prev => ({
+        ...prev,
+        [postId]: [...(prev[postId] || []), newComment]
+      }));
+
+      // Clear input
+      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+
+      // Increment comment count in posts state
+      setPosts(prevPosts => prevPosts.map(post => {
+        if (post.id === postId) {
+          return { ...post, commentCount: (post.commentCount || 0) + 1 };
+        }
+        return post;
+      }));
+    } catch (error) {
+      alert('Failed to post comment: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsSubmittingComment(prev => ({ ...prev, [postId]: false }));
+    }
+  };
+
+  const handleDeleteComment = async (commentId, postId) => {
+    if (!window.confirm('Delete this comment?')) return;
+
+    try {
+      await postService.deleteComment(commentId);
+      
+      // Update comments list
+      setCommentsByPost(prev => ({
+        ...prev,
+        [postId]: prev[postId].filter(c => c.id !== commentId)
+      }));
+
+      // Decrement comment count
+      setPosts(prevPosts => prevPosts.map(post => {
+        if (post.id === postId) {
+          return { ...post, commentCount: Math.max(0, (post.commentCount || 0) - 1) };
+        }
+        return post;
+      }));
+    } catch (error) {
+      alert('Failed to delete comment: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -348,7 +426,9 @@ const Home = () => {
                 {/* Engagement Stats */}
                 <div className="flex items-center gap-4 text-[13px] text-gray-500 pb-3 mb-3 border-b border-gray-50 font-medium">
                   <span className="hover:text-blue-600 cursor-pointer">{post.likeCount || 0} likes</span>
-                  <span className="hover:text-blue-600 cursor-pointer">0 comments</span>
+                  <span className="hover:text-blue-600 cursor-pointer" onClick={() => handleToggleComments(post.id)}>
+                    {post.commentCount || 0} comments
+                  </span>
                   <span className="hover:text-blue-600 cursor-pointer">0 shares</span>
                 </div>
 
@@ -361,8 +441,11 @@ const Home = () => {
                     <ThumbsUp className={`w-4 h-4 group-hover/btn:scale-110 transition-transform ${post.isLiked ? 'fill-current' : ''}`} />
                     <span className="text-sm font-bold">{post.isLiked ? 'Liked' : 'Like'}</span>
                   </button>
-                  <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
-                    <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                  <button 
+                    onClick={() => handleToggleComments(post.id)}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition group/btn ${expandedComments.has(post.id) ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600'}`}
+                  >
+                    <MessageCircle className={`w-4 h-4 group-hover/btn:scale-110 transition-transform ${expandedComments.has(post.id) ? 'fill-current' : ''}`} />
                     <span className="text-sm font-bold">Comment</span>
                   </button>
                   <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
@@ -370,6 +453,71 @@ const Home = () => {
                     <span className="text-sm font-bold">Share</span>
                   </button>
                 </div>
+
+                {/* Comments Section */}
+                {expandedComments.has(post.id) && (
+                  <div className="mt-4 pt-4 border-t border-gray-50 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                    {/* Comment Input */}
+                    <div className="flex gap-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                        {user?.initials || user?.fullName?.[0] || 'U'}
+                      </div>
+                      <div className="flex-1 flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Write a comment..."
+                          value={commentInputs[post.id] || ''}
+                          onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment(post.id)}
+                          className="flex-1 bg-gray-50 border-none rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none"
+                        />
+                        <button
+                          onClick={() => handleSubmitComment(post.id)}
+                          disabled={!commentInputs[post.id]?.trim() || isSubmittingComment[post.id]}
+                          className="text-blue-600 font-bold text-sm px-2 disabled:opacity-50 hover:text-blue-700 transition-colors"
+                        >
+                          {isSubmittingComment[post.id] ? '...' : 'Post'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Comment List */}
+                    <div className="space-y-4">
+                      {commentsByPost[post.id]?.length === 0 ? (
+                        <p className="text-center text-gray-400 text-xs py-2">No comments yet. Be the first to comment!</p>
+                      ) : (
+                        commentsByPost[post.id]?.map((comment) => (
+                          <div key={comment.id} className="flex gap-3 group/comment">
+                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xs font-bold flex-shrink-0">
+                              {comment.author?.initials || comment.author?.name?.[0] || 'U'}
+                            </div>
+                            <div className="flex-1">
+                              <div className="bg-gray-50 rounded-2xl px-4 py-2 relative">
+                                <div className="flex items-center justify-between gap-2 mb-0.5">
+                                  <span className="text-xs font-bold text-gray-900">{comment.author?.name}</span>
+                                  <span className="text-[10px] text-gray-400 font-medium">{formatDate(comment.createdAt)}</span>
+                                </div>
+                                <p className="text-sm text-gray-700 leading-relaxed font-dm-sans">
+                                  {comment.content}
+                                </p>
+                                
+                                {/* Delete button for owned comments */}
+                                {(user?.username === comment.author?.username || user?.role === 'ADMIN') && (
+                                  <button
+                                    onClick={() => handleDeleteComment(comment.id, post.id)}
+                                    className="absolute -right-2 -top-2 p-1.5 bg-white shadow-sm border border-gray-100 rounded-full text-gray-400 hover:text-red-500 opacity-0 group-hover/comment:opacity-100 transition-all hover:scale-110"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
 
