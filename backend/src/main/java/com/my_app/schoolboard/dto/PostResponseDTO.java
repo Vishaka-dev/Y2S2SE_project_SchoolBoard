@@ -22,6 +22,7 @@ public class PostResponseDTO {
     private Long likeCount;
     @com.fasterxml.jackson.annotation.JsonProperty("isLiked")
     private Boolean isLiked;
+    private Long commentCount;
 
     @Data
     @Builder

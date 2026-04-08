@@ -28,6 +28,7 @@ import com.my_app.schoolboard.service.PostService;
 import com.my_app.schoolboard.service.StorageService;
 import com.my_app.schoolboard.model.PostLike;
 import com.my_app.schoolboard.repository.PostLikeRepository;
+import com.my_app.schoolboard.repository.CommentRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ public class PostServiceImpl implements PostService {
     private final InstituteProfileRepository instituteProfileRepository;
     private final FollowRepository followRepository;
     private final PostLikeRepository postLikeRepository;
+    private final CommentRepository commentRepository;
     private final StorageService storageService;
 
     @Value("${app.frontend-url:http://localhost:5173}")
@@ -318,6 +320,7 @@ public class PostServiceImpl implements PostService {
                 .createdAt(post.getCreatedAt())
                 .likeCount(postLikeRepository.countByPostId(post.getId()))
                 .isLiked(currentUserId != null ? postLikeRepository.existsByPostIdAndUserId(post.getId(), currentUserId) : false)
+                .commentCount(commentRepository.countByPostId(post.getId()))
                 .build();
     }
 }
