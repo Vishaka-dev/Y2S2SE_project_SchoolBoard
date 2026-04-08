@@ -27,6 +27,10 @@ const Profile = () => {
   const [modalState, setModalState] = useState({ isOpen: false, mode: 'followers' });
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const [expandedComments, setExpandedComments] = useState(new Set());
+  const [commentsByPost, setCommentsByPost] = useState({});
+  const [commentInputs, setCommentInputs] = useState({});
+  const [isSubmittingComment, setIsSubmittingComment] = useState({});
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -98,6 +102,73 @@ const Profile = () => {
     window.addEventListener('postCreated', handlePostCreated);
     return () => window.removeEventListener('postCreated', handlePostCreated);
   }, []);
+
+  // Comment handlers
+  const handleToggleComments = async (postId) => {
+    const isExpanded = expandedComments.has(postId);
+    const newExpanded = new Set(expandedComments);
+
+    if (isExpanded) {
+      newExpanded.delete(postId);
+    } else {
+      newExpanded.add(postId);
+      // Fetch comments if not already loaded or to refresh
+      try {
+        const comments = await postService.getCommentsByPost(postId);
+        setCommentsByPost(prev => ({ ...prev, [postId]: comments }));
+      } catch (error) {
+        console.error('Failed to load comments:', error);
+      }
+    }
+    setExpandedComments(newExpanded);
+  };
+
+  const handleSubmitComment = async (postId) => {
+    const content = commentInputs[postId]?.trim();
+    if (!content) return;
+
+    setIsSubmittingComment(prev => ({ ...prev, [postId]: true }));
+    try {
+      const newComment = await postService.createComment(postId, content);
+      
+      // Update comments list
+      setCommentsByPost(prev => ({
+        ...prev,
+        [postId]: [...(prev[postId] || []), newComment]
+      }));
+
+      // Clear input
+      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+    } catch (error) {
+      console.error('Failed to post comment:', error);
+      showToast('Failed to post comment', 'error');
+    } finally {
+      setIsSubmittingComment(prev => ({ ...prev, [postId]: false }));
+    }
+  };
+
+  const handleDeleteComment = async (commentId, postId) => {
+    if (!window.confirm('Delete this comment?')) return;
+
+    try {
+      await postService.deleteComment(commentId);
+      
+      // Update comments list
+      setCommentsByPost(prev => ({
+        ...prev,
+        [postId]: prev[postId].filter(c => c.id !== commentId)
+      }));
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+      showToast('Failed to delete comment', 'error');
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
 
   if (!currentUser || isProfileLoading || !profileUser) {
     return (
@@ -395,17 +466,102 @@ const Profile = () => {
                             className="rounded-lg max-h-80 w-full object-cover mb-4"
                           />
                         )}
-                        <div className="flex items-center gap-4 text-gray-400">
-                          <button className="flex items-center gap-1.5 text-xs font-bold hover:text-blue-600 transition-colors">
+                        <div className="flex items-center gap-4 text-gray-400 text-xs font-bold mb-4">
+                          <button className="flex items-center gap-1.5 hover:text-blue-600 transition-colors">
                             <ThumbsUp className="w-3.5 h-3.5" /> Like
                           </button>
-                          <button className="flex items-center gap-1.5 text-xs font-bold hover:text-blue-600 transition-colors">
+                          <button 
+                            onClick={() => handleToggleComments(post.id)}
+                            className="flex items-center gap-1.5 hover:text-blue-600 transition-colors"
+                          >
                             <MessageSquare className="w-3.5 h-3.5" /> Comment
                           </button>
-                          <button className="flex items-center gap-1.5 text-xs font-bold hover:text-blue-600 transition-colors">
+                          <button className="flex items-center gap-1.5 hover:text-blue-600 transition-colors">
                             <Share2 className="w-3.5 h-3.5" /> Share
                           </button>
                         </div>
+
+                        {/* Comments Section */}
+                        {expandedComments.has(post.id) && (
+                          <div className="mt-4 pt-4 border-t border-gray-100 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                            {/* Comment Input */}
+                            <div className="flex gap-3">
+                              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                                {currentUser?.initials || currentUser?.fullName?.[0] || 'U'}
+                              </div>
+                              <div className="flex-1 flex gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="Write a comment..."
+                                  value={commentInputs[post.id] || ''}
+                                  onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
+                                  onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment(post.id)}
+                                  className="flex-1 bg-gray-50 border-none rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none"
+                                />
+                                <button
+                                  onClick={() => handleSubmitComment(post.id)}
+                                  disabled={!commentInputs[post.id]?.trim() || isSubmittingComment[post.id]}
+                                  className="text-blue-600 font-bold text-sm px-2 disabled:opacity-50 hover:text-blue-700 transition-colors"
+                                >
+                                  {isSubmittingComment[post.id] ? '...' : 'Post'}
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Comment List */}
+                            <div className="space-y-4">
+                              {commentsByPost[post.id]?.length === 0 ? (
+                                <p className="text-center text-gray-400 text-xs py-2">No comments yet. Be the first to comment!</p>
+                              ) : (
+                                commentsByPost[post.id]?.map((comment) => (
+                                  <div key={comment.id} className="flex gap-3 group/comment">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden">
+                                      {comment.authorImageUrl ? (
+                                        <img
+                                          src={comment.authorImageUrl.startsWith('http')
+                                            ? comment.authorImageUrl
+                                            : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/api\/?$/, '')}${comment.authorImageUrl.startsWith('/') ? comment.authorImageUrl : '/' + comment.authorImageUrl}`
+                                          }
+                                          alt={comment.authorName}
+                                          className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                            e.target.style.display = 'none';
+                                            const fallback = e.target.parentElement.querySelector('.avatar-fallback');
+                                            if (fallback) fallback.classList.remove('hidden');
+                                          }}
+                                        />
+                                      ) : null}
+                                      <span className={`avatar-fallback ${comment.authorImageUrl ? 'hidden' : ''}`}>
+                                        {comment.authorName?.[0] || 'U'}
+                                      </span>
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="bg-gray-50 rounded-2xl px-4 py-2 relative">
+                                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                                          <span className="text-xs font-bold text-gray-900">{comment.authorName || 'Unknown User'}</span>
+                                          <span className="text-[10px] text-gray-400 font-medium">{formatDate(comment.createdAt)}</span>
+                                        </div>
+                                        <p className="text-sm text-gray-700 leading-relaxed font-dm-sans">
+                                          {comment.content}
+                                        </p>
+                                        
+                                        {/* Delete button for owned comments */}
+                                        {(currentUser?.username === comment.authorUsername || currentUser?.role === 'ADMIN') && (
+                                          <button
+                                            onClick={() => handleDeleteComment(comment.id, post.id)}
+                                            className="absolute -right-2 -top-2 p-1.5 bg-white shadow-sm border border-gray-100 rounded-full text-gray-400 hover:text-red-500 opacity-0 group-hover/comment:opacity-100 transition-all hover:scale-110"
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

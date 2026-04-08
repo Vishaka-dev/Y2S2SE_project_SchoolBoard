@@ -488,13 +488,30 @@ const Home = () => {
                       ) : (
                         commentsByPost[post.id]?.map((comment) => (
                           <div key={comment.id} className="flex gap-3 group/comment">
-                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xs font-bold flex-shrink-0">
-                              {comment.author?.initials || comment.author?.name?.[0] || 'U'}
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden">
+                              {comment.authorImageUrl ? (
+                                <img
+                                  src={comment.authorImageUrl.startsWith('http')
+                                    ? comment.authorImageUrl
+                                    : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/api\/?$/, '')}${comment.authorImageUrl.startsWith('/') ? comment.authorImageUrl : '/' + comment.authorImageUrl}`
+                                  }
+                                  alt={comment.authorName}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    const fallback = e.target.parentElement.querySelector('.avatar-fallback');
+                                    if (fallback) fallback.classList.remove('hidden');
+                                  }}
+                                />
+                              ) : null}
+                              <span className={`avatar-fallback ${comment.authorImageUrl ? 'hidden' : ''}`}>
+                                {comment.authorName?.[0] || 'U'}
+                              </span>
                             </div>
                             <div className="flex-1">
                               <div className="bg-gray-50 rounded-2xl px-4 py-2 relative">
                                 <div className="flex items-center justify-between gap-2 mb-0.5">
-                                  <span className="text-xs font-bold text-gray-900">{comment.author?.name}</span>
+                                  <span className="text-xs font-bold text-gray-900">{comment.authorName || 'Unknown User'}</span>
                                   <span className="text-[10px] text-gray-400 font-medium">{formatDate(comment.createdAt)}</span>
                                 </div>
                                 <p className="text-sm text-gray-700 leading-relaxed font-dm-sans">
@@ -502,7 +519,7 @@ const Home = () => {
                                 </p>
                                 
                                 {/* Delete button for owned comments */}
-                                {(user?.username === comment.author?.username || user?.role === 'ADMIN') && (
+                                {(user?.username === comment.authorUsername || user?.role === 'ADMIN') && (
                                   <button
                                     onClick={() => handleDeleteComment(comment.id, post.id)}
                                     className="absolute -right-2 -top-2 p-1.5 bg-white shadow-sm border border-gray-100 rounded-full text-gray-400 hover:text-red-500 opacity-0 group-hover/comment:opacity-100 transition-all hover:scale-110"
