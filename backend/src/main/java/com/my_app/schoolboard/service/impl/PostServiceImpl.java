@@ -209,6 +209,17 @@ public class PostServiceImpl implements PostService {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public PostResponseDTO getPostById(Long id) {
+        log.info("Fetching post by ID: {}", id);
+        
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
+        
+        return mapToDTO(post, getCurrentUserIdOrNull());
+    }
+
     private PostResponseDTO mapToDTO(Post post, Long currentUserId) {
         User author = post.getAuthor();
 

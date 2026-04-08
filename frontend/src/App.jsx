@@ -69,6 +69,17 @@ function AppRoutes() {
       >
         <Route index element={<Home />} />
       </Route>
+
+      <Route 
+        path="/posts/:targetPostId" 
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Home />} />
+      </Route>
       
       <Route 
         path="/profile" 

@@ -52,10 +52,6 @@ public class PostController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * Get all posts for the feed
-     * GET /api/posts
-     */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<PostResponseDTO>> getAllPosts(
@@ -67,6 +63,18 @@ public class PostController {
         List<PostResponseDTO> posts = postService.getAllPosts(page, size);
 
         return ResponseEntity.ok(posts);
+    }
+
+    /**
+     * Get a single post by ID
+     * GET /api/posts/{id}
+     */
+    @GetMapping("/{id:\\d+}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PostResponseDTO> getPostById(@PathVariable Long id) {
+        log.info("Fetching post by ID: {}", id);
+        PostResponseDTO post = postService.getPostById(id);
+        return ResponseEntity.ok(post);
     }
 
     /**

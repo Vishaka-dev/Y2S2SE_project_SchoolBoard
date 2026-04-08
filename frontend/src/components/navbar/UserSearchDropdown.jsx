@@ -86,10 +86,8 @@ const UserSearchDropdown = () => {
   const handlePostClick = (post) => {
     setIsOpen(false);
     setQuery('');
-    // Navigate to the post author's profile (closest available route)
-    if (post.author?.id) {
-      navigate(`/profile/${post.author.id}`);
-    }
+    // Navigate to the specific post using a descriptive URL
+    navigate(`/posts/${post.id}`);
   };
 
   const formatDate = (dateString) => {
