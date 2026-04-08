@@ -324,13 +324,15 @@ const Home = () => {
                   <div 
                     key={post.id} 
                     id={`post-${post.id}`}
-                    className={`bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition group/post relative ${isDeleting === post.id ? 'opacity-50 grayscale' : ''}`}
+                    onClick={() => navigate(`/posts/${post.id}`)}
+                    className={`bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition cursor-pointer group/post relative ${isDeleting === post.id ? 'opacity-50 grayscale' : ''}`}
                   >
                     {/* Post Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div
                         className="flex gap-3 cursor-pointer group/author"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           if (post.author?.id) {
                             navigate(`/profile/${post.author.id}`);
                           } else if (post.author?.username) {
@@ -365,7 +367,7 @@ const Home = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                         {user?.id !== post.author?.id && (
                           <FollowButton
                             targetUserId={post.author?.id}
@@ -436,7 +438,7 @@ const Home = () => {
                       <span className="hover:text-blue-600 cursor-pointer">0 comments</span>
                       <span className="hover:text-blue-600 cursor-pointer">0 shares</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
                         <ThumbsUp className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                         <span className="text-sm font-bold">Like</span>
