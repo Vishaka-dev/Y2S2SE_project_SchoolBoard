@@ -11,6 +11,9 @@ import Connections from './pages/Connections';
 import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import ResourceHub from './pages/ResourceHub';
+import CreateGroup from './pages/CreateGroup';
+import GroupDetails from './pages/GroupDetails';
+import MyGroups from './pages/MyGroups';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -75,6 +78,16 @@ function AppRoutes() {
         path="/dashboard"
         element={<Navigate to="/feed" replace />}
       />
+      <Route 
+        path="/posts/:targetPostId" 
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Home />} />
+      </Route>
       
       <Route 
         path="/profile" 
@@ -136,6 +149,39 @@ function AppRoutes() {
         }
       >
         <Route index element={<ResourceHub />} />
+      </Route>
+
+      <Route
+        path="/groups/create"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<CreateGroup />} />
+      </Route>
+
+      <Route
+        path="/groups/:id"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<GroupDetails />} />
+      </Route>
+
+      <Route
+        path="/my-groups"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<MyGroups />} />
       </Route>
       
       {/* Account Management Routes - Also in DashboardLayout */}
