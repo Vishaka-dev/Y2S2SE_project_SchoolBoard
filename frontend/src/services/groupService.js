@@ -70,6 +70,15 @@ const groupService = {
       throw error.response?.data || new Error('Network error fetching group members');
     }
   },
+  searchGroups: async (keyword) => {
+    try {
+      const response = await apiClient.get(`/groups/search?keyword=${encodeURIComponent(keyword)}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error searching groups:', error);
+      throw error.response?.data || new Error('Network error searching groups');
+    }
+  },
 };
 
 export default groupService;
