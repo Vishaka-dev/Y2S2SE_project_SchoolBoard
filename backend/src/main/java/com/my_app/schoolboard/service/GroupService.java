@@ -20,4 +20,5 @@ public interface GroupService {
     void leaveGroup(Long groupId, String username);
 
     List<GroupMemberDTO> getGroupMembers(Long groupId, String username);
+    List<GroupResponseDTO> searchGroups(String keyword, String username);
 }

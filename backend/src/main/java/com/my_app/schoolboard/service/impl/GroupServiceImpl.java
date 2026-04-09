@@ -150,6 +150,19 @@ public class GroupServiceImpl implements GroupService {
                 .toList();
     }
 
+    @Override
+    public List<GroupResponseDTO> searchGroups(String keyword, String username) {
+        User currentUser = getUserByUsername(username);
+        return groupRepository.searchGroups(keyword.trim(), currentUser.getId()).stream()
+                .map(group -> {
+                    GroupMember membership = getMembership(group.getId(), currentUser.getId()).orElse(null);
+                    return mapToGroupResponse(group, currentUser.getId(),
+                            membership != null ? membership.getRole() : null,
+                            membership != null);
+                })
+                .toList();
+    }
+
     private Group getGroupOrThrow(Long groupId) {
         return groupRepository.findById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Group", "id", groupId));

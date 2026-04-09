@@ -85,4 +85,12 @@ public class GroupController {
             Authentication authentication) {
         return ResponseEntity.ok(groupService.getGroupMembers(id, authentication.getName()));
     }
+
+    @GetMapping("/search")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<GroupResponseDTO>> searchGroups(
+            @jakarta.validation.constraints.NotBlank @org.springframework.web.bind.annotation.RequestParam("keyword") String keyword,
+            Authentication authentication) {
+        return ResponseEntity.ok(groupService.searchGroups(keyword, authentication.getName()));
+    }
 }
