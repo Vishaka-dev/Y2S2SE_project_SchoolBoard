@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.my_app.schoolboard.model.Group;
+import com.my_app.schoolboard.model.GroupType;
 
 @Repository
 public interface GroupRepository extends JpaRepository<Group, Long> {
@@ -23,6 +24,19 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
             ORDER BY g.createdAt DESC
             """)
     List<Group> findAccessibleGroups(@Param("userId") Long userId);
+
+       @Query("""
+          SELECT DISTINCT g
+          FROM StudyGroup g
+          LEFT JOIN GroupMember gm
+         ON gm.group = g
+             AND gm.user.id = :userId
+          WHERE g.groupType = :groupType
+            AND (g.visibility = com.my_app.schoolboard.model.GroupVisibility.PUBLIC
+             OR gm.id IS NOT NULL)
+          ORDER BY g.createdAt DESC
+          """)
+       List<Group> findAccessibleGroupsByCategory(@Param("groupType") GroupType groupType, @Param("userId") Long userId);
 
     @Query("""
             SELECT DISTINCT g

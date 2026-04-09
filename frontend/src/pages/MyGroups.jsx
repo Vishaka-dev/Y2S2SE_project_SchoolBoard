@@ -4,10 +4,21 @@ import { FolderPlus, Users } from 'lucide-react';
 import groupService from '../services/groupService';
 import GroupCard from '../components/GroupCard';
 
+const GROUP_CATEGORY_OPTIONS = [
+  { value: 'COURSE', label: 'Course' },
+  { value: 'BATCH', label: 'Batch' },
+  { value: 'STUDY_GROUP', label: 'Study Group' },
+  { value: 'PROJECT', label: 'Project' },
+  { value: 'EXAM_PREP', label: 'Exam Prep' },
+  { value: 'CLUB', label: 'Club' },
+  { value: 'MENTORSHIP', label: 'Mentorship' },
+];
+
 const MyGroups = () => {
   const navigate = useNavigate();
   const [myGroups, setMyGroups] = useState([]);
   const [discoverGroups, setDiscoverGroups] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -17,10 +28,14 @@ const MyGroups = () => {
       setError('');
 
       try {
-        const [myGroupsData, allGroupsData] = await Promise.all([
-          groupService.getMyGroups(),
-          groupService.getGroups(),
-        ]);
+        if (selectedCategory) {
+          const allGroupsData = await groupService.getGroupsByCategory(selectedCategory);
+          setMyGroups(allGroupsData.filter((group) => group.joined));
+          setDiscoverGroups(allGroupsData.filter((group) => !group.joined));
+          return;
+        }
+
+        const [myGroupsData, allGroupsData] = await Promise.all([groupService.getMyGroups(), groupService.getGroups()]);
 
         setMyGroups(myGroupsData);
         setDiscoverGroups(allGroupsData.filter((group) => !group.joined));
@@ -32,7 +47,7 @@ const MyGroups = () => {
     };
 
     loadGroups();
-  }, []);
+  }, [selectedCategory]);
 
   return (
     <div className="space-y-6">
@@ -45,14 +60,43 @@ const MyGroups = () => {
               See the groups you already belong to and discover more spaces for collaboration, projects, and revision.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => navigate('/groups/create')}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-          >
-            <FolderPlus className="h-4 w-4" />
-            Create Group
-          </button>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+            <div className="flex items-center gap-2">
+              <label htmlFor="groupCategory" className="text-sm font-medium text-gray-700">
+                Category
+              </label>
+              <select
+                id="groupCategory"
+                value={selectedCategory}
+                onChange={(event) => setSelectedCategory(event.target.value)}
+                className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              >
+                <option value="">All</option>
+                {GROUP_CATEGORY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {selectedCategory && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory('')}
+                  className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/groups/create')}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              <FolderPlus className="h-4 w-4" />
+              Create Group
+            </button>
+          </div>
         </div>
       </div>
 
