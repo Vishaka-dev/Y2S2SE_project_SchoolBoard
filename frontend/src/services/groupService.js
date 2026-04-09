@@ -21,6 +21,16 @@ const groupService = {
     }
   },
 
+  getGroupsByCategory: async (category) => {
+    try {
+      const response = await apiClient.get(`/groups?category=${encodeURIComponent(category)}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching groups by category:', error);
+      throw error.response?.data || new Error('Network error fetching groups by category');
+    }
+  },
+
   getMyGroups: async () => {
     try {
       const response = await apiClient.get('/groups/my-groups');

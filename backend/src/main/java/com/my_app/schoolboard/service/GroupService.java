@@ -13,6 +13,8 @@ public interface GroupService {
 
     List<GroupResponseDTO> getGroups(String username);
 
+    List<GroupResponseDTO> filterGroupsByCategory(String category, String username);
+
     List<GroupResponseDTO> getMyGroups(String username);
 
     void joinGroup(Long groupId, String username);

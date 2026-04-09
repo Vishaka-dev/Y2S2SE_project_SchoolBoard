@@ -1,6 +1,7 @@
 package com.my_app.schoolboard.service.impl;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +13,7 @@ import com.my_app.schoolboard.exception.ResourceNotFoundException;
 import com.my_app.schoolboard.model.Group;
 import com.my_app.schoolboard.model.GroupMember;
 import com.my_app.schoolboard.model.GroupMemberRole;
+import com.my_app.schoolboard.model.GroupType;
 import com.my_app.schoolboard.model.GroupVisibility;
 import com.my_app.schoolboard.model.Role;
 import com.my_app.schoolboard.model.User;
@@ -83,6 +85,30 @@ public class GroupServiceImpl implements GroupService {
     public List<GroupResponseDTO> getGroups(String username) {
         User currentUser = getUserByUsername(username);
         return groupRepository.findAccessibleGroups(currentUser.getId()).stream()
+                .map(group -> {
+                    GroupMember membership = getMembership(group.getId(), currentUser.getId()).orElse(null);
+                    return mapToGroupResponse(group, currentUser.getId(),
+                            membership != null ? membership.getRole() : null,
+                            membership != null);
+                })
+                .toList();
+    }
+
+    @Override
+    public List<GroupResponseDTO> filterGroupsByCategory(String category, String username) {
+        if (category == null || category.trim().isEmpty()) {
+            return getGroups(username);
+        }
+
+        GroupType groupType;
+        try {
+            groupType = GroupType.valueOf(category.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            return List.of();
+        }
+
+        User currentUser = getUserByUsername(username);
+        return groupRepository.findAccessibleGroupsByCategory(groupType, currentUser.getId()).stream()
                 .map(group -> {
                     GroupMember membership = getMembership(group.getId(), currentUser.getId()).orElse(null);
                     return mapToGroupResponse(group, currentUser.getId(),

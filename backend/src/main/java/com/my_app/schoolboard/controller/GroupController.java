@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.my_app.schoolboard.dto.CreateGroupRequestDTO;
@@ -54,7 +55,12 @@ public class GroupController {
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<GroupResponseDTO>> getGroups(Authentication authentication) {
+    public ResponseEntity<List<GroupResponseDTO>> getGroups(
+            @RequestParam(value = "category", required = false) String category,
+            Authentication authentication) {
+        if (category != null && !category.trim().isEmpty()) {
+            return ResponseEntity.ok(groupService.filterGroupsByCategory(category, authentication.getName()));
+        }
         return ResponseEntity.ok(groupService.getGroups(authentication.getName()));
     }
 
