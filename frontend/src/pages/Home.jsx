@@ -1,17 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-<<<<<<< Updated upstream
-import { ThumbsUp, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react';
-<<<<<<< HEAD
-import { useNavigate } from 'react-router-dom';
-=======
 import { ThumbsUp, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, X, Smile } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { useNavigate, useParams } from 'react-router-dom';
->>>>>>> Stashed changes
-=======
-import { useNavigate, useParams } from 'react-router-dom';
->>>>>>> 6c9eb7a511ed0ec0fb925b9a01fa6942257deeb1
 import { postService } from '../services/postService';
 import RoleBasedWidget from '../components/widgets/RoleBasedWidget';
 import EditPostModal from '../components/EditPostModal';
@@ -20,6 +11,9 @@ import ReactionButton from '../components/ReactionButton';
 
 const Home = () => {
   const { user } = useAuth();
+  const token = localStorage.getItem('token');
+  console.log('Home Render - User:', user ? user.username : 'null', 'Token exists:', !!token);
+
   const navigate = useNavigate();
   const { targetPostId } = useParams();
   const [posts, setPosts] = useState([]);
@@ -182,22 +176,28 @@ const Home = () => {
     setExpandedComments(newExpanded);
   };
 
+  useEffect(() => {
+    window.postService = postService;
+  }, []);
+
   const handleSubmitComment = async (postId) => {
     const content = commentInputs[postId]?.trim();
     if (!content) return;
 
     setIsSubmittingComment(prev => ({ ...prev, [postId]: true }));
+    console.log(`Submitting comment for post ${postId}: ${content}`);
     try {
       const newComment = await postService.createComment(postId, content);
       
-      // Update comments list
+      // Update comments list (prepend for consistency with backend DESC order)
       setCommentsByPost(prev => ({
         ...prev,
-        [postId]: [...(prev[postId] || []), newComment]
+        [postId]: [newComment, ...(prev[postId] || [])]
       }));
 
-      // Clear input
+      // Clear input and picker
       setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+      setShowCommentEmojiPicker(null);
 
       // Increment comment count in posts state
       setPosts(prevPosts => prevPosts.map(post => {
@@ -206,7 +206,14 @@ const Home = () => {
         }
         return post;
       }));
+
+      // Update single post count if applicable
+      setSinglePost(prev => {
+        if (!prev || prev.id !== postId) return prev;
+        return { ...prev, commentCount: (prev.commentCount || 0) + 1 };
+      });
     } catch (error) {
+      console.error('Failed to post comment:', error);
       alert('Failed to post comment: ' + (error.message || 'Unknown error'));
     } finally {
       setIsSubmittingComment(prev => ({ ...prev, [postId]: false }));
@@ -234,6 +241,9 @@ const Home = () => {
       }));
     } catch (error) {
       alert('Failed to delete comment: ' + (error.message || 'Unknown error'));
+    }
+  };
+
   const handleReact = async (postId, reactionType) => {
     try {
       const summary = await postService.reactToPost(postId, reactionType);
@@ -252,9 +262,7 @@ const Home = () => {
     } catch (error) {
       console.error('Failed to react to post:', error);
     }
-<<<<<<< Updated upstream
-=======
-    };
+  };
 
   const renderCommentsSection = (post) => {
     if (!expandedComments.has(post.id)) return null;
@@ -308,9 +316,12 @@ const Home = () => {
             </div>
             
             <button
-              onClick={() => handleSubmitComment(post.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSubmitComment(post.id);
+              }}
               disabled={!commentInputs[post.id]?.trim() || isSubmittingComment[post.id]}
-              className="text-blue-600 font-bold text-sm px-2 disabled:opacity-50 hover:text-blue-700 transition-colors"
+              className="relative z-20 text-blue-600 font-bold text-sm px-2 disabled:opacity-50 hover:text-blue-700 transition-colors"
             >
               {isSubmittingComment[post.id] ? '...' : 'Post'}
             </button>
@@ -369,27 +380,6 @@ const Home = () => {
         </div>
       </div>
     );
-  };
-
-  const handleReact = async (postId, reactionType) => {
-    try {
-      const summary = await postService.reactToPost(postId, reactionType);
-      
-      setPosts(prevPosts => prevPosts.map(p => {
-        if (p.id === postId) {
-          return {
-            ...p,
-            reactionCounts: summary.reactionCounts,
-            totalReactions: summary.totalReactions,
-            currentUserReaction: summary.currentUserReaction
-          };
-        }
-        return p;
-      }));
-    } catch (error) {
-      console.error('Failed to react to post:', error);
-    }
->>>>>>> Stashed changes
   };
 
   const getRoleBadgeColor = (role) => {
