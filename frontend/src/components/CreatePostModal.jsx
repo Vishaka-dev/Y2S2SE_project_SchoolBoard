@@ -169,7 +169,10 @@ const CreatePostModal = ({ isOpen, onClose, onPostCompleted }) => {
                         </button>
 
                         {showEmojiPicker && (
-                            <div className="absolute bottom-full left-0 mb-2 shadow-xl rounded-lg">
+                            <div 
+                                className="absolute bottom-full left-0 mb-2 shadow-xl rounded-lg z-[60]"
+                                onMouseLeave={() => setShowEmojiPicker(false)}
+                            >
                                 <EmojiPicker 
                                     onEmojiClick={(emojiObject) => {
                                         setContent(prev => prev + emojiObject.emoji);
