@@ -229,7 +229,7 @@ const Home = () => {
       // Update comments list
       setCommentsByPost(prev => ({
         ...prev,
-        [postId]: prev[postId].filter(c => c.id !== commentId)
+        [postId]: (prev[postId] || []).filter(c => c.id !== commentId)
       }));
 
       // Decrement comment count
@@ -239,6 +239,11 @@ const Home = () => {
         }
         return post;
       }));
+
+      setSinglePost(prev => {
+        if (!prev || prev.id !== postId) return prev;
+        return { ...prev, commentCount: Math.max(0, (prev.commentCount || 0) - 1) };
+      });
     } catch (error) {
       alert('Failed to delete comment: ' + (error.message || 'Unknown error'));
     }
@@ -524,7 +529,7 @@ const Home = () => {
                 ) : (
                   <span className="hover:text-blue-600 cursor-pointer">0 reactions</span>
                 )}
-                <span className="hover:text-blue-600 cursor-pointer">0 comments</span>
+                <span className="hover:text-blue-600 cursor-pointer">{singlePost.commentCount || 0} comments</span>
                 <span className="hover:text-blue-600 cursor-pointer">0 shares</span>
               </div>
               <div className="flex items-center gap-2">
@@ -532,7 +537,10 @@ const Home = () => {
                   currentUserReaction={singlePost.currentUserReaction} 
                   onReact={(reactionType) => handleReact(singlePost.id, reactionType)} 
                 />
-                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+                <button
+                  onClick={() => handleToggleComments(singlePost.id)}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn"
+                >
                   <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                   <span className="text-sm font-bold">Comment</span>
                 </button>
@@ -541,6 +549,7 @@ const Home = () => {
                   <span className="text-sm font-bold">Share</span>
                 </button>
               </div>
+              {renderCommentsSection(singlePost)}
             </div>
           )
         ) : (
@@ -682,7 +691,7 @@ const Home = () => {
                       ) : (
                         <span className="hover:text-blue-600 cursor-pointer">0 reactions</span>
                       )}
-                      <span className="hover:text-blue-600 cursor-pointer">0 comments</span>
+                      <span className="hover:text-blue-600 cursor-pointer">{post.commentCount || 0} comments</span>
                       <span className="hover:text-blue-600 cursor-pointer">0 shares</span>
                     </div>
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -690,7 +699,13 @@ const Home = () => {
                         currentUserReaction={post.currentUserReaction} 
                         onReact={(reactionType) => handleReact(post.id, reactionType)} 
                       />
-                      <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleComments(post.id);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn"
+                      >
                         <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                         <span className="text-sm font-bold">Comment</span>
                       </button>
@@ -699,6 +714,7 @@ const Home = () => {
                         <span className="text-sm font-bold">Share</span>
                       </button>
                     </div>
+                    {renderCommentsSection(post)}
                   </div>
                 ))}
                 {hasMore && (

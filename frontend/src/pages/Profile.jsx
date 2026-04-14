@@ -149,6 +149,14 @@ const Profile = () => {
 
       // Clear input
       setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+
+      // Increment comment count in posts state
+      setPosts(prevPosts => prevPosts.map(post => {
+        if (post.id === postId) {
+          return { ...post, commentCount: (post.commentCount || 0) + 1 };
+        }
+        return post;
+      }));
     } catch (error) {
       console.error('Failed to post comment:', error);
       showToast('Failed to post comment', 'error');
@@ -166,7 +174,15 @@ const Profile = () => {
       // Update comments list
       setCommentsByPost(prev => ({
         ...prev,
-        [postId]: prev[postId].filter(c => c.id !== commentId)
+        [postId]: (prev[postId] || []).filter(c => c.id !== commentId)
+      }));
+
+      // Decrement comment count in posts state
+      setPosts(prevPosts => prevPosts.map(post => {
+        if (post.id === postId) {
+          return { ...post, commentCount: Math.max(0, (post.commentCount || 0) - 1) };
+        }
+        return post;
       }));
     } catch (error) {
       console.error('Failed to delete comment:', error);
@@ -481,11 +497,14 @@ const Profile = () => {
                           />
                         )}
                         <div className="flex items-center gap-4 text-gray-400" onClick={(e) => e.stopPropagation()}>
-                          <button className="flex items-center gap-1.5 text-xs font-bold hover:text-blue-600 transition-colors py-1 px-2 hover:bg-blue-50 rounded-lg">
-                            <ThumbsUp className="w-3.5 h-3.5" /> Like
-                          </button>
-                          <button className="flex items-center gap-1.5 text-xs font-bold hover:text-blue-600 transition-colors py-1 px-2 hover:bg-blue-50 rounded-lg">
-                            <MessageSquare className="w-3.5 h-3.5" /> Comment
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleComments(post.id);
+                            }}
+                            className="flex items-center gap-1.5 text-xs font-bold hover:text-blue-600 transition-colors py-1 px-2 hover:bg-blue-50 rounded-lg"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" /> Comment ({post.commentCount || 0})
                           </button>
                           <button className="flex items-center gap-1.5 text-xs font-bold hover:text-blue-600 transition-colors py-1 px-2 hover:bg-blue-50 rounded-lg">
                             <Share2 className="w-3.5 h-3.5" /> Share
@@ -494,7 +513,10 @@ const Profile = () => {
 
                         {/* Comments Section */}
                         {expandedComments.has(post.id) && (
-                          <div className="mt-4 pt-4 border-t border-gray-100 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                          <div
+                            className="mt-4 pt-4 border-t border-gray-100 space-y-4 animate-in slide-in-from-top-2 duration-200"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             {/* Comment Input */}
                             <div className="flex gap-3">
                               <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
