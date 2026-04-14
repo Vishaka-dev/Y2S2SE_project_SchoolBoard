@@ -16,14 +16,8 @@ public interface PostService {
     void deletePost(Long id, String username);
 
     List<PostResponseDTO> searchPosts(String keyword);
+    
+    PostResponseDTO getPostById(Long id);
 
     List<PostResponseDTO> getPostsByUsername(String username);
-    
-    void likePost(Long postId, String username);
-    
-    void unlikePost(Long postId, String username);
-    
-    long getLikeCount(Long postId);
-    
-    boolean isLikedByUser(Long postId, String username);
 }

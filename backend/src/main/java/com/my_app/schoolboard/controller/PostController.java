@@ -52,15 +52,11 @@ public class PostController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * Get all posts for the feed
-     * GET /api/posts
-     */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<PostResponseDTO>> getAllPosts(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(name="page", defaultValue = "0") int page,
+            @RequestParam(name="size", defaultValue = "10") int size) {
 
         log.info("Fetching all posts for feed - page: {}, size: {}", page, size);
 
@@ -70,13 +66,25 @@ public class PostController {
     }
 
     /**
+     * Get a single post by ID
+     * GET /api/posts/{id}
+     */
+    @GetMapping("/{id:\\d+}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PostResponseDTO> getPostById(@PathVariable Long id) {
+        log.info("Fetching post by ID: {}", id);
+        PostResponseDTO post = postService.getPostById(id);
+        return ResponseEntity.ok(post);
+    }
+
+    /**
      * Update an existing post
      * PATCH /api/posts/{id}
      */
     @PatchMapping(value = "/{id:\\d+}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<PostResponseDTO> updatePost(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestParam(value = "content", required = false) String content,
             @RequestParam(value = "image", required = false) MultipartFile image,
             Authentication authentication) {
@@ -95,7 +103,7 @@ public class PostController {
     @DeleteMapping("/{id:\\d+}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deletePost(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             Authentication authentication) {
 
         log.info("Received request to delete post {} from user: {}", id, authentication.getName());
@@ -111,7 +119,7 @@ public class PostController {
      */
     @GetMapping("/user/{username}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<PostResponseDTO>> getUserPosts(@PathVariable String username) {
+    public ResponseEntity<List<PostResponseDTO>> getUserPosts(@PathVariable("username") String username) {
 
         log.info("Fetching all posts for user: {}", username);
 
@@ -135,39 +143,5 @@ public class PostController {
         List<PostResponseDTO> posts = postService.searchPosts(keyword);
 
         return ResponseEntity.ok(posts);
-    }
-
-    /**
-     * Like a post
-     * POST /api/posts/{postId}/like
-     */
-    @PostMapping("/{postId}/like")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> likePost(
-            @PathVariable Long postId,
-            Authentication authentication) {
-
-        log.info("Received request to like post {} from user: {}", postId, authentication.getName());
-
-        postService.likePost(postId, authentication.getName());
-
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * Unlike a post
-     * DELETE /api/posts/{postId}/like
-     */
-    @DeleteMapping("/{postId}/like")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> unlikePost(
-            @PathVariable Long postId,
-            Authentication authentication) {
-
-        log.info("Received request to unlike post {} from user: {}", postId, authentication.getName());
-
-        postService.unlikePost(postId, authentication.getName());
-
-        return ResponseEntity.noContent().build();
     }
 }

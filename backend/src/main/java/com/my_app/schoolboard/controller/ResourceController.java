@@ -38,12 +38,12 @@ public class ResourceController {
 
     @GetMapping
     public ResponseEntity<ResourcePageDTO> getResources(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) ResourceCategory category,
-            @RequestParam(required = false) ResourceType type,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) Role role) {
+            @RequestParam(name="page", defaultValue = "0") int page,
+            @RequestParam(name="size", defaultValue = "10") int size,
+            @RequestParam(name="category", required = false) ResourceCategory category,
+            @RequestParam(name="type", required = false) ResourceType type,
+            @RequestParam(name="search", required = false) String search,
+            @RequestParam(name="role", required = false) Role role) {
 
         ResourcePageDTO response = resourceService.getResources(page, size, category, type, search, role);
         return ResponseEntity.ok(response);
@@ -51,7 +51,7 @@ public class ResourceController {
 
     @DeleteMapping("/{id:\\d+}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> deleteResource(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<Void> deleteResource(@PathVariable("id") Long id, Authentication authentication) {
         resourceService.deleteResource(id, authentication.getName());
         return ResponseEntity.noContent().build();
     }

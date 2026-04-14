@@ -18,6 +18,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.my_app.schoolboard.dto.PostResponseDTO;
 import com.my_app.schoolboard.model.Post;
 import com.my_app.schoolboard.model.User;
+import com.my_app.schoolboard.repository.CommentRepository;
 import com.my_app.schoolboard.repository.FollowRepository;
 import com.my_app.schoolboard.repository.InstituteProfileRepository;
 import com.my_app.schoolboard.repository.PostRepository;
@@ -25,10 +26,10 @@ import com.my_app.schoolboard.repository.StudentProfileRepository;
 import com.my_app.schoolboard.repository.TeacherProfileRepository;
 import com.my_app.schoolboard.repository.UserRepository;
 import com.my_app.schoolboard.service.PostService;
+import com.my_app.schoolboard.service.ReactionService;
 import com.my_app.schoolboard.service.StorageService;
-import com.my_app.schoolboard.model.PostLike;
-import com.my_app.schoolboard.repository.PostLikeRepository;
-import com.my_app.schoolboard.repository.CommentRepository;
+import com.my_app.schoolboard.dto.ReactionSummaryDTO;
+import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,9 +45,9 @@ public class PostServiceImpl implements PostService {
     private final TeacherProfileRepository teacherProfileRepository;
     private final InstituteProfileRepository instituteProfileRepository;
     private final FollowRepository followRepository;
-    private final PostLikeRepository postLikeRepository;
     private final CommentRepository commentRepository;
     private final StorageService storageService;
+    private final ReactionService reactionService;
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
@@ -91,7 +92,9 @@ public class PostServiceImpl implements PostService {
                 .build();
 
         Post savedPost = postRepository.save(post);
-        return mapToDTO(savedPost, author.getId());
+        ReactionSummaryDTO emptySummary = ReactionSummaryDTO.builder().reactionCounts(Map.of()).totalReactions(0L)
+                .build();
+        return mapToDTO(savedPost, author.getId(), emptySummary);
     }
 
     @Override
@@ -99,8 +102,14 @@ public class PostServiceImpl implements PostService {
     public List<PostResponseDTO> getAllPosts(int page, int size) {
         Long currentUserId = getCurrentUserIdOrNull();
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
-        return postRepository.findAllByOrderByCreatedAtDesc(pageable).stream()
-                .map(post -> mapToDTO(post, currentUserId))
+        List<Post> posts = postRepository.findAllByOrderByCreatedAtDesc(pageable);
+
+        List<Long> postIds = posts.stream().map(Post::getId).collect(Collectors.toList());
+        Map<Long, ReactionSummaryDTO> reactionMap = reactionService.getReactionSummaryMapForPosts(postIds,
+                currentUserId);
+
+        return posts.stream()
+                .map(post -> mapToDTO(post, currentUserId, reactionMap.get(post.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -144,7 +153,8 @@ public class PostServiceImpl implements PostService {
         }
 
         Post updatedPost = postRepository.save(post);
-        return mapToDTO(updatedPost, user.getId());
+        ReactionSummaryDTO summary = reactionService.getReactionSummary(updatedPost.getId(), user.getId());
+        return mapToDTO(updatedPost, user.getId(), summary);
     }
 
     @Override
@@ -176,8 +186,14 @@ public class PostServiceImpl implements PostService {
     public List<PostResponseDTO> getPostsByUsername(String username) {
         log.info("Fetching all posts for user: {}", username);
         Long currentUserId = getCurrentUserIdOrNull();
-        return postRepository.findAllByAuthorUsernameOrderByCreatedAtDesc(username).stream()
-                .map(post -> mapToDTO(post, currentUserId))
+        List<Post> posts = postRepository.findAllByAuthorUsernameOrderByCreatedAtDesc(username);
+
+        List<Long> postIds = posts.stream().map(Post::getId).collect(Collectors.toList());
+        Map<Long, ReactionSummaryDTO> reactionMap = reactionService.getReactionSummaryMapForPosts(postIds,
+                currentUserId);
+
+        return posts.stream()
+                .map(post -> mapToDTO(post, currentUserId, reactionMap.get(post.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -208,62 +224,31 @@ public class PostServiceImpl implements PostService {
         }
 
         List<Post> posts = postRepository.searchByContentKeyword(keyword.trim());
+        Long currentUserId = getCurrentUserIdOrNull();
+
+        List<Long> postIds = posts.stream().map(Post::getId).collect(Collectors.toList());
+        Map<Long, ReactionSummaryDTO> reactionMap = reactionService.getReactionSummaryMapForPosts(postIds,
+                currentUserId);
 
         return posts.stream()
-                .map(post -> mapToDTO(post, getCurrentUserIdOrNull()))
+                .map(post -> mapToDTO(post, currentUserId, reactionMap.get(post.getId())))
                 .toList();
     }
 
     @Override
-    @Transactional
-    public void likePost(Long postId, String username) {
-        log.info("User {} liking post {}", username, postId);
-        
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
-        
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        if (postLikeRepository.existsByPostIdAndUserId(postId, user.getId())) {
-            log.warn("User {} already liked post {}", username, postId);
-            return;
-        }
-        
-        PostLike postLike = PostLike.builder()
-                .post(post)
-                .user(user)
-                .build();
-        
-        postLikeRepository.save(postLike);
-    }
-
-    @Override
-    @Transactional
-    public void unlikePost(Long postId, String username) {
-        log.info("User {} unliking post {}", username, postId);
-        
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        postLikeRepository.deleteByPostIdAndUserId(postId, user.getId());
-    }
-
-    @Override
     @Transactional(readOnly = true)
-    public long getLikeCount(Long postId) {
-        return postLikeRepository.countByPostId(postId);
+    public PostResponseDTO getPostById(Long id) {
+        log.info("Fetching post by ID: {}", id);
+
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
+
+        Long currentUserId = getCurrentUserIdOrNull();
+        ReactionSummaryDTO summary = reactionService.getReactionSummary(post.getId(), currentUserId);
+        return mapToDTO(post, currentUserId, summary);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public boolean isLikedByUser(Long postId, String username) {
-        return userRepository.findByUsername(username)
-                .map(user -> postLikeRepository.existsByPostIdAndUserId(postId, user.getId()))
-                .orElse(false);
-    }
-
-    private PostResponseDTO mapToDTO(Post post, Long currentUserId) {
+    private PostResponseDTO mapToDTO(Post post, Long currentUserId, ReactionSummaryDTO reactionSummary) {
         User author = post.getAuthor();
 
         // Load profile to get fullName
@@ -318,9 +303,14 @@ public class PostServiceImpl implements PostService {
                 .author(authorDTO)
                 .hashtags(post.getHashtags())
                 .createdAt(post.getCreatedAt())
-                .likeCount(postLikeRepository.countByPostId(post.getId()))
-                .isLiked(currentUserId != null ? postLikeRepository.existsByPostIdAndUserId(post.getId(), currentUserId) : false)
                 .commentCount(commentRepository.countByPostId(post.getId()))
+                .reactionCounts(reactionSummary != null && reactionSummary.getReactionCounts() != null
+                        ? reactionSummary.getReactionCounts()
+                        : java.util.Collections.emptyMap())
+                .totalReactions(reactionSummary != null && reactionSummary.getTotalReactions() != null
+                        ? reactionSummary.getTotalReactions()
+                        : 0L)
+                .currentUserReaction(reactionSummary != null ? reactionSummary.getCurrentUserReaction() : null)
                 .build();
     }
 }
