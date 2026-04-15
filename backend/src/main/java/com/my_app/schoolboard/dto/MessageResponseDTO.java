@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 @Builder
@@ -21,6 +23,7 @@ public class MessageResponseDTO {
     private LocalDateTime updatedAt;
     private Boolean isRead;
     private LocalDateTime readAt;
+    private List<AttachmentDTO> attachments;
 
     /**
      * Convert Message entity to MessageResponseDTO
@@ -38,6 +41,13 @@ public class MessageResponseDTO {
             .updatedAt(message.getUpdatedAt())
             .isRead(message.getIsRead())
             .readAt(message.getReadAt())
+            .attachments(
+                message.getAttachments() != null 
+                    ? message.getAttachments().stream()
+                        .map(AttachmentDTO::fromAttachment)
+                        .collect(Collectors.toList())
+                    : List.of()
+            )
             .build();
     }
 }

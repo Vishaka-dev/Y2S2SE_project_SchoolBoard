@@ -3,21 +3,27 @@ package com.my_app.schoolboard.controller;
 import com.my_app.schoolboard.dto.MessageRequestDTO;
 import com.my_app.schoolboard.dto.MessageResponseDTO;
 import com.my_app.schoolboard.dto.UpdateMessageRequestDTO;
+import com.my_app.schoolboard.dto.AttachmentDTO;
 import com.my_app.schoolboard.model.User;
 import com.my_app.schoolboard.repository.UserRepository;
 import com.my_app.schoolboard.exception.ResourceNotFoundException;
 import com.my_app.schoolboard.service.MessageService;
+import com.my_app.schoolboard.service.AttachmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -28,6 +34,7 @@ import java.util.Map;
 public class MessageController {
 
     private final MessageService messageService;
+    private final AttachmentService attachmentService;
     private final UserRepository userRepository;
 
     /**
@@ -197,6 +204,96 @@ public class MessageController {
         );
 
         return ResponseEntity.ok(results);
+    }
+
+    /**
+     * Upload attachments to a message
+     * POST /api/messages/{messageId}/attachments
+     */
+    @PostMapping("/{messageId}/attachments")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<AttachmentDTO>> uploadAttachments(
+            @PathVariable Long messageId,
+            @RequestParam("files") List<MultipartFile> files,
+            Authentication authentication) {
+        
+        Long userId = getCurrentAuthenticatedUserId(authentication);
+        log.info("User: {} uploading {} attachments to message: {}", userId, files.size(), messageId);
+        
+        try {
+            List<AttachmentDTO> attachments = attachmentService.uploadAttachments(messageId, files, userId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(attachments);
+        } catch (IOException e) {
+            log.error("Failed to upload attachments", e);
+            throw new RuntimeException("Failed to upload attachments", e);
+        }
+    }
+
+    /**
+     * Get attachments for a message
+     * GET /api/messages/{messageId}/attachments
+     */
+    @GetMapping("/{messageId}/attachments")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<AttachmentDTO>> getMessageAttachments(
+            @PathVariable Long messageId,
+            Authentication authentication) {
+        
+        Long userId = getCurrentAuthenticatedUserId(authentication);
+        log.info("User: {} fetching attachments for message: {}", userId, messageId);
+        
+        List<AttachmentDTO> attachments = attachmentService.getAttachmentsByMessage(messageId);
+        return ResponseEntity.ok(attachments);
+    }
+
+    /**
+     * Download an attachment by ID
+     * GET /api/messages/attachments/download/{id}
+     */
+    @GetMapping("/attachments/download/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> downloadAttachment(
+            @PathVariable Long id,
+            Authentication authentication) {
+        
+        Long userId = getCurrentAuthenticatedUserId(authentication);
+        log.info("User: {} downloading attachment: {}", userId, id);
+        
+        try {
+            AttachmentDTO attachment = attachmentService.getAttachment(id);
+            byte[] fileContent = attachmentService.downloadAttachment(id);
+            
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getFileName() + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, attachment.getFileType())
+                .body(fileContent);
+        } catch (IOException | ResourceNotFoundException e) {
+            log.error("Failed to download attachment", e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    /**
+     * Delete an attachment by ID
+     * DELETE /api/messages/attachments/{id}
+     */
+    @DeleteMapping("/attachments/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, String>> deleteAttachment(
+            @PathVariable Long id,
+            Authentication authentication) {
+        
+        Long userId = getCurrentAuthenticatedUserId(authentication);
+        log.info("User: {} deleting attachment: {}", userId, id);
+        
+        try {
+            attachmentService.deleteAttachment(id, userId);
+            return ResponseEntity.ok(Map.of("message", "Attachment deleted successfully"));
+        } catch (ResourceNotFoundException e) {
+            log.error("Attachment not found", e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Attachment not found"));
+        }
     }
 
     /**

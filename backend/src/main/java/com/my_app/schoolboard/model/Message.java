@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "messages", indexes = {
@@ -52,6 +53,10 @@ public class Message {
 
     @Column(name = "read_at")
     private LocalDateTime readAt;
+
+    @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Attachment> attachments = List.of();
 
     /**
      * Mark this message as read by the recipient
