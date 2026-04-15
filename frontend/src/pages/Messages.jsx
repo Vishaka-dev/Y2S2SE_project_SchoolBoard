@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useSearchParams } from 'react-router-dom';
 import conversationAPI from '../api/conversationAPI';
 import messageAPI from '../api/messageAPI';
 import attachmentAPI from '../api/attachmentAPI';
@@ -19,6 +20,7 @@ import {
  */
 const Messages = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [selectedChat, setSelectedChat] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -75,6 +77,48 @@ const Messages = () => {
       webSocketService.disconnectWebSocket();
     };
   }, []);
+
+  // Handle userId query parameter to auto-select conversation
+  useEffect(() => {
+    const targetUserId = searchParams.get('userId');
+    console.log('[AutoSelect] userId param:', targetUserId, 'selectedChat:', selectedChat?.id, 'loading:', loading, 'user:', user?.id);
+    
+    if (!targetUserId || !user || selectedChat) {
+      console.log('[AutoSelect] Early return - targetUserId:', !!targetUserId, 'user:', !!user, 'selectedChat:', !!selectedChat);
+      return; // Don't run if already have selectedChat
+    }
+
+    const targetId = parseInt(targetUserId);
+    
+    // Look for existing conversation with the user
+    const existingConversation = conversations.find(conv => {
+      const otherUser = conv.user1?.id === user.id ? conv.user2 : conv.user1;
+      return otherUser?.id === targetId;
+    });
+
+    if (existingConversation) {
+      console.log('[AutoSelect] Found existing conversation:', existingConversation.id);
+      setSelectedChat(existingConversation);
+    } else if (!loading) {
+      // Only create new conversation after initial conversations have loaded
+      console.log('[AutoSelect] Creating new conversation with user:', targetId);
+      conversationAPI.createOrGetConversation(targetId)
+        .then(newConversation => {
+          console.log('[AutoSelect] New conversation created:', newConversation);
+          setSelectedChat(newConversation);
+          // Refetch conversations to keep list in sync
+          conversationAPI.fetchConversations(0, 50)
+            .then(data => setConversations(data.content || data || []))
+            .catch(err => console.error('Failed to refetch conversations:', err));
+        })
+        .catch(err => {
+          console.error('[AutoSelect] Failed to create conversation:', err);
+          setError('Failed to start conversation with this user');
+        });
+    } else {
+      console.log('[AutoSelect] Still loading, waiting for conversations to load');
+    }
+  }, [searchParams, user, loading, selectedChat, conversations]);
 
   // Fetch messages when conversation is selected
   useEffect(() => {

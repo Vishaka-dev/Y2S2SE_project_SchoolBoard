@@ -20,6 +20,9 @@ const subscriptions = new Map(); // Store active subscriptions for cleanup
 export const connectWebSocket = (onConnect, onError) => {
   return new Promise((resolve, reject) => {
     try {
+      // Get JWT token from localStorage
+      const token = localStorage.getItem('token');
+      
       const socket = new SockJS(
         (import.meta.env.VITE_WS_BASE_URL || 'http://localhost:8080') + '/ws'
       );
@@ -29,8 +32,11 @@ export const connectWebSocket = (onConnect, onError) => {
       // Disable debug output (comment out for debugging)
       stompClient.debug = () => {};
       
+      // Include Authorization header with JWT token
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      
       stompClient.connect(
-        {}, // Headers, empty for default
+        headers,
         (frame) => {
           console.log('WebSocket connected:', frame);
           isConnected = true;
