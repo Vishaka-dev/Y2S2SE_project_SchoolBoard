@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.my_app.schoolboard.dto.AccountResponseDTO;
 import com.my_app.schoolboard.service.AccountService;
+import org.springframework.security.core.Authentication;
 
 import java.util.HashMap;
 import java.util.List;
@@ -46,8 +47,8 @@ public class UserController {
      * Get user by ID
      * GET /api/users/{id}
      */
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+    @GetMapping("/{id:\\d+}")
+    public ResponseEntity<?> getUserById(@PathVariable("id") Long id) {
         log.info("Fetching user with id: {}", id);
         try {
             AccountResponseDTO response = accountService.getAccountByUserId(id);
@@ -63,7 +64,7 @@ public class UserController {
      * GET /api/users/email/{email}
      */
     @GetMapping("/email/{email}")
-    public ResponseEntity<?> getUserByEmail(@PathVariable String email) {
+    public ResponseEntity<?> getUserByEmail(@PathVariable("email") String email) {
         log.info("Fetching user with email: {}", email);
         return userRepository.findByEmail(email)
                 .map(ResponseEntity::ok)
@@ -76,7 +77,7 @@ public class UserController {
      * GET /api/users/username/{username}
      */
     @GetMapping("/username/{username}")
-    public ResponseEntity<?> getUserByUsername(@PathVariable String username) {
+    public ResponseEntity<?> getUserByUsername(@PathVariable("username") String username) {
         log.info("Fetching user with username: {}", username);
         return userRepository.findByUsername(username)
                 .map(ResponseEntity::ok)
@@ -88,8 +89,8 @@ public class UserController {
      * Update user
      * PUT /api/users/{id}
      */
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+    @PutMapping("/{id:\\d+}")
+    public ResponseEntity<?> updateUser(@PathVariable("id") Long id, @RequestBody User userDetails) {
         log.info("Updating user with id: {}", id);
 
         return userRepository.findById(id)
@@ -119,8 +120,8 @@ public class UserController {
      * Delete user
      * DELETE /api/users/{id}
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+    @DeleteMapping("/{id:\\d+}")
+    public ResponseEntity<?> deleteUser(@PathVariable("id") Long id) {
         log.info("Deleting user with id: {}", id);
 
         return userRepository.findById(id)
@@ -157,7 +158,7 @@ public class UserController {
      * GET /api/users/exists/email/{email}
      */
     @GetMapping("/exists/email/{email}")
-    public ResponseEntity<Map<String, Boolean>> checkEmailExists(@PathVariable String email) {
+    public ResponseEntity<Map<String, Boolean>> checkEmailExists(@PathVariable("email") String email) {
         boolean exists = userRepository.existsByEmail(email);
         log.info("Email {} exists: {}", email, exists);
 
@@ -172,7 +173,7 @@ public class UserController {
      * GET /api/users/exists/username/{username}
      */
     @GetMapping("/exists/username/{username}")
-    public ResponseEntity<Map<String, Boolean>> checkUsernameExists(@PathVariable String username) {
+    public ResponseEntity<Map<String, Boolean>> checkUsernameExists(@PathVariable("username") String username) {
         boolean exists = userRepository.existsByUsername(username);
         log.info("Username {} exists: {}", username, exists);
 
@@ -180,5 +181,16 @@ public class UserController {
         response.put("exists", exists);
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Increment profile views
+     * POST /api/users/{username}/view
+     */
+    @PostMapping("/{username}/view")
+    public ResponseEntity<Void> incrementProfileViews(@PathVariable("username") String username, Authentication authentication) {
+        log.info("Incrementing profile views for username: {} by {}", username, authentication.getName());
+        accountService.incrementProfileViews(username, authentication.getName());
+        return ResponseEntity.ok().build();
     }
 }

@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +32,7 @@ public class AccountServiceImpl implements AccountService {
     private final InstituteProfileRepository instituteProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final FileStorageService fileStorageService;
+    private final ProfileViewRepository profileViewRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -44,16 +44,16 @@ public class AccountServiceImpl implements AccountService {
         return buildAccountResponse(user);
     }
 
-        @Override
-        @Transactional(readOnly = true)
-        public AccountResponseDTO getAccountByUserId(Long userId) {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-            if (user.isDeleted()) {
-                throw new AccountDeletedException();
-            }
-            return buildAccountResponse(user);
+    @Override
+    @Transactional(readOnly = true)
+    public AccountResponseDTO getAccountByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        if (user.isDeleted()) {
+            throw new AccountDeletedException();
         }
+        return buildAccountResponse(user);
+    }
 
     @Override
     public AccountResponseDTO updateProfile(UpdateProfileRequestDTO request) {
@@ -63,7 +63,7 @@ public class AccountServiceImpl implements AccountService {
 
         // Delegate to role-specific update methods
         switch (user.getRole()) {
-            case STUDENT -> updateStudentProfile(user, request);
+            case SCHOOL_STUDENT, UNIVERSITY_STUDENT, STUDENT -> updateStudentProfile(user, request);
             case TEACHER -> updateTeacherProfile(user, request);
             case INSTITUTE -> updateInstituteProfile(user, request);
             default ->
@@ -193,7 +193,7 @@ public class AccountServiceImpl implements AccountService {
     private AccountResponseDTO buildAccountResponse(User user) {
         // Load and attach role-specific profile
         Object profileDTO = switch (user.getRole()) {
-            case STUDENT -> getStudentProfileDTO(user);
+            case SCHOOL_STUDENT, UNIVERSITY_STUDENT, STUDENT -> getStudentProfileDTO(user);
             case TEACHER -> getTeacherProfileDTO(user);
             case INSTITUTE -> getInstituteProfileDTO(user);
             default -> null;
@@ -214,6 +214,7 @@ public class AccountServiceImpl implements AccountService {
                 .provider(user.getProvider())
                 .createdAt(user.getCreatedAt())
                 .imageUrl(displayImageUrl)
+                .profileViews(user.getProfileViews())
                 .profile(profileDTO)
                 .build();
 
@@ -441,5 +442,27 @@ public class AccountServiceImpl implements AccountService {
         log.info("Profile image updated successfully for user: {}. New URL: {}", user.getEmail(), profileImageUrl);
 
         return profileImageUrl;
+    }
+
+    @Override
+    @Transactional
+    public void incrementProfileViews(String username, String viewerUsername) {
+        if (username.equals(viewerUsername)) return;
+
+        userRepository.findByUsername(username).ifPresent(user -> {
+            userRepository.findByUsername(viewerUsername).ifPresent(viewer -> {
+                if (!profileViewRepository.existsByViewerIdAndViewedId(viewer.getId(), user.getId())) {
+                    ProfileView profileView = ProfileView.builder()
+                            .viewerId(viewer.getId())
+                            .viewedId(user.getId())
+                            .build();
+                    profileViewRepository.save(profileView);
+
+                    user.setProfileViews((user.getProfileViews() != null ? user.getProfileViews() : 0) + 1);
+                    userRepository.save(user);
+                    log.info("Incremented unique profile views for user: {} by {}", username, viewerUsername);
+                }
+            });
+        });
     }
 }

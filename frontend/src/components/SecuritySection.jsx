@@ -15,7 +15,9 @@ const SecuritySection = ({ accountData }) => {
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const isLocalAccount = accountData?.provider === 'local';
+  const provider = accountData?.provider?.toUpperCase?.() || '';
+  const isLocalAccount = provider === 'LOCAL';
+  const isGoogleAccount = provider === 'GOOGLE';
 
   const validatePassword = (password) => {
     const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -258,13 +260,13 @@ const SecuritySection = ({ accountData }) => {
                 <div>
                   <p className="text-sm font-semibold text-gray-900">Google</p>
                   <p className="text-xs text-gray-600">
-                    {accountData?.provider === 'google' 
+                    {isGoogleAccount
                       ? 'Connected • Used for login' 
                       : 'Not connected'}
                   </p>
                 </div>
               </div>
-              {accountData?.provider === 'google' ? (
+              {isGoogleAccount ? (
                 <span className="px-3 py-1.5 bg-green-100 text-green-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 border border-green-200">
                   <CheckCircle className="w-3.5 h-3.5" />
                   Connected

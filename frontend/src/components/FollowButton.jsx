@@ -43,6 +43,8 @@ const FollowButton = ({
         setToast({ message: 'Unfollowed successfully', type: 'success' });
       }
 
+      window.dispatchEvent(new CustomEvent('followChanged', { detail: { isFollowing: nextState, targetUserId } }));
+
       if (onFollowChange) {
         onFollowChange(nextState);
       }

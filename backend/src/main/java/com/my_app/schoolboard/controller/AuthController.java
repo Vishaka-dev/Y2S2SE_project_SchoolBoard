@@ -9,7 +9,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -39,6 +43,22 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         log.info("Received login request for username: {}", request.getUsername());
         AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Lightweight authentication status endpoint.
+     * Uses SecurityContext populated by JWT filter when a valid token is provided.
+     */
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, Object>> authStatus(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        boolean authenticated = authentication != null && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getPrincipal());
+
+        response.put("authenticated", authenticated);
+        response.put("username", authenticated ? authentication.getName() : null);
+
         return ResponseEntity.ok(response);
     }
 }

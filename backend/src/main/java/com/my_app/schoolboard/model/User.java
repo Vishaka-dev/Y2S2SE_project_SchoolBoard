@@ -53,6 +53,10 @@ public class User {
     @Column(name = "profile_image_url")
     private String profileImageUrl; // Uploaded profile picture (overrides OAuth2 image)
 
+    @Column(name = "profile_views", columnDefinition = "integer default 0")
+    @Builder.Default
+    private Integer profileViews = 0;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -73,10 +77,13 @@ public class User {
             this.provider = AuthProvider.LOCAL;
         }
         if (this.role == null) {
-            this.role = Role.STUDENT; // Default role for OAuth2 users
+            this.role = Role.SCHOOL_STUDENT; // Default role for OAuth2 users
         }
         if (this.isActive == null) {
             this.isActive = true;
+        }
+        if (this.profileViews == null) {
+            this.profileViews = 0;
         }
     }
 
