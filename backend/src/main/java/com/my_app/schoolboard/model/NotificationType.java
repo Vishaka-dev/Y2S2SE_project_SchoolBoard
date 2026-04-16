@@ -6,5 +6,7 @@ public enum NotificationType {
     PASSWORD_CHANGED,
     GROUP_CREATED,
     MESSAGE_RECEIVED,
-    EVENT_CREATED
+    EVENT_CREATED,
+    USER_FOLLOWED,
+    POST_REACTED
 }
