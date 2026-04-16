@@ -12,6 +12,7 @@ import com.my_app.schoolboard.repository.FollowRepository;
 import com.my_app.schoolboard.repository.UserRepository;
 import com.my_app.schoolboard.service.FollowService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +32,7 @@ public class FollowServiceImpl implements FollowService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "userSuggestions", allEntries = true)
     public void followUser(Long currentUserId, Long targetUserId) {
         if (currentUserId.equals(targetUserId)) {
             throw new IllegalArgumentException("Cannot follow yourself");
@@ -65,6 +67,7 @@ public class FollowServiceImpl implements FollowService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "userSuggestions", allEntries = true)
     public void unfollowUser(Long currentUserId, Long targetUserId) {
         userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", targetUserId));

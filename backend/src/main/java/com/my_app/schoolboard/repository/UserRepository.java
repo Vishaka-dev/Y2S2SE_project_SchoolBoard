@@ -55,15 +55,36 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsActiveByEmail(@Param("email") String email);
 
     @Query(value = """
-SELECT u FROM User u
-WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%'))
-AND u.isActive = true
-ORDER BY u.username ASC
-""",
-countQuery = """
-SELECT COUNT(u) FROM User u
-WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%'))
-AND u.isActive = true
-""")
+            SELECT u FROM User u
+            WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%'))
+            AND u.isActive = true
+            ORDER BY u.username ASC
+            """, countQuery = """
+            SELECT COUNT(u) FROM User u
+            WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%'))
+            AND u.isActive = true
+            """)
     Page<User> searchByUsername(@Param("query") String query, Pageable pageable);
+
+    @Query(value = """
+            SELECT u FROM User u
+            WHERE u.isActive = true
+            AND u.id <> :currentUserId
+            AND NOT EXISTS (
+                SELECT 1 FROM Follow f
+                WHERE f.follower.id = :currentUserId
+                AND f.following.id = u.id
+            )
+            ORDER BY u.createdAt DESC
+            """, countQuery = """
+            SELECT COUNT(u) FROM User u
+            WHERE u.isActive = true
+            AND u.id <> :currentUserId
+            AND NOT EXISTS (
+                SELECT 1 FROM Follow f
+                WHERE f.follower.id = :currentUserId
+                AND f.following.id = u.id
+            )
+            """)
+    Page<User> findSuggestionCandidates(@Param("currentUserId") Long currentUserId, Pageable pageable);
 }
