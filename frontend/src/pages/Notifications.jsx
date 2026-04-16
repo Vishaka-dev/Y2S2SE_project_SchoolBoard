@@ -11,6 +11,7 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
+import { useNotifications } from '../context/NotificationContext';
 import notificationService from '../services/notificationService';
 
 const PAGE_SIZE = 15;
@@ -39,6 +40,7 @@ const formatTimestamp = (value) => {
 };
 
 const Notifications = () => {
+  const { refreshUnreadCount } = useNotifications();
   const [notifications, setNotifications] = useState([]);
   const [page, setPage] = useState(0);
   const [hasNext, setHasNext] = useState(false);
@@ -75,6 +77,7 @@ const Notifications = () => {
     } finally {
       setLoading(false);
       setLoadingMore(false);
+      refreshUnreadCount();
     }
   };
 
@@ -90,6 +93,7 @@ const Notifications = () => {
           notification.id === notificationId ? { ...notification, ...updated, isRead: true } : notification
         )
       );
+      refreshUnreadCount();
     } catch (apiError) {
       setError(apiError?.message || 'Failed to mark notification as read');
     }
@@ -102,6 +106,7 @@ const Notifications = () => {
     try {
       await notificationService.markAllAsRead();
       setNotifications((previous) => previous.map((notification) => ({ ...notification, isRead: true })));
+      refreshUnreadCount();
     } catch (apiError) {
       setError(apiError?.message || 'Failed to mark all notifications as read');
     } finally {
