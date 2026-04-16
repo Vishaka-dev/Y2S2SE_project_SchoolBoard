@@ -1,5 +1,52 @@
 # Schema Migration Fix Guide
 
+## Notification Constraint Hotfix (Follow/Reaction Failures)
+
+If follow or post reaction APIs fail with `SQLState: 23514` and mention `notifications_type_check`, your database constraint is stale and does not include new notification types.
+
+### Affected Symptoms
+
+- Follow endpoint fails even though follow logic is correct.
+- Post reaction endpoint fails even though reaction logic is correct.
+- Backend logs show insert failures for `USER_FOLLOWED` or `POST_REACTED` into `notifications`.
+
+### Immediate Fix (Current Hibernate Update Setup)
+
+1. Open pgAdmin Query Tool for your `school_board` database.
+2. Run `fix-notifications-type-constraint.sql`.
+3. Restart backend.
+4. Re-test:
+   - POST `/api/users/{id}/follow`
+   - POST `/api/posts/{postId}/reactions`
+   - GET `/api/notifications`
+
+### Verify Current Constraint Definition
+
+Run this query before and after applying the script:
+
+```sql
+SELECT
+    con.conname AS constraint_name,
+    pg_get_constraintdef(con.oid) AS definition
+FROM pg_constraint con
+JOIN pg_class rel ON rel.oid = con.conrelid
+JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+WHERE rel.relname = 'notifications'
+  AND nsp.nspname = 'public'
+  AND con.conname = 'notifications_type_check';
+```
+
+Expected allowed values include:
+
+`RESOURCE_UPLOADED`, `PROFILE_UPDATED`, `PASSWORD_CHANGED`, `GROUP_CREATED`, `MESSAGE_RECEIVED`, `EVENT_CREATED`, `USER_FOLLOWED`, `POST_REACTED`
+
+### Important for Future Enum Changes
+
+When adding any new value to `NotificationType`, update the DB check constraint in the same change set. In this repo:
+
+- Manual hotfix script: `fix-notifications-type-constraint.sql`
+- Versioned SQL migration: `src/main/resources/db/migration/V6__update_notifications_type_check.sql`
+
 ## Problem
 
 Your backend failed to start with the error:
