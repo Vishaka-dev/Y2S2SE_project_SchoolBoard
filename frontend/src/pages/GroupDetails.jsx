@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Crown, Loader2, LogIn, LogOut, Calendar, BookOpen, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Users, Crown, Loader2, LogIn, LogOut, Calendar, BookOpen, GraduationCap, Pencil } from 'lucide-react';
 import groupService from '../services/groupService';
 import { GROUP_TYPE_CONFIG } from '../components/GroupCard';
 import GroupMembersModal from '../components/GroupMembersModal';
@@ -93,6 +93,8 @@ const GroupDetails = () => {
   const Icon = config.icon;
   const isMember = !!group.currentUserRole;
   const isOwner = group.currentUserRole === 'OWNER';
+  const isAdmin = group.currentUserRole === 'ADMIN';
+  const canEdit = isOwner || isAdmin;
   const resolveImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
@@ -147,10 +149,19 @@ const GroupDetails = () => {
             <div className="flex-shrink-0">
               {isMember ? (
                 isOwner ? (
-                  <span className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg">
-                    <Crown className="w-4 h-4" />
-                    Owner
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg">
+                      <Crown className="w-4 h-4" />
+                      Owner
+                    </span>
+                    <button
+                      onClick={() => navigate(`/groups/${groupId}/edit`)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition"
+                    >
+                      <Pencil className="w-4 h-4" />
+                      Edit
+                    </button>
+                  </div>
                 ) : (
                   <button
                     onClick={handleLeave}

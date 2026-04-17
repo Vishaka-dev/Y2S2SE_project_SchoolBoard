@@ -14,6 +14,7 @@ import ResourceHub from './pages/ResourceHub';
 import MyGroups from './pages/MyGroups';
 import CreateGroup from './pages/CreateGroup';
 import GroupDetails from './pages/GroupDetails';
+import EditGroup from './pages/EditGroup';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -183,6 +184,17 @@ function AppRoutes() {
         }
       >
         <Route index element={<GroupDetails />} />
+      </Route>
+
+      <Route
+        path="/groups/:groupId/edit"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<EditGroup />} />
       </Route>
       
       {/* Account Management Routes - Also in DashboardLayout */}

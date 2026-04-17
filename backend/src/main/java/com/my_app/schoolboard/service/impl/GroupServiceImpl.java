@@ -216,6 +216,54 @@ public class GroupServiceImpl implements GroupService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public GroupResponseDTO updateGroup(Long groupId, String name, String description, String groupType,
+                                         String subject, String academicLevel, boolean removeImage,
+                                         MultipartFile image, String username) {
+        log.info("Updating group {} by user {}", groupId, username);
+
+        StudyGroup group = findGroupById(groupId);
+        User user = findUserByUsername(username);
+
+        // Validate user is OWNER or ADMIN of this group
+        GroupMember membership = groupMemberRepository.findByGroup_IdAndUser_Id(groupId, user.getId())
+                .orElseThrow(() -> new IllegalStateException("You are not a member of this group"));
+
+        if (membership.getRole() != GroupMemberRole.OWNER && membership.getRole() != GroupMemberRole.ADMIN) {
+            throw new IllegalStateException("Only group owner or admin can edit the group");
+        }
+
+        // Update fields
+        group.setName(name);
+        group.setDescription(description);
+        group.setGroupType(GroupType.valueOf(groupType));
+        group.setSubject(subject);
+        group.setAcademicLevel(academicLevel);
+
+        // Image handling — matches PostServiceImpl.updatePost pattern exactly
+        if (image != null && !image.isEmpty()) {
+            // Store new image using same storageService pattern as posts
+            String filename = storageService.store(image, "groups");
+            String imageUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/groups/")
+                    .path(filename)
+                    .toUriString();
+            group.setImageUrl(imageUrl);
+        } else if (removeImage) {
+            // Remove image only if explicitly requested
+            group.setImageUrl(null);
+        }
+        // else: keep existing image (do nothing)
+
+        StudyGroup updatedGroup = studyGroupRepository.save(group);
+        long memberCount = groupMemberRepository.countByGroup_Id(groupId);
+
+        log.info("Group '{}' (id={}) updated successfully by user: {}", updatedGroup.getName(), groupId, username);
+
+        return toResponseDTO(updatedGroup, memberCount, membership.getRole());
+    }
+
     // ===== Helper Methods =====
 
     private User findUserByUsername(String username) {

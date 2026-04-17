@@ -142,6 +142,33 @@ public class GroupController {
     }
 
     /**
+     * Update an existing group
+     * PUT /api/groups/{groupId}
+     * Consumes multipart/form-data (matching PostController pattern)
+     */
+    @PutMapping(value = "/{groupId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<GroupResponseDTO> updateGroup(
+            @PathVariable Long groupId,
+            @RequestParam("name") String name,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam("groupType") String groupType,
+            @RequestParam(value = "subject", required = false) String subject,
+            @RequestParam(value = "academicLevel", required = false) String academicLevel,
+            @RequestParam(value = "removeImage", required = false, defaultValue = "false") boolean removeImage,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            Authentication authentication) {
+
+        log.info("Received request to update group {} from user: {}", groupId, authentication.getName());
+
+        GroupResponseDTO response = groupService.updateGroup(
+                groupId, name, description, groupType, subject, academicLevel,
+                removeImage, image, authentication.getName());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Search groups by keyword
      * GET /api/groups/search
      */
