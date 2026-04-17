@@ -47,6 +47,13 @@ public class MessageController {
             @Valid @RequestBody MessageRequestDTO request,
             Authentication authentication) {
         
+        log.info("===== MESSAGE SEND REQUEST =====");
+        log.info("Request received - ConversationId: {}, Content length: {}", 
+            request.getConversationId(), 
+            request.getContent() != null ? request.getContent().length() : 0);
+        log.info("Request body: {}", request);
+        log.info("Authentication: {}", authentication);
+        
         Long userId = getCurrentAuthenticatedUserId(authentication);
         log.info("User: {} sending message in conversation: {}", userId, request.getConversationId());
 
@@ -56,6 +63,7 @@ public class MessageController {
             request.getContent()
         );
 
+        log.info("Message sent successfully - ID: {}", message.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(message);
     }
 
@@ -218,14 +226,31 @@ public class MessageController {
             Authentication authentication) {
         
         Long userId = getCurrentAuthenticatedUserId(authentication);
-        log.info("User: {} uploading {} attachments to message: {}", userId, files.size(), messageId);
+        
+        log.info("===== ATTACHMENT UPLOAD START =====");
+        log.info("MessageId: {}, FileCount: {}, UserId: {}", messageId, files.size(), userId);
+        
+        for (int i = 0; i < files.size(); i++) {
+            MultipartFile file = files.get(i);
+            log.info("File[{}]: name={}, size={}, contentType={}", 
+                i, file.getOriginalFilename(), file.getSize(), file.getContentType());
+        }
         
         try {
+            if (files == null || files.isEmpty()) {
+                log.warn("No files provided for attachment upload");
+                return ResponseEntity.ok(List.of());
+            }
+            
             List<AttachmentDTO> attachments = attachmentService.uploadAttachments(messageId, files, userId);
+            log.info("✅ Attachment upload successful - Created {} attachments", attachments.size());
             return ResponseEntity.status(HttpStatus.CREATED).body(attachments);
         } catch (IOException e) {
-            log.error("Failed to upload attachments", e);
-            throw new RuntimeException("Failed to upload attachments", e);
+            log.error("❌ IOException during attachment upload:", e);
+            throw new RuntimeException("Failed to upload attachments: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("❌ Unexpected error during attachment upload:", e);
+            throw new RuntimeException("Unexpected error: " + e.getMessage(), e);
         }
     }
 

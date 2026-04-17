@@ -14,13 +14,53 @@ import apiClient from './apiClient';
  */
 export const sendMessage = async (conversationId, content) => {
   try {
-    const response = await apiClient.post('/messages', {
+    // Validate inputs
+    if (typeof conversationId !== 'number' || conversationId <= 0) {
+      const err = new Error(`Invalid conversationId: ${conversationId}`);
+      console.error('❌ messageAPI.sendMessage - Invalid conversationId:', err.message);
+      throw err;
+    }
+
+    const trimmedContent = String(content).trim();
+    
+    if (trimmedContent.length === 0) {
+      const err = new Error('Content cannot be empty');
+      console.error('❌ messageAPI.sendMessage - Empty content');
+      throw err;
+    }
+
+    if (trimmedContent.length > 5000) {
+      const err = new Error(`Content exceeds 5000 characters (${trimmedContent.length})`);
+      console.error('❌ messageAPI.sendMessage - Content too long:', err.message);
+      throw err;
+    }
+
+    const payload = {
       conversationId,
-      content
+      content: trimmedContent
+    };
+
+    console.log('📤 messageAPI.sendMessage - Sending:', {
+      conversationId,
+      contentLength: trimmedContent.length,
+      contentPreview: trimmedContent.substring(0, 50)
     });
+
+    const response = await apiClient.post('/messages', payload);
+    
+    console.log('✅ messageAPI.sendMessage - Success:', {
+      messageId: response.data?.id,
+      contentLength: response.data?.content?.length
+    });
+    
     return response.data;
   } catch (error) {
-    console.error('Failed to send message:', error);
+    console.error('❌ messageAPI.sendMessage - Error:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      errorData: error.response?.data?.detailMessage || error.response?.data?.message
+    });
     throw error;
   }
 };

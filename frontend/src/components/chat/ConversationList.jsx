@@ -14,7 +14,8 @@ const ConversationList = ({
   error,
   currentUserId,
   searchQuery,
-  onSearchChange
+  onSearchChange,
+  onDeleteConversation
 }) => {
   const getInitials = (name) => {
     return name
@@ -69,10 +70,7 @@ const ConversationList = ({
           </div>
         ) : (
           conversations.map((conversation) => {
-            const otherUser =
-              conversation.user1?.id === currentUserId
-                ? conversation.user2
-                : conversation.user1;
+            const otherUser = conversation.otherUser;
             const unreadCount = conversation.unreadCount || 0;
 
             return (
@@ -106,15 +104,11 @@ const ConversationList = ({
                         {otherUser?.username || 'Unknown User'}
                       </h3>
                       <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
-                        {formatTime(conversation.lastMessage?.createdAt)}
+                        {formatTime(conversation.lastMessageTime)}
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 truncate">
-                      {conversation.lastMessage?.senderUsername ===
-                      currentUserId
-                        ? 'You: '
-                        : ''}
-                      {conversation.lastMessage?.content || 'No messages yet'}
+                      {conversation.lastMessagePreview || 'No messages yet'}
                     </p>
                   </div>
 
@@ -138,9 +132,9 @@ ConversationList.propTypes = {
   conversations: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.number.isRequired,
-      user1: PropTypes.object,
-      user2: PropTypes.object,
-      lastMessage: PropTypes.object,
+      otherUser: PropTypes.object,
+      lastMessagePreview: PropTypes.string,
+      lastMessageTime: PropTypes.string,
       unreadCount: PropTypes.number
     })
   ).isRequired,
@@ -150,7 +144,8 @@ ConversationList.propTypes = {
   error: PropTypes.string,
   currentUserId: PropTypes.number.isRequired,
   searchQuery: PropTypes.string,
-  onSearchChange: PropTypes.func.isRequired
+  onSearchChange: PropTypes.func.isRequired,
+  onDeleteConversation: PropTypes.func
 };
 
 ConversationList.defaultProps = {

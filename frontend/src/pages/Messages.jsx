@@ -92,8 +92,7 @@ const Messages = () => {
     
     // Look for existing conversation with the user
     const existingConversation = conversations.find(conv => {
-      const otherUser = conv.user1?.id === user.id ? conv.user2 : conv.user1;
-      return otherUser?.id === targetId;
+      return conv.otherUser?.id === targetId;
     });
 
     if (existingConversation) {
@@ -210,15 +209,46 @@ const Messages = () => {
 
   // Send message
   const handleSendMessage = async (attachments = []) => {
-    if (!messageInput.trim() && attachments.length === 0) return;
-    if (!selectedChat || sending) return;
+    const trimmedContent = messageInput.trim();
+    
+    // Validation before setting sending state
+    if (!trimmedContent && attachments.length === 0) {
+      console.warn('⚠️ No content and no attachments');
+      return;
+    }
+    
+    if (!selectedChat) {
+      console.error('❌ No chat selected');
+      setError('No conversation selected');
+      return;
+    }
+    
+    if (sending) {
+      console.warn('⚠️ Already sending, ignoring duplicate');
+      return;
+    }
 
     try {
       setSending(true);
+      setError('');
       let messageId = null;
       
+      // Determine content to send
+      const contentToSend = trimmedContent || (attachments.length > 0 ? '📎 Attachment' : '');
+      
+      if (!contentToSend) {
+        throw new Error('No content to send');
+      }
+      
+      console.log('📨 Sending message:', {
+        hasTextContent: !!trimmedContent,
+        contentToSend,
+        attachmentCount: attachments.length,
+        conversationId: selectedChat.id
+      });
+      
       // Send message via REST API to get the messageId for attachments
-      const newMessage = await messageAPI.sendMessage(selectedChat.id, messageInput.trim());
+      const newMessage = await messageAPI.sendMessage(selectedChat.id, contentToSend);
       messageId = newMessage.id;
       
       // Add message to local state immediately
@@ -229,12 +259,23 @@ const Messages = () => {
       // Upload attachments if present
       if (attachments.length > 0 && messageId) {
         try {
+          console.log('📎 Starting attachment upload:', {
+            messageId,
+            attachmentCount: attachments.length
+          });
+          
           // Convert attachment objects to File objects for upload
           const filesToUpload = attachments.map(att => att.file);
           await attachmentAPI.uploadAttachments(messageId, filesToUpload);
-          console.log('Attachments uploaded successfully');
+          
+          console.log('✅ Attachments uploaded successfully');
         } catch (attachErr) {
-          console.error('Failed to upload attachments:', attachErr);
+          console.error('❌ Attachment upload failed:', {
+            messageId,
+            status: attachErr.response?.status,
+            statusText: attachErr.response?.statusText,
+            error: attachErr.response?.data || attachErr.message
+          });
           setError('Message sent but attachments failed to upload');
         }
       }
@@ -245,7 +286,7 @@ const Messages = () => {
         setIsTyping(false);
       }
     } catch (err) {
-      console.error('Failed to send message:', err);
+      console.error('❌ Failed to send message:', err);
       setError('Failed to send message');
     } finally {
       setSending(false);
@@ -253,11 +294,14 @@ const Messages = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[calc(100vh-8rem)]">
-      <div className="flex h-full">
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[calc(100vh-8rem)] border border-gray-300">
+      <div className="flex h-full overflow-hidden">
         {/* Conversations List Component */}
         <ConversationList
-          conversations={conversations}
+          conversations={conversations.filter((conv) =>
+            !searchQuery || 
+            conv.otherUser?.username?.toLowerCase().includes(searchQuery.toLowerCase())
+          )}
           selectedChat={selectedChat}
           onSelectChat={setSelectedChat}
           loading={loading}
@@ -265,11 +309,21 @@ const Messages = () => {
           currentUserId={user?.id}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onDeleteConversation={(convId) => {
+            conversationAPI.deleteConversation(convId)
+              .then(() => {
+                setConversations(prev => prev.filter(c => c.id !== convId));
+                if (selectedChat?.id === convId) {
+                  setSelectedChat(null);
+                }
+              })
+              .catch(err => console.error('Failed to delete conversation:', err));
+          }}
         />
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col">
-          {/* Chat Window Component */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
+          {/* Chat Window Component - Scrollable with fixed header */}
           <ChatWindow
             selectedChat={selectedChat}
             messages={messages}
@@ -280,19 +334,38 @@ const Messages = () => {
               [selectedChat?.user1?.id]: selectedChat?.user1?.username,
               [selectedChat?.user2?.id]: selectedChat?.user2?.username
             }}
+            onDeleteMessage={(messageId) => {
+              messageAPI.deleteMessage(messageId)
+                .then(() => {
+                  setMessages(prev => prev.filter(m => m.id !== messageId));
+                })
+                .catch(err => console.error('Failed to delete message:', err));
+            }}
+            onDeleteConversation={(convId) => {
+              conversationAPI.deleteConversation(convId)
+                .then(() => {
+                  setConversations(prev => prev.filter(c => c.id !== convId));
+                  if (selectedChat?.id === convId) {
+                    setSelectedChat(null);
+                  }
+                })
+                .catch(err => console.error('Failed to delete conversation:', err));
+            }}
           />
 
-          {/* Message Input Component - Only show when chat is selected */}
+          {/* Message Input Component - Fixed at bottom */}
           {selectedChat && (
-            <MessageInput
-              value={messageInput}
-              onChange={setMessageInput}
-              onSend={handleSendMessage}
-              sending={sending}
-              disabled={false}
-              onTyping={handleInputChange}
-              maxLength={5000}
-            />
+            <div className="flex-shrink-0 border-t border-gray-200">
+              <MessageInput
+                value={messageInput}
+                onChange={setMessageInput}
+                onSend={handleSendMessage}
+                sending={sending}
+                disabled={false}
+                onTyping={handleInputChange}
+                maxLength={5000}
+              />
+            </div>
           )}
         </div>
       </div>

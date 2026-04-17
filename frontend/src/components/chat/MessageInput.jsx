@@ -29,11 +29,24 @@ const MessageInput = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!sending && (value.trim() || attachments.length > 0)) {
-      onSend(attachments);
-      setAttachments([]);
-      setShowFileUpload(false);
+    const trimmedValue = value.trim();
+    
+    // Prevent sending if no content and no attachments
+    if (!trimmedValue && attachments.length === 0) {
+      console.warn('⚠️ Prevented empty message submission');
+      return;
     }
+    
+    // Prevent sending while already sending
+    if (sending) {
+      console.warn('⚠️ Already sending, ignoring duplicate submit');
+      return;
+    }
+    
+    console.log('✅ Form submitted with content:', { trimmedValue, attachmentCount: attachments.length });
+    onSend(attachments);
+    setAttachments([]);
+    setShowFileUpload(false);
   };
 
   const handleFileSelect = (e) => {

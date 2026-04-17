@@ -14,7 +14,9 @@ const DashboardLayout = () => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [toast, setToast] = useState(null);
   const isResourceHubRoute = location.pathname === '/resource-hub';
-  const showSocialSidebars = !isResourceHubRoute;
+  const isMessagesRoute = location.pathname === '/messages';
+  const isGroupsRoute = location.pathname.includes('/groups') || location.pathname === '/my-groups';
+  const showSocialSidebars = !isResourceHubRoute && !isMessagesRoute && !isGroupsRoute;
   const showCreatePost = location.pathname === '/feed';
 
   const showToast = (message, type = 'success') => {
@@ -66,7 +68,7 @@ const DashboardLayout = () => {
             {showSocialSidebars && <FeedLeftRail />}
 
             <main className="min-w-0 h-full overflow-y-auto">
-              <div className={isResourceHubRoute ? 'max-w-7xl mx-auto pb-8' : 'max-w-3xl mx-auto pb-8'}>
+              <div className={isMessagesRoute || isGroupsRoute ? 'max-w-7xl mx-auto' : isResourceHubRoute ? 'max-w-7xl mx-auto pb-8' : 'max-w-3xl mx-auto pb-8'}>
                 {showCreatePost && (
                   <div className="bg-white rounded-[24px] md:rounded-[32px] shadow-sm p-4 md:p-6 mb-8 border border-gray-100 flex gap-4 items-center">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">

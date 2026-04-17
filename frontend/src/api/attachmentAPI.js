@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import axios from 'axios';
 
 /**
  * Attachment API Service
@@ -14,6 +15,16 @@ import apiClient from './apiClient';
  */
 export const uploadAttachments = async (messageId, files) => {
   try {
+    console.log('📤 uploadAttachments - Starting:', {
+      messageId,
+      fileCount: files.length,
+      files: files.map(f => ({
+        name: f.name,
+        size: f.size,
+        type: f.type
+      }))
+    });
+
     const formData = new FormData();
     
     // Add all files to FormData
@@ -21,14 +32,35 @@ export const uploadAttachments = async (messageId, files) => {
       formData.append('files', file);
     });
     
-    const response = await apiClient.post(`/messages/${messageId}/attachments`, formData, {
+    // Create a separate axios instance for file uploads
+    // WITHOUT the Content-Type: application/json header
+    // so the browser can set it to multipart/form-data
+    const token = localStorage.getItem('token');
+    const uploadClient = axios.create({
+      baseURL: apiClient.defaults.baseURL,
       headers: {
-        'Content-Type': 'multipart/form-data'
+        // Don't set Content-Type - let browser set multipart/form-data
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       }
     });
+
+    console.log('📤 uploadAttachments - Sending FormData to /messages/' + messageId + '/attachments');
+    
+    const response = await uploadClient.post(`/messages/${messageId}/attachments`, formData);
+    
+    console.log('✅ uploadAttachments - Success:', {
+      attachmentCount: response.data?.length,
+      attachments: response.data?.map(a => ({ id: a.id, fileName: a.fileName }))
+    });
+    
     return response.data;
   } catch (error) {
-    console.error('Failed to upload attachments:', error);
+    console.error('❌ uploadAttachments - Error:', {
+      messageId,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      error: error.response?.data?.message || error.response?.data?.detailMessage || error.message
+    });
     throw error;
   }
 };
