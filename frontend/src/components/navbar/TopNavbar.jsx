@@ -1,7 +1,7 @@
-import { Bell, MessageSquare, ChevronDown, Home, BookOpenText } from 'lucide-react';
+import { Bell, MessageSquare, ChevronDown, Home, BookOpenText, Users } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import learnlinkLogo from '../../../logos/learnlink_logo-transparent.png';
 import UserSearchDropdown from './UserSearchDropdown';
 
@@ -10,6 +10,12 @@ const TopNavbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const getNavButtonClass = (isActive) =>
+    `relative p-2.5 rounded-xl transition group ${
+      isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-100'
+    }`;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -57,7 +63,7 @@ const TopNavbar = () => {
         {/* Home */}
         <button
           onClick={() => navigate('/feed')}
-          className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
+          className={getNavButtonClass(location.pathname === '/feed')}
           title="Home"
         >
           <Home className="h-5 w-5 group-hover:text-blue-600 transition" />
@@ -66,16 +72,25 @@ const TopNavbar = () => {
         {/* Resource Hub */}
         <button
           onClick={() => navigate('/resource-hub')}
-          className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
+          className={getNavButtonClass(location.pathname.startsWith('/resource-hub'))}
           title="Resource Hub"
         >
           <BookOpenText className="h-5 w-5 group-hover:text-blue-600 transition" />
         </button>
 
+        {/* Groups */}
+        <button
+          onClick={() => navigate('/groups')}
+          className={getNavButtonClass(location.pathname.startsWith('/groups'))}
+          title="Groups"
+        >
+          <Users className="h-5 w-5 group-hover:text-blue-600 transition" />
+        </button>
+
         {/* Notification Bell */}
         <button
           onClick={() => navigate('/notifications')}
-          className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
+          className={getNavButtonClass(location.pathname.startsWith('/notifications'))}
           title="Notifications"
         >
           <Bell className="h-5 w-5 group-hover:text-blue-600 transition" />
@@ -85,7 +100,7 @@ const TopNavbar = () => {
         {/* Messages */}
         <button
           onClick={() => navigate('/messages')}
-          className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
+          className={getNavButtonClass(location.pathname.startsWith('/messages'))}
           title="Messages"
         >
           <MessageSquare className="h-5 w-5 group-hover:text-blue-600 transition" />
