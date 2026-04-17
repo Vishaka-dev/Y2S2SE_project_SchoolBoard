@@ -28,7 +28,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity(name = "StudyGroup")
+@Entity(name = "Group")
 @Table(name = "groups")
 public class Group {
 
@@ -72,7 +72,8 @@ public class Group {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "group", fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id", updatable = false, insertable = false)
     @Builder.Default
     private Set<GroupMember> members = new HashSet<>();
 }

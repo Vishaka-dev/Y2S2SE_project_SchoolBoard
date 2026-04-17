@@ -56,15 +56,39 @@ const UserSearchDropdown = () => {
       setIsLoading(true);
       setError('');
       try {
-        const [userResponse, postResponse, groupResponse] = await Promise.allSettled([
-          searchUsers(sanitizedQuery, 0, 10),
-          postService.searchPosts(sanitizedQuery),
-          groupService.searchGroups(sanitizedQuery),
-        ]);
-        setResults(userResponse.status === 'fulfilled' ? (userResponse.value.data?.content || []) : []);
-        setPostResults(postResponse.status === 'fulfilled' ? (postResponse.value || []) : []);
-        setGroupResults(groupResponse.status === 'fulfilled' ? (groupResponse.value || []) : []);
+        const promises = [
+          searchUsers(sanitizedQuery, 0, 10).then(res => {
+             console.log("user response.status:", res.status);
+             console.log("user response.data:", res.data);
+             return res;
+          }),
+          postService.searchPosts(sanitizedQuery).then(data => {
+             console.log("post parsed search results:", data);
+             return data;
+          })
+        ];
+
+        if (typeof groupService.searchGroups === 'function') {
+          promises.push(groupService.searchGroups(sanitizedQuery));
+        } else {
+          promises.push(Promise.resolve([]));
+        }
+
+        const [userResponse, postResponse, groupResponse] = await Promise.allSettled(promises);
+        
+        const parsedUsers = userResponse.status === 'fulfilled' ? (userResponse.value.data?.content || []) : [];
+        const parsedPosts = postResponse.status === 'fulfilled' ? (postResponse.value || []) : [];
+        const parsedGroups = groupResponse.status === 'fulfilled' ? (groupResponse.value || []) : [];
+        
+        console.log("parsed search results (users):", parsedUsers);
+        console.log("parsed search results (posts):", parsedPosts);
+        console.log("parsed search results (groups):", parsedGroups);
+
+        setResults(parsedUsers);
+        setPostResults(parsedPosts);
+        setGroupResults(parsedGroups);
       } catch (searchError) {
+        console.error("Caught exception during search:", searchError);
         setResults([]);
         setPostResults([]);
         setGroupResults([]);

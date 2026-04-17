@@ -22,10 +22,6 @@ const Home = () => {
   const [activeMenu, setActiveMenu] = useState(null);
   const [isDeleting, setIsDeleting] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
-  const [expandedComments, setExpandedComments] = useState(new Set());
-  const [commentsByPost, setCommentsByPost] = useState({});
-  const [commentInputs, setCommentInputs] = useState({});
-  const [isSubmittingComment, setIsSubmittingComment] = useState({});
   const POSTS_PER_PAGE = 10;
 
   const loadPosts = async (pageToLoad, isInitial = false) => {
@@ -150,175 +146,6 @@ const Home = () => {
     } finally {
       setIsDeleting(null);
     }
-  };
-
-  const handleToggleComments = async (postId) => {
-    const isExpanded = expandedComments.has(postId);
-    const newExpanded = new Set(expandedComments);
-
-    if (isExpanded) {
-      newExpanded.delete(postId);
-    } else {
-      newExpanded.add(postId);
-      // Fetch comments if not already loaded or to refresh
-      try {
-        const comments = await postService.getCommentsByPost(postId);
-        setCommentsByPost(prev => ({ ...prev, [postId]: comments }));
-      } catch (error) {
-        console.error('Failed to load comments:', error);
-      }
-    }
-    setExpandedComments(newExpanded);
-  };
-
-  const handleSubmitComment = async (postId) => {
-    const content = commentInputs[postId]?.trim();
-    if (!content) return;
-
-    setIsSubmittingComment(prev => ({ ...prev, [postId]: true }));
-    try {
-      const newComment = await postService.createComment(postId, content);
-      
-      // Update comments list
-      setCommentsByPost(prev => ({
-        ...prev,
-        [postId]: [...(prev[postId] || []), newComment]
-      }));
-
-      // Clear input
-      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
-
-      // Increment comment count in posts state
-      setPosts(prevPosts => prevPosts.map(post => {
-        if (post.id === postId) {
-          return { ...post, commentCount: (post.commentCount || 0) + 1 };
-        }
-        return post;
-      }));
-
-      setSinglePost(prev => {
-        if (!prev || prev.id !== postId) return prev;
-        return { ...prev, commentCount: (prev.commentCount || 0) + 1 };
-      });
-    } catch (error) {
-      alert('Failed to post comment: ' + (error.message || 'Unknown error'));
-    } finally {
-      setIsSubmittingComment(prev => ({ ...prev, [postId]: false }));
-    }
-  };
-
-  const handleDeleteComment = async (commentId, postId) => {
-    if (!window.confirm('Delete this comment?')) return;
-
-    try {
-      await postService.deleteComment(commentId);
-      
-      // Update comments list
-      setCommentsByPost(prev => ({
-        ...prev,
-        [postId]: (prev[postId] || []).filter(c => c.id !== commentId)
-      }));
-
-      // Decrement comment count
-      setPosts(prevPosts => prevPosts.map(post => {
-        if (post.id === postId) {
-          return { ...post, commentCount: Math.max(0, (post.commentCount || 0) - 1) };
-        }
-        return post;
-      }));
-
-      setSinglePost(prev => {
-        if (!prev || prev.id !== postId) return prev;
-        return { ...prev, commentCount: Math.max(0, (prev.commentCount || 0) - 1) };
-      });
-    } catch (error) {
-      alert('Failed to delete comment: ' + (error.message || 'Unknown error'));
-    }
-    };
-
-  const renderCommentsSection = (post) => {
-    if (!expandedComments.has(post.id)) return null;
-
-    return (
-      <div
-        className="mt-4 pt-4 border-t border-gray-100 space-y-4 animate-in slide-in-from-top-2 duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-            {user?.initials || user?.fullName?.[0] || user?.username?.[0] || 'U'}
-          </div>
-          <div className="flex-1 flex gap-2">
-            <input
-              type="text"
-              placeholder="Write a comment..."
-              value={commentInputs[post.id] || ''}
-              onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment(post.id)}
-              className="flex-1 bg-gray-50 border-none rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none"
-            />
-            <button
-              onClick={() => handleSubmitComment(post.id)}
-              disabled={!commentInputs[post.id]?.trim() || isSubmittingComment[post.id]}
-              className="text-blue-600 font-bold text-sm px-2 disabled:opacity-50 hover:text-blue-700 transition-colors"
-            >
-              {isSubmittingComment[post.id] ? '...' : 'Post'}
-            </button>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          {commentsByPost[post.id]?.length === 0 ? (
-            <p className="text-center text-gray-400 text-xs py-2">No comments yet. Be the first to comment!</p>
-          ) : (
-            commentsByPost[post.id]?.map((comment) => (
-              <div key={comment.id} className="flex gap-3 group/comment">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden">
-                  {comment.authorImageUrl ? (
-                    <img
-                      src={comment.authorImageUrl.startsWith('http')
-                        ? comment.authorImageUrl
-                        : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/api\/?$/, '')}${comment.authorImageUrl.startsWith('/') ? comment.authorImageUrl : '/' + comment.authorImageUrl}`
-                      }
-                      alt={comment.authorName}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        const fallback = e.target.parentElement.querySelector('.avatar-fallback');
-                        if (fallback) fallback.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
-                  <span className={`avatar-fallback ${comment.authorImageUrl ? 'hidden' : ''}`}>
-                    {comment.authorName?.[0] || 'U'}
-                  </span>
-                </div>
-                <div className="flex-1">
-                  <div className="bg-gray-50 rounded-2xl px-4 py-2 relative">
-                    <div className="flex items-center justify-between gap-2 mb-0.5">
-                      <span className="text-xs font-bold text-gray-900">{comment.authorName || 'Unknown User'}</span>
-                      <span className="text-[10px] text-gray-400 font-medium">{formatDate(comment.createdAt)}</span>
-                    </div>
-                    <p className="text-sm text-gray-700 leading-relaxed font-dm-sans">
-                      {comment.content}
-                    </p>
-
-                    {(user?.username === comment.authorUsername || user?.role === 'ADMIN') && (
-                      <button
-                        onClick={() => handleDeleteComment(comment.id, post.id)}
-                        className="absolute -right-2 -top-2 p-1.5 bg-white shadow-sm border border-gray-100 rounded-full text-gray-400 hover:text-red-500 opacity-0 group-hover/comment:opacity-100 transition-all hover:scale-110"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    );
   };
 
   const handleReact = async (postId, reactionType) => {
@@ -476,25 +303,16 @@ const Home = () => {
                 </div>
               )}
               <div className="flex items-center gap-4 text-[13px] text-gray-500 pb-3 mb-3 border-b border-gray-50 font-medium">
-                {singlePost.totalReactions > 0 ? (
-                  <span className="hover:text-blue-600 cursor-pointer flex items-center gap-1">
-                    <span className="text-base">👍</span> {singlePost.totalReactions}
-                  </span>
-                ) : (
-                  <span className="hover:text-blue-600 cursor-pointer">0 reactions</span>
-                )}
-                <span className="hover:text-blue-600 cursor-pointer">{singlePost.commentCount || 0} comments</span>
+                <span className="hover:text-blue-600 cursor-pointer">0 likes</span>
+                <span className="hover:text-blue-600 cursor-pointer">0 comments</span>
                 <span className="hover:text-blue-600 cursor-pointer">0 shares</span>
               </div>
               <div className="flex items-center gap-2">
-                <ReactionButton 
-                  currentUserReaction={singlePost.currentUserReaction} 
-                  onReact={(reactionType) => handleReact(singlePost.id, reactionType)} 
-                />
-                <button
-                  onClick={() => handleToggleComments(singlePost.id)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn"
-                >
+                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+                  <ThumbsUp className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                  <span className="text-sm font-bold">Like</span>
+                </button>
+                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
                   <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                   <span className="text-sm font-bold">Comment</span>
                 </button>
@@ -503,7 +321,6 @@ const Home = () => {
                   <span className="text-sm font-bold">Share</span>
                 </button>
               </div>
-              {renderCommentsSection(singlePost)}
             </div>
           )
         ) : (
@@ -637,6 +454,7 @@ const Home = () => {
                         />
                       </div>
                     )}
+                    {/* Engagement Stats */}
                     <div className="flex items-center gap-4 text-[13px] text-gray-500 pb-3 mb-3 border-b border-gray-50 font-medium">
                       {post.totalReactions > 0 ? (
                         <span className="hover:text-blue-600 cursor-pointer flex items-center gap-1">
@@ -645,21 +463,17 @@ const Home = () => {
                       ) : (
                         <span className="hover:text-blue-600 cursor-pointer">0 reactions</span>
                       )}
-                      <span className="hover:text-blue-600 cursor-pointer">{post.commentCount || 0} comments</span>
+                      <span className="hover:text-blue-600 cursor-pointer">0 comments</span>
                       <span className="hover:text-blue-600 cursor-pointer">0 shares</span>
                     </div>
+
+                    {/* Action Buttons */}
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <ReactionButton 
                         currentUserReaction={post.currentUserReaction} 
                         onReact={(reactionType) => handleReact(post.id, reactionType)} 
                       />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleComments(post.id);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn"
-                      >
+                      <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
                         <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                         <span className="text-sm font-bold">Comment</span>
                       </button>
@@ -668,33 +482,34 @@ const Home = () => {
                         <span className="text-sm font-bold">Share</span>
                       </button>
                     </div>
-                    {renderCommentsSection(post)}
                   </div>
                 ))}
-                {hasMore && (
-                  <div className="text-center py-6">
-                    <button
-                      onClick={handleLoadMore}
-                      disabled={isFetchingMore}
-                      className="px-8 py-3 bg-white text-blue-600 border border-blue-100 hover:border-blue-600 hover:bg-blue-50 rounded-full font-bold text-sm transition shadow-sm disabled:opacity-50 flex items-center gap-2 mx-auto"
-                    >
-                      {isFetchingMore ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                          Loading...
-                        </>
-                      ) : (
-                        'Load more posts'
-                      )}
-                    </button>
-                  </div>
-                )}
-              </>
+
+            {hasMore && (
+              <div className="text-center py-6">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={isFetchingMore}
+                  className="px-8 py-3 bg-white text-blue-600 border border-blue-100 hover:border-blue-600 hover:bg-blue-50 rounded-full font-bold text-sm transition shadow-sm disabled:opacity-50 flex items-center gap-2 mx-auto"
+                >
+                  {isFetchingMore ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                      Loading...
+                    </>
+                  ) : (
+                    'Load more posts'
+                  )}
+                </button>
+              </div>
             )}
+
             {!hasMore && posts.length > 0 && (
               <div className="text-center py-8 text-gray-400 font-medium text-sm">
                 You've reached the end of the feed ✨
               </div>
+            )}
+              </>
             )}
           </>
         )}

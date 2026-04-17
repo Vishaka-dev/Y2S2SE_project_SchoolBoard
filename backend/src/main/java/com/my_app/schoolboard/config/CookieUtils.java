@@ -57,7 +57,13 @@ public class CookieUtils {
     }
 
     public static <T> T deserialize(Cookie cookie, Class<T> cls) {
-        return cls.cast(SerializationUtils.deserialize(
-                Base64.getUrlDecoder().decode(cookie.getValue())));
+        try {
+            byte[] bytes = Base64.getUrlDecoder().decode(cookie.getValue());
+            return cls.cast(SerializationUtils.deserialize(bytes));
+        } catch (IllegalArgumentException e) {
+            // Fallback to standard Base64 if URL decoder fails
+            byte[] bytes = Base64.getDecoder().decode(cookie.getValue());
+            return cls.cast(SerializationUtils.deserialize(bytes));
+        }
     }
 }

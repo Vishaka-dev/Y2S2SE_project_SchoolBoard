@@ -11,9 +11,9 @@ import Connections from './pages/Connections';
 import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import ResourceHub from './pages/ResourceHub';
+import MyGroups from './pages/MyGroups';
 import CreateGroup from './pages/CreateGroup';
 import GroupDetails from './pages/GroupDetails';
-import MyGroups from './pages/MyGroups';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -151,6 +151,18 @@ function AppRoutes() {
         <Route index element={<ResourceHub />} />
       </Route>
 
+      {/* Group Routes */}
+      <Route
+        path="/groups"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<MyGroups />} />
+      </Route>
+
       <Route
         path="/groups/create"
         element={
@@ -163,7 +175,7 @@ function AppRoutes() {
       </Route>
 
       <Route
-        path="/groups/:id"
+        path="/groups/:groupId"
         element={
           <ProtectedRoute>
             <DashboardLayout />
@@ -171,17 +183,6 @@ function AppRoutes() {
         }
       >
         <Route index element={<GroupDetails />} />
-      </Route>
-
-      <Route
-        path="/my-groups"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<MyGroups />} />
       </Route>
       
       {/* Account Management Routes - Also in DashboardLayout */}
