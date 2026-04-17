@@ -180,6 +180,27 @@ public class GroupServiceImpl implements GroupService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<GroupResponseDTO> searchGroups(String keyword, String username) {
+        log.info("Searching groups with keyword: {} for user: {}", keyword, username);
+
+        List<StudyGroup> groups = studyGroupRepository.searchByName(keyword);
+        User user = (username != null && !username.isBlank()) ? userRepository.findByUsername(username).orElse(null) : null;
+
+        return groups.stream()
+                .map(group -> {
+                    long memberCount = groupMemberRepository.countByGroup_Id(group.getId());
+                    GroupMemberRole role = null;
+                    if (user != null) {
+                        role = groupMemberRepository.findByGroup_IdAndUser_Id(group.getId(), user.getId())
+                                .map(GroupMember::getRole)
+                                .orElse(null);
+                    }
+                    return toResponseDTO(group, memberCount, role);
+                })
+                .collect(Collectors.toList());
+    }
+
     // ===== Helper Methods =====
 
     private User findUserByUsername(String username) {

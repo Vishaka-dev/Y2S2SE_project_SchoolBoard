@@ -62,6 +62,15 @@ const groupService = {
       throw error.response?.data || new Error('Failed to fetch group members');
     }
   },
+
+  searchGroups: async (keyword) => {
+    try {
+      const response = await apiClient.get(`/groups/search?keyword=${encodeURIComponent(keyword)}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || new Error('Failed to search groups');
+    }
+  },
 };
 
 export default groupService;

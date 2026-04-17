@@ -137,4 +137,21 @@ public class GroupController {
 
         return ResponseEntity.ok(members);
     }
+
+    /**
+     * Search groups by keyword
+     * GET /api/groups/search
+     */
+    @GetMapping("/search")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<GroupResponseDTO>> searchGroups(
+            @RequestParam(value = "keyword", defaultValue = "") String keyword,
+            Authentication authentication) {
+
+        log.info("Searching groups with keyword: {}", keyword);
+
+        List<GroupResponseDTO> groups = groupService.searchGroups(keyword, authentication.getName());
+
+        return ResponseEntity.ok(groups);
+    }
 }
