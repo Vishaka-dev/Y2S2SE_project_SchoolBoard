@@ -27,4 +27,8 @@ public interface GroupService {
     List<GroupMemberDTO> getGroupMembers(Long groupId);
 
     List<GroupResponseDTO> searchGroups(String keyword, String username);
+
+    GroupResponseDTO updateGroup(Long groupId, String name, String description, String groupType,
+                                 String subject, String academicLevel, boolean removeImage,
+                                 MultipartFile image, String username);
 }
