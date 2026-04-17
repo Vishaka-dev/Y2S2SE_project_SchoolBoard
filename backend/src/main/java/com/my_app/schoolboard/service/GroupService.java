@@ -4,6 +4,7 @@ import com.my_app.schoolboard.dto.CreateGroupRequestDTO;
 import com.my_app.schoolboard.dto.GroupMemberDTO;
 import com.my_app.schoolboard.dto.GroupResponseDTO;
 
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 /**
@@ -11,7 +12,7 @@ import java.util.List;
  */
 public interface GroupService {
 
-    GroupResponseDTO createGroup(CreateGroupRequestDTO request, String username);
+    GroupResponseDTO createGroup(CreateGroupRequestDTO request, MultipartFile image, String username);
 
     GroupResponseDTO getGroupById(Long groupId, String username);
 

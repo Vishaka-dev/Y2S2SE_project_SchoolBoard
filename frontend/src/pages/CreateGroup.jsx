@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, BookOpen, GraduationCap, Lightbulb, Layers, FlaskConical, Trophy, Heart, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Loader2, BookOpen, GraduationCap, Lightbulb, Layers, FlaskConical, Trophy, Heart, CheckCircle2, ImagePlus, X } from 'lucide-react';
 import groupService from '../services/groupService';
 
 const GROUP_TYPES = [
@@ -33,8 +33,9 @@ const CreateGroup = () => {
     groupType: '',
     subject: '',
     academicLevel: '',
-    imageUrl: '',
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
 
   const selectedType = GROUP_TYPES.find((t) => t.value === form.groupType);
   const helpText = HELP_TEXT[form.groupType] || {};
@@ -42,6 +43,27 @@ const CreateGroup = () => {
   const handleChange = (field) => (e) => {
     setError('');
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image size should be less than 5MB');
+        return;
+      }
+      setImageFile(file);
+      setImagePreviewUrl(URL.createObjectURL(file));
+      setError('');
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+    }
+    setImagePreviewUrl('');
   };
 
   const handleTypeSelect = (typeValue) => {
@@ -64,14 +86,19 @@ const CreateGroup = () => {
 
     setIsSubmitting(true);
     try {
-      const created = await groupService.createGroup({
-        name: form.name.trim(),
-        description: form.description.trim(),
-        groupType: form.groupType,
-        subject: form.subject.trim() || null,
-        academicLevel: form.academicLevel.trim() || null,
-        imageUrl: form.imageUrl.trim() || null,
-      });
+      const formData = new FormData();
+      formData.append('name', form.name.trim());
+      formData.append('description', form.description.trim());
+      formData.append('groupType', form.groupType);
+      
+      if (form.subject.trim()) formData.append('subject', form.subject.trim());
+      if (form.academicLevel.trim()) formData.append('academicLevel', form.academicLevel.trim());
+      
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+
+      const created = await groupService.createGroup(formData);
       navigate(`/groups/${created.id}`);
     } catch (err) {
       setError(err.message || 'Failed to create group');
@@ -198,19 +225,39 @@ const CreateGroup = () => {
             />
           </div>
 
-          {/* Image URL */}
+          {/* Image Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Group Image URL <span className="text-xs text-gray-400 font-normal">(optional)</span>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Group Profile Picture <span className="text-xs text-gray-400 font-normal">(optional)</span>
             </label>
-            <input
-              type="url"
-              value={form.imageUrl}
-              onChange={handleChange('imageUrl')}
-              placeholder="https://example.com/group-image.jpg"
-              maxLength={500}
-              className="w-full bg-white border border-gray-300 rounded-lg py-2.5 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            />
+            
+            {imagePreviewUrl ? (
+              <div className="relative w-32 h-32 rounded-xl overflow-hidden group border border-gray-200">
+                <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="p-1.5 bg-white/20 hover:bg-red-500 rounded-full text-white backdrop-blur-sm transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="flex items-center justify-center w-32 h-32 rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer group">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                <div className="flex flex-col items-center gap-2 text-gray-500 group-hover:text-blue-600 transition-colors">
+                  <ImagePlus className="w-6 h-6" />
+                  <span className="text-xs font-medium">Upload</span>
+                </div>
+              </label>
+            )}
           </div>
         </div>
 

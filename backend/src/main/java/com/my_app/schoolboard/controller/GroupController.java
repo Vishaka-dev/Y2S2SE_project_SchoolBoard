@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping("/api/groups")
@@ -29,15 +31,16 @@ public class GroupController {
      * Create a new group
      * POST /api/groups
      */
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<GroupResponseDTO> createGroup(
-            @Valid @RequestBody CreateGroupRequestDTO request,
+            @Valid @ModelAttribute CreateGroupRequestDTO request,
+            @RequestParam(value = "image", required = false) MultipartFile image,
             Authentication authentication) {
 
         log.info("Received request to create group '{}' from user: {}", request.getName(), authentication.getName());
 
-        GroupResponseDTO response = groupService.createGroup(request, authentication.getName());
+        GroupResponseDTO response = groupService.createGroup(request, image, authentication.getName());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

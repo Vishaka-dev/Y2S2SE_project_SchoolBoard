@@ -139,6 +139,13 @@ const UserSearchDropdown = () => {
     return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
   };
 
+  const resolveImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    const serverUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/api\/?$/, '');
+    return `${serverUrl}${url.startsWith('/') ? url : `/${url}`}`;
+  };
+
   return (
     <div ref={wrapperRef} className="relative w-full max-w-2xl">
       <div className="relative">
@@ -250,7 +257,7 @@ const UserSearchDropdown = () => {
                       >
                         <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5">
                           {group.imageUrl ? (
-                            <img src={group.imageUrl} alt="" className="w-full h-full rounded-lg object-cover" />
+                            <img src={resolveImageUrl(group.imageUrl)} alt="" className="w-full h-full rounded-lg object-cover" />
                           ) : (
                             <Users className="w-4 h-4 text-blue-500" />
                           )}

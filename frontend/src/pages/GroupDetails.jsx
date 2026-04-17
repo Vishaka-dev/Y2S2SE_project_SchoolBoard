@@ -93,6 +93,12 @@ const GroupDetails = () => {
   const Icon = config.icon;
   const isMember = !!group.currentUserRole;
   const isOwner = group.currentUserRole === 'OWNER';
+  const resolveImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    const serverUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/api\/?$/, '');
+    return `${serverUrl}${url.startsWith('/') ? url : `/${url}`}`;
+  };
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-8">
@@ -112,8 +118,12 @@ const GroupDetails = () => {
           <div className="absolute inset-0 bg-black/10" />
           <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/20 to-transparent" />
           <div className="absolute -bottom-8 left-6">
-            <div className={`w-16 h-16 rounded-2xl ${config.bg} ${config.border} border-2 shadow-lg flex items-center justify-center`}>
-              <Icon className={`w-8 h-8 ${config.text}`} />
+            <div className={`w-16 h-16 rounded-2xl ${config.bg} ${config.border} border-2 shadow-lg flex items-center justify-center overflow-hidden bg-white`}>
+              {group.imageUrl ? (
+                <img src={resolveImageUrl(group.imageUrl)} alt={group.name} className="w-full h-full object-cover" />
+              ) : (
+                <Icon className={`w-8 h-8 ${config.text}`} />
+              )}
             </div>
           </div>
         </div>
@@ -237,7 +247,7 @@ const GroupDetails = () => {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm overflow-hidden">
               {group.creatorProfileImageUrl ? (
-                <img src={group.creatorProfileImageUrl} alt={group.creatorUsername} className="w-full h-full object-cover" />
+                <img src={resolveImageUrl(group.creatorProfileImageUrl)} alt={group.creatorUsername} className="w-full h-full object-cover" />
               ) : (
                 group.creatorUsername?.[0]?.toUpperCase() || 'U'
               )}
