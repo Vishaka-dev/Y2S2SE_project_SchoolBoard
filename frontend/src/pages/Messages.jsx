@@ -310,14 +310,21 @@ const Messages = () => {
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onDeleteConversation={(convId) => {
+            console.log('Attempting to delete conversation:', convId);
             conversationAPI.deleteConversation(convId)
               .then(() => {
+                console.log('Conversation deleted successfully:', convId);
                 setConversations(prev => prev.filter(c => c.id !== convId));
                 if (selectedChat?.id === convId) {
                   setSelectedChat(null);
                 }
               })
-              .catch(err => console.error('Failed to delete conversation:', err));
+              .catch(err => {
+                console.error('Failed to delete conversation:', err);
+                console.error('Error status:', err.response?.status);
+                console.error('Error message:', err.response?.data?.message);
+                alert('Failed to delete conversation: ' + (err.response?.data?.message || err.message));
+              });
           }}
         />
 
@@ -342,14 +349,21 @@ const Messages = () => {
                 .catch(err => console.error('Failed to delete message:', err));
             }}
             onDeleteConversation={(convId) => {
+              console.log('Attempting to delete conversation:', convId);
               conversationAPI.deleteConversation(convId)
                 .then(() => {
+                  console.log('Conversation deleted successfully:', convId);
                   setConversations(prev => prev.filter(c => c.id !== convId));
                   if (selectedChat?.id === convId) {
                     setSelectedChat(null);
                   }
                 })
-                .catch(err => console.error('Failed to delete conversation:', err));
+                .catch(err => {
+                  console.error('Failed to delete conversation:', err);
+                  console.error('Error status:', err.response?.status);
+                  console.error('Error message:', err.response?.data?.message);
+                  alert('Failed to delete conversation: ' + (err.response?.data?.message || err.message));
+                });
             }}
           />
 

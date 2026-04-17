@@ -20,6 +20,18 @@ const ChatWindow = ({
   onDeleteConversation
 }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleDeleteConversation = () => {
+    setShowDeleteConfirm(true);
+    setShowMenu(false);
+  };
+
+  const confirmDeleteConversation = () => {
+    onDeleteConversation(selectedChat.id);
+    setShowDeleteConfirm(false);
+  };
+
   if (!selectedChat) {
     return (
       <div className="flex-1 flex items-center justify-center text-gray-500">
@@ -90,12 +102,7 @@ const ChatWindow = ({
             {showMenu && (
               <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-gray-200 z-50 w-48">
                 <button
-                  onClick={() => {
-                    if (confirm('Delete this conversation?')) {
-                      onDeleteConversation(selectedChat.id);
-                      setShowMenu(false);
-                    }
-                  }}
+                  onClick={handleDeleteConversation}
                   className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition rounded-lg"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -141,6 +148,30 @@ const ChatWindow = ({
           <div ref={messagesEndRef} />
         </div>
       </div>
+
+      {/* Delete Conversation Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-11/12 max-w-xl">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">Delete Conversation?</h3>
+            <p className="text-gray-900 text-sm mb-6">This will permanently delete your conversation with {otherUser?.username}. This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteConversation}
+                className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg transition"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
