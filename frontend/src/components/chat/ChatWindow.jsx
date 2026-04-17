@@ -1,6 +1,7 @@
 import { MessageSquare, MoreVertical, Trash2 } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 
@@ -19,6 +20,7 @@ const ChatWindow = ({
   onDeleteMessage,
   onDeleteConversation
 }) => {
+  const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -61,9 +63,9 @@ const ChatWindow = ({
       {/* Chat Header - Fixed */}
       <div className="flex-shrink-0 p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => otherUser?.id && navigate(`/profile/${otherUser.id}`)}>
             {/* Avatar */}
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold overflow-hidden">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold overflow-hidden hover:opacity-80 transition">
               {otherUser?.profileImageUrl ? (
                 <img
                   src={otherUser.profileImageUrl}
@@ -79,7 +81,7 @@ const ChatWindow = ({
 
             {/* User Info */}
             <div>
-              <h3 className="font-semibold text-gray-900">
+              <h3 className="font-semibold text-gray-900 hover:text-blue-600 transition">
                 {otherUser?.username || 'Unknown User'}
               </h3>
               <p className="text-xs text-gray-500">
