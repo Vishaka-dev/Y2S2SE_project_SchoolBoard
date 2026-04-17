@@ -71,6 +71,37 @@ public class FileSystemStorageService implements StorageService {
     }
 
     @Override
+    public String store(MultipartFile file, String folder) {
+        try {
+            if (file.isEmpty()) {
+                throw new RuntimeException("Failed to store empty file.");
+            }
+
+            Path folderPath = Paths.get("uploads", folder).normalize().toAbsolutePath();
+            Files.createDirectories(folderPath);
+
+            // Create a unique filename to prevent overwriting
+            String originalFilename = file.getOriginalFilename();
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+            String uniqueFilename = UUID.randomUUID().toString() + extension;
+
+            Path destinationFile = folderPath.resolve(uniqueFilename).normalize().toAbsolutePath();
+
+            try (InputStream inputStream = file.getInputStream()) {
+                Files.copy(inputStream, destinationFile,
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            return uniqueFilename;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to store file.", e);
+        }
+    }
+
+    @Override
     public Stream<Path> loadAll() {
         try {
             return Files.walk(this.rootLocation, 1)

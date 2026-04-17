@@ -1,284 +1,307 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Globe2, Lock, Plus, UserMinus, Users } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Users, Crown, Loader2, LogIn, LogOut, Calendar, BookOpen, GraduationCap } from 'lucide-react';
 import groupService from '../services/groupService';
+import { GROUP_TYPE_CONFIG } from '../components/GroupCard';
 import GroupMembersModal from '../components/GroupMembersModal';
 
-const formatGroupType = (groupType) =>
-  groupType
-    ?.split('_')
-    .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
-    .join(' ') || 'Group';
-
-const formatDate = (value) => {
-  if (!value) return '';
-  return new Date(value).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
 const GroupDetails = () => {
-  const { id } = useParams();
+  const { groupId } = useParams();
   const navigate = useNavigate();
+
   const [group, setGroup] = useState(null);
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [membersLoading, setMembersLoading] = useState(false);
-  const [membersOpen, setMembersOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState('');
+  const [showMembers, setShowMembers] = useState(false);
+
+  useEffect(() => {
+    if (groupId) {
+      loadGroup();
+    }
+  }, [groupId]);
 
   const loadGroup = async () => {
-    setLoading(true);
+    setIsLoading(true);
     setError('');
-
     try {
-      const data = await groupService.getGroupById(id);
+      const data = await groupService.getGroupById(groupId);
       setGroup(data);
     } catch (err) {
-      setError(err.message || 'Failed to load group details.');
-      setGroup(null);
+      setError(err.message || 'Failed to load group');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadGroup();
-  }, [id]);
-
   const handleJoin = async () => {
     setActionLoading(true);
+    setActionError('');
     try {
-      await groupService.joinGroup(id);
+      await groupService.joinGroup(groupId);
       await loadGroup();
     } catch (err) {
-      setError(err.message || 'Failed to join group.');
+      setActionError(err.message || 'Failed to join group');
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleLeave = async () => {
-    const confirmed = window.confirm('Leave this group?');
-    if (!confirmed) {
-      return;
-    }
-
+    if (!window.confirm('Are you sure you want to leave this group?')) return;
     setActionLoading(true);
+    setActionError('');
     try {
-      await groupService.leaveGroup(id);
+      await groupService.leaveGroup(groupId);
       await loadGroup();
     } catch (err) {
-      setError(err.message || 'Failed to leave group.');
+      setActionError(err.message || 'Failed to leave group');
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleOpenMembers = async () => {
-    setMembersOpen(true);
-    setMembersLoading(true);
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+        <p className="text-gray-500 font-medium font-dm-sans">Loading group...</p>
+      </div>
+    );
+  }
 
-    try {
-      const data = await groupService.getGroupMembers(id);
-      setMembers(data);
-    } catch (err) {
-      setError(err.message || 'Failed to load group members.');
-      setMembersOpen(false);
-    } finally {
-      setMembersLoading(false);
-    }
+  if (error || !group) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+        <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span className="text-3xl">⚠️</span>
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2 font-manrope">Group not found</h3>
+        <p className="text-gray-500 mb-6 font-dm-sans">{error || 'The group you are looking for does not exist.'}</p>
+        <button
+          onClick={() => navigate('/groups')}
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
+        >
+          Back to Groups
+        </button>
+      </div>
+    );
+  }
+
+  const config = GROUP_TYPE_CONFIG[group.groupType] || GROUP_TYPE_CONFIG.COURSE;
+  const Icon = config.icon;
+  const isMember = !!group.currentUserRole;
+  const isOwner = group.currentUserRole === 'OWNER';
+  const resolveImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    const serverUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/api\/?$/, '');
+    return `${serverUrl}${url.startsWith('/') ? url : `/${url}`}`;
   };
 
-  if (loading) {
-    return (
-      <div className="rounded-[32px] bg-white p-12 text-center shadow-sm">
-        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-        <p className="mt-4 text-sm font-medium text-gray-500">Loading group details...</p>
-      </div>
-    );
-  }
-
-  if (!group) {
-    return (
-      <div className="rounded-[32px] bg-white p-10 text-center shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900">Group unavailable</h1>
-        <p className="mt-3 text-sm text-gray-500">{error || 'We could not find that group.'}</p>
-        <button
-          type="button"
-          onClick={() => navigate('/my-groups')}
-          className="mt-6 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-        >
-          Back to My Groups
-        </button>
-      </div>
-    );
-  }
-
-  const canLeave = group.joined && group.currentUserRole !== 'OWNER';
-
   return (
-    <>
-      <div className="space-y-6">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:text-blue-600"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </button>
+    <div className="space-y-6 max-w-3xl mx-auto pb-8">
+      {/* Back Button */}
+      <button
+        onClick={() => navigate('/groups')}
+        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition font-medium"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Groups
+      </button>
 
-        <div className="overflow-hidden rounded-[36px] border border-gray-100 bg-white shadow-sm">
-          <div className="h-40 bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-900" />
-          <div className="px-6 pb-8 md:px-8">
-            <div className="-mt-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-              <div className="flex min-w-0 items-end gap-4">
-                <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-[28px] border-4 border-white bg-white shadow-lg">
-                  {group.imageUrl ? (
-                    <img src={group.imageUrl} alt={group.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <BookOpen className="h-10 w-10 text-blue-600" />
-                  )}
-                </div>
-                <div className="min-w-0 pb-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-2xl font-bold text-gray-900 md:text-3xl">{group.name}</h1>
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-700">
-                      {formatGroupType(group.groupType)}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm text-gray-500">
-                    {group.subject} • {group.academicLevel}
-                  </p>
-                </div>
+      {/* Hero Header */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Gradient Banner */}
+        <div className={`h-32 bg-gradient-to-r ${config.color} relative`}>
+          <div className="absolute inset-0 bg-black/10" />
+          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/20 to-transparent" />
+          <div className="absolute -bottom-8 left-6">
+            <div className={`w-16 h-16 rounded-2xl ${config.bg} ${config.border} border-2 shadow-lg flex items-center justify-center overflow-hidden bg-white`}>
+              {group.imageUrl ? (
+                <img src={resolveImageUrl(group.imageUrl)} alt={group.name} className="w-full h-full object-cover" />
+              ) : (
+                <Icon className={`w-8 h-8 ${config.text}`} />
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-12 pb-6 px-6">
+          {/* Title Row */}
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl font-bold text-gray-900 font-manrope">{group.name}</h1>
+                <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${config.bg} ${config.text}`}>
+                  {config.label}
+                </span>
               </div>
+              {group.description && (
+                <p className="text-sm text-gray-500 mt-2 font-dm-sans leading-relaxed">{group.description}</p>
+              )}
+            </div>
 
-              <div className="flex flex-wrap gap-3">
-                {!group.joined ? (
+            {/* Join / Leave Button */}
+            <div className="flex-shrink-0">
+              {isMember ? (
+                isOwner ? (
+                  <span className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg">
+                    <Crown className="w-4 h-4" />
+                    Owner
+                  </span>
+                ) : (
                   <button
-                    type="button"
-                    onClick={handleJoin}
-                    disabled={actionLoading}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
-                  >
-                    <Plus className="h-4 w-4" />
-                    {actionLoading ? 'Joining...' : 'Join Group'}
-                  </button>
-                ) : canLeave ? (
-                  <button
-                    type="button"
                     onClick={handleLeave}
                     disabled={actionLoading}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+                    className="group relative inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold border rounded-lg transition-all disabled:opacity-60
+                      bg-blue-600 text-white border-blue-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
                   >
-                    <UserMinus className="h-4 w-4" />
-                    {actionLoading ? 'Leaving...' : 'Leave Group'}
+                    {actionLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <span className="group-hover:hidden">Joined ✓</span>
+                        <span className="hidden group-hover:inline-flex items-center gap-1">
+                          <LogOut className="w-4 h-4" />
+                          Leave
+                        </span>
+                      </>
+                    )}
                   </button>
-                ) : (
-                  <div className="rounded-2xl bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-700">
-                    {group.currentUserRole === 'OWNER' ? 'You own this group' : 'You are a member'}
-                  </div>
-                )}
-
+                )
+              ) : (
                 <button
-                  type="button"
-                  onClick={handleOpenMembers}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:border-blue-200 hover:bg-blue-50"
+                  onClick={handleJoin}
+                  disabled={actionLoading}
+                  className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-sm disabled:opacity-60"
                 >
-                  <Users className="h-4 w-4 text-blue-600" />
-                  View Members
+                  {actionLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Joining...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="w-4 h-4" />
+                      Join Group
+                    </>
+                  )}
                 </button>
-              </div>
+              )}
             </div>
+          </div>
 
-            {error && (
-              <div className="mt-6 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
+          {/* Action Error */}
+          {actionError && (
+            <div className="mt-3 bg-red-50 text-red-700 border border-red-200 rounded-lg px-3 py-2 text-sm">
+              {actionError}
+            </div>
+          )}
+
+          {/* Meta + Stats Row */}
+          <div className="mt-5 flex items-center gap-4 flex-wrap text-sm text-gray-500">
+            <button
+              onClick={() => setShowMembers(true)}
+              className="inline-flex items-center gap-1.5 hover:text-blue-600 transition font-medium"
+            >
+              <Users className="w-4 h-4" />
+              <span className="font-semibold text-gray-900">{group.memberCount}</span>
+              member{group.memberCount !== 1 ? 's' : ''}
+            </button>
+
+            {group.subject && (
+              <span className="inline-flex items-center gap-1.5">
+                <BookOpen className="w-4 h-4" />
+                {group.subject}
+              </span>
             )}
 
-            <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="space-y-6">
-                <section className="rounded-[28px] border border-gray-100 bg-gray-50 p-6">
-                  <h2 className="text-base font-bold text-gray-900">About This Group</h2>
-                  <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-gray-600">
-                    {group.description || 'No description has been added yet.'}
-                  </p>
-                </section>
-              </div>
+            {group.academicLevel && (
+              <span className="inline-flex items-center gap-1.5">
+                <GraduationCap className="w-4 h-4" />
+                {group.academicLevel}
+              </span>
+            )}
 
-              <aside className="space-y-4">
-                <div className="rounded-[28px] border border-gray-100 bg-white p-5">
-                  <h2 className="text-sm font-semibold text-gray-900">Group Info</h2>
-                  <div className="mt-4 space-y-3 text-sm text-gray-600">
-                    <div className="flex items-center justify-between gap-3">
-                      <span>Members</span>
-                      <span className="font-semibold text-gray-900">{group.memberCount || 0}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span>Visibility</span>
-                      <span className="inline-flex items-center gap-1.5 font-semibold text-gray-900">
-                        {group.visibility === 'PRIVATE' ? (
-                          <Lock className="h-4 w-4 text-amber-600" />
-                        ) : (
-                          <Globe2 className="h-4 w-4 text-emerald-600" />
-                        )}
-                        {group.visibility}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span>Created</span>
-                      <span className="font-semibold text-gray-900">{formatDate(group.createdAt)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-[28px] border border-gray-100 bg-white p-5">
-                  <h2 className="text-sm font-semibold text-gray-900">Created By</h2>
-                  <div className="mt-4 flex items-center gap-3">
-                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-sm font-semibold text-white">
-                      {group.creator?.profileImageUrl ? (
-                        <img
-                          src={group.creator.profileImageUrl}
-                          alt={group.creator.displayName || group.creator.username}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span>
-                          {(group.creator?.displayName || group.creator?.username || 'U')
-                            .split(' ')
-                            .map((part) => part[0])
-                            .join('')
-                            .toUpperCase()
-                            .slice(0, 2)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-gray-900">
-                        {group.creator?.displayName || group.creator?.username}
-                      </p>
-                      <p className="truncate text-xs text-gray-500">@{group.creator?.username}</p>
-                    </div>
-                  </div>
-                </div>
-              </aside>
-            </div>
+            <span className="inline-flex items-center gap-1.5">
+              <Calendar className="w-4 h-4" />
+              Created {new Date(group.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
           </div>
         </div>
       </div>
 
+      {/* Group Info Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Creator Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <Crown className="w-4 h-4 text-amber-500" />
+            Created by
+          </h3>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm overflow-hidden">
+              {group.creatorProfileImageUrl ? (
+                <img src={resolveImageUrl(group.creatorProfileImageUrl)} alt={group.creatorUsername} className="w-full h-full object-cover" />
+              ) : (
+                group.creatorUsername?.[0]?.toUpperCase() || 'U'
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">@{group.creatorUsername}</p>
+              <p className="text-xs text-gray-400">Group Owner</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Visibility Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Group Info</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500">Visibility</span>
+              <span className="font-medium text-gray-900 bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">{group.visibility}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500">Type</span>
+              <span className={`font-medium px-2 py-0.5 rounded text-xs ${config.bg} ${config.text}`}>{config.label}</span>
+            </div>
+            {group.currentUserRole && (
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Your Role</span>
+                <span className="font-semibold text-gray-900">{group.currentUserRole}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Group Posts Placeholder */}
+      {isMember && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
+            <span className="text-2xl">💬</span>
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 font-manrope mb-1">Group Discussion</h3>
+          <p className="text-sm text-gray-500 font-dm-sans">
+            Group posts and discussions will be available here soon!
+          </p>
+        </div>
+      )}
+
+      {/* Members Modal */}
       <GroupMembersModal
-        isOpen={membersOpen}
-        members={members}
-        isLoading={membersLoading}
-        onClose={() => setMembersOpen(false)}
+        groupId={group.id}
+        groupName={group.name}
+        isOpen={showMembers}
+        onClose={() => setShowMembers(false)}
       />
-    </>
+    </div>
   );
 };
 

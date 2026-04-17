@@ -1,251 +1,296 @@
 import { useState } from 'react';
-import { ImagePlus, Users, Globe2, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import GroupTypeSelector from '../components/GroupTypeSelector';
+import { ArrowLeft, Loader2, BookOpen, GraduationCap, Lightbulb, Layers, FlaskConical, Trophy, Heart, CheckCircle2, ImagePlus, X } from 'lucide-react';
 import groupService from '../services/groupService';
 
-const initialForm = {
-  name: '',
-  description: '',
-  groupType: '',
-  subject: '',
-  academicLevel: '',
-  imageUrl: '',
-  visibility: 'PUBLIC',
+const GROUP_TYPES = [
+  { value: 'COURSE', label: 'Course Group', icon: BookOpen, description: 'For a specific course or module', color: 'from-blue-500 to-blue-600', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+  { value: 'BATCH', label: 'Batch Group', icon: GraduationCap, description: 'For classmates in the same batch/year', color: 'from-emerald-500 to-emerald-600', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+  { value: 'STUDY_GROUP', label: 'Study Group', icon: Lightbulb, description: 'For studying a topic together', color: 'from-amber-500 to-orange-500', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+  { value: 'PROJECT', label: 'Project Group', icon: Layers, description: 'For collaborating on a project', color: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200' },
+  { value: 'EXAM_PREP', label: 'Exam Prep', icon: FlaskConical, description: 'For exam preparation and revision', color: 'from-rose-500 to-pink-600', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
+  { value: 'CLUB', label: 'Club / Community', icon: Trophy, description: 'For clubs, societies, and communities', color: 'from-cyan-500 to-teal-600', bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200' },
+  { value: 'MENTORSHIP', label: 'Mentorship', icon: Heart, description: 'For mentoring and guidance', color: 'from-pink-500 to-fuchsia-600', bg: 'bg-pink-50', text: 'text-pink-700', border: 'border-pink-200' },
+];
+
+const HELP_TEXT = {
+  COURSE: { subject: 'Course name or module code (e.g., "CS101 - Data Structures")', academicLevel: 'Academic level (e.g., "Year 2 - Semester 1")' },
+  BATCH: { subject: 'Program or department name', academicLevel: 'Batch year/intake (e.g., "2024 Intake")' },
+  STUDY_GROUP: { subject: 'Study topic or focus area', academicLevel: 'Level of study (e.g., "Beginner", "Advanced")' },
+  PROJECT: { subject: 'Project name or subject area', academicLevel: 'Project scope (e.g., "Final Year Project")' },
+  EXAM_PREP: { subject: 'Exam name or subject', academicLevel: 'Exam level (e.g., "A/L 2025", "Mid-Semester")' },
+  CLUB: { subject: 'Club focus or interest area', academicLevel: 'Open to all levels' },
+  MENTORSHIP: { subject: 'Mentorship area or skill', academicLevel: 'Experience level required' },
 };
 
 const CreateGroup = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState(initialForm);
-  const [errors, setErrors] = useState({});
-  const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    groupType: '',
+    subject: '',
+    academicLevel: '',
+  });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
 
-  const updateField = (field, value) => {
-    setFormData((current) => ({ ...current, [field]: value }));
-    setErrors((current) => ({ ...current, [field]: undefined }));
+  const selectedType = GROUP_TYPES.find((t) => t.value === form.groupType);
+  const helpText = HELP_TEXT[form.groupType] || {};
+
+  const handleChange = (field) => (e) => {
+    setError('');
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
-  const validate = () => {
-    const nextErrors = {};
-
-    if (!formData.name.trim()) nextErrors.name = 'Group name is required.';
-    if (!formData.groupType) nextErrors.groupType = 'Choose a group type.';
-    if (!formData.subject.trim()) nextErrors.subject = 'Subject is required.';
-    if (!formData.academicLevel.trim()) nextErrors.academicLevel = 'Academic level is required.';
-
-    return nextErrors;
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image size should be less than 5MB');
+        return;
+      }
+      setImageFile(file);
+      setImagePreviewUrl(URL.createObjectURL(file));
+      setError('');
+    }
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const removeImage = () => {
+    setImageFile(null);
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+    }
+    setImagePreviewUrl('');
+  };
 
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+  const handleTypeSelect = (typeValue) => {
+    setError('');
+    setForm((prev) => ({ ...prev, groupType: typeValue }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!form.name.trim()) {
+      setError('Group name is required');
+      return;
+    }
+    if (!form.groupType) {
+      setError('Please select a group type');
       return;
     }
 
     setIsSubmitting(true);
-    setSubmitError('');
-
     try {
-      const createdGroup = await groupService.createGroup({
-        ...formData,
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-        subject: formData.subject.trim(),
-        academicLevel: formData.academicLevel.trim(),
-        imageUrl: formData.imageUrl.trim(),
-      });
-
-      navigate(`/groups/${createdGroup.id}`);
-    } catch (error) {
-      const validationMap = error.validationErrors || {};
-      if (Object.keys(validationMap).length > 0) {
-        setErrors(validationMap);
+      const formData = new FormData();
+      formData.append('name', form.name.trim());
+      formData.append('description', form.description.trim());
+      formData.append('groupType', form.groupType);
+      
+      if (form.subject.trim()) formData.append('subject', form.subject.trim());
+      if (form.academicLevel.trim()) formData.append('academicLevel', form.academicLevel.trim());
+      
+      if (imageFile) {
+        formData.append('image', imageFile);
       }
-      setSubmitError(error.message || 'Failed to create group.');
+
+      const created = await groupService.createGroup(formData);
+      navigate(`/groups/${created.id}`);
+    } catch (err) {
+      setError(err.message || 'Failed to create group');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-[32px] border border-gray-100 bg-gradient-to-br from-blue-600 via-indigo-600 to-slate-900 px-6 py-8 text-white shadow-sm md:px-8">
-        <div className="max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-100">Group Creation</p>
-          <h1 className="mt-3 text-3xl font-bold">Create a learning space in minutes</h1>
-          <p className="mt-3 text-sm leading-6 text-blue-50">
-            Keep it simple like a chat group setup, then add the academic context that helps the right people join.
-          </p>
-        </div>
+    <div className="space-y-6 max-w-3xl mx-auto pb-8">
+      {/* Back Button */}
+      <button
+        onClick={() => navigate('/groups')}
+        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition font-medium"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Groups
+      </button>
+
+      {/* Page Header */}
+      <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+        <h1 className="text-2xl font-bold text-gray-900 font-manrope">Create a Group</h1>
+        <p className="text-sm text-gray-500 mt-1 font-dm-sans">
+          Set up an academic collaboration group for your peers
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="rounded-[32px] border border-gray-100 bg-white p-6 shadow-sm md:p-8">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="space-y-6">
-            <div>
-              <label htmlFor="groupName" className="block text-sm font-semibold text-gray-800">
-                Group Name
-              </label>
-              <input
-                id="groupName"
-                type="text"
-                value={formData.name}
-                onChange={(event) => updateField('name', event.target.value)}
-                placeholder="e.g. Advanced Physics Revision Circle"
-                className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-              />
-              {errors.name && <p className="mt-2 text-xs font-medium text-red-600">{errors.name}</p>}
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Group Type Selector */}
+        <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+          <label className="block text-sm font-semibold text-gray-900 mb-1">
+            Group Type <span className="text-red-500">*</span>
+          </label>
+          <p className="text-xs text-gray-500 mb-4 font-dm-sans">Choose the purpose of your group</p>
 
-            <div>
-              <label htmlFor="groupDescription" className="block text-sm font-semibold text-gray-800">
-                Description
-              </label>
-              <textarea
-                id="groupDescription"
-                rows={5}
-                value={formData.description}
-                onChange={(event) => updateField('description', event.target.value)}
-                placeholder="What will this group be used for?"
-                className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-              />
-              {errors.description && <p className="mt-2 text-xs font-medium text-red-600">{errors.description}</p>}
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {GROUP_TYPES.map((type) => {
+              const Icon = type.icon;
+              const isSelected = form.groupType === type.value;
+              return (
+                <button
+                  key={type.value}
+                  type="button"
+                  onClick={() => handleTypeSelect(type.value)}
+                  className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left group/type ${
+                    isSelected
+                      ? `${type.border} ${type.bg} shadow-sm`
+                      : 'border-gray-100 hover:border-gray-200 hover:shadow-sm'
+                  }`}
+                >
+                  {isSelected && (
+                    <CheckCircle2 className={`absolute top-2 right-2 w-4 h-4 ${type.text}`} />
+                  )}
+                  <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${type.color} flex items-center justify-center mb-2.5 group-hover/type:scale-105 transition-transform`}>
+                    <Icon className="w-4.5 h-4.5 text-white" />
+                  </div>
+                  <p className="text-sm font-bold text-gray-900 leading-tight">{type.label}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5 leading-snug">{type.description}</p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-            <GroupTypeSelector
-              value={formData.groupType}
-              onChange={(value) => updateField('groupType', value)}
-              disabled={isSubmitting}
+        {/* Group Details */}
+        <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 space-y-5">
+          <h2 className="text-lg font-bold text-gray-900 font-manrope">Group Details</h2>
+
+          {/* Group Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Group Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={handleChange('name')}
+              placeholder="e.g., CS101 Study Circle"
+              maxLength={100}
+              className="w-full bg-white border border-gray-300 rounded-lg py-2.5 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
             />
-            {errors.groupType && <p className="-mt-3 text-xs font-medium text-red-600">{errors.groupType}</p>}
+          </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-              <div>
-                <label htmlFor="groupSubject" className="block text-sm font-semibold text-gray-800">
-                  Subject
-                </label>
-                <input
-                  id="groupSubject"
-                  type="text"
-                  value={formData.subject}
-                  onChange={(event) => updateField('subject', event.target.value)}
-                  placeholder="Mathematics, Biology, ICT..."
-                  className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-                {errors.subject && <p className="mt-2 text-xs font-medium text-red-600">{errors.subject}</p>}
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              value={form.description}
+              onChange={handleChange('description')}
+              placeholder="Briefly describe the group's purpose..."
+              rows={3}
+              maxLength={500}
+              className="w-full bg-white border border-gray-300 rounded-lg py-2.5 px-3 text-sm text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            />
+            <p className="text-xs text-gray-400 mt-1 text-right">{form.description.length}/500</p>
+          </div>
+
+          {/* Subject */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Subject / Category
+              {form.groupType === 'COURSE' && <span className="text-red-500"> *</span>}
+            </label>
+            <input
+              type="text"
+              value={form.subject}
+              onChange={handleChange('subject')}
+              placeholder={helpText.subject || 'Subject or focus area'}
+              maxLength={100}
+              className="w-full bg-white border border-gray-300 rounded-lg py-2.5 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            />
+          </div>
+
+          {/* Academic Level */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Academic Level</label>
+            <input
+              type="text"
+              value={form.academicLevel}
+              onChange={handleChange('academicLevel')}
+              placeholder={helpText.academicLevel || 'Academic level or year'}
+              maxLength={50}
+              className="w-full bg-white border border-gray-300 rounded-lg py-2.5 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            />
+          </div>
+
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Group Profile Picture <span className="text-xs text-gray-400 font-normal">(optional)</span>
+            </label>
+            
+            {imagePreviewUrl ? (
+              <div className="relative w-32 h-32 rounded-xl overflow-hidden group border border-gray-200">
+                <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="p-1.5 bg-white/20 hover:bg-red-500 rounded-full text-white backdrop-blur-sm transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
-
-              <div>
-                <label htmlFor="academicLevel" className="block text-sm font-semibold text-gray-800">
-                  Academic Level
-                </label>
+            ) : (
+              <label className="flex items-center justify-center w-32 h-32 rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer group">
                 <input
-                  id="academicLevel"
-                  type="text"
-                  value={formData.academicLevel}
-                  onChange={(event) => updateField('academicLevel', event.target.value)}
-                  placeholder="Grade 13, Year 2, Undergraduate..."
-                  className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
                 />
-                {errors.academicLevel && <p className="mt-2 text-xs font-medium text-red-600">{errors.academicLevel}</p>}
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="groupImageUrl" className="block text-sm font-semibold text-gray-800">
-                Group Image URL
+                <div className="flex flex-col items-center gap-2 text-gray-500 group-hover:text-blue-600 transition-colors">
+                  <ImagePlus className="w-6 h-6" />
+                  <span className="text-xs font-medium">Upload</span>
+                </div>
               </label>
-              <div className="mt-2 flex items-center gap-3 rounded-2xl border border-gray-200 px-4 py-3">
-                <ImagePlus className="h-5 w-5 text-gray-400" />
-                <input
-                  id="groupImageUrl"
-                  type="url"
-                  value={formData.imageUrl}
-                  onChange={(event) => updateField('imageUrl', event.target.value)}
-                  placeholder="Optional cover image link"
-                  className="w-full border-none p-0 text-sm text-gray-900 outline-none"
-                />
-              </div>
-              {errors.imageUrl && <p className="mt-2 text-xs font-medium text-red-600">{errors.imageUrl}</p>}
-            </div>
-          </div>
-
-          <div className="space-y-5">
-            <div className="rounded-[28px] border border-blue-100 bg-blue-50/70 p-5">
-              <p className="text-sm font-semibold text-blue-900">Visibility</p>
-              <div className="mt-4 space-y-3">
-                {[
-                  {
-                    value: 'PUBLIC',
-                    label: 'Public Group',
-                    description: 'Any authenticated learner can discover and join.',
-                    icon: Globe2,
-                  },
-                  {
-                    value: 'PRIVATE',
-                    label: 'Private Group',
-                    description: 'Only members can view the details and member list.',
-                    icon: Lock,
-                  },
-                ].map((option) => {
-                  const Icon = option.icon;
-                  const active = formData.visibility === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => updateField('visibility', option.value)}
-                      className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
-                        active
-                          ? 'border-blue-500 bg-white shadow-sm'
-                          : 'border-blue-100 bg-white/70 hover:border-blue-300'
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-xl bg-blue-100 p-2 text-blue-700">
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">{option.label}</p>
-                          <p className="mt-1 text-xs leading-5 text-gray-500">{option.description}</p>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="rounded-[28px] border border-gray-100 bg-gray-50 p-5">
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-white p-3 text-blue-600 shadow-sm">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Automatic Ownership</p>
-                  <p className="text-xs text-gray-500">You’ll be added as the group owner as soon as it’s created.</p>
-                </div>
-              </div>
-            </div>
-
-            {submitError && (
-              <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {submitError}
-              </div>
             )}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? 'Creating group...' : 'Create Group'}
-            </button>
           </div>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="bg-red-50 text-red-700 border border-red-200 rounded-xl px-4 py-3 text-sm font-medium">
+            {error}
+          </div>
+        )}
+
+        {/* Submit */}
+        <div className="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => navigate('/groups')}
+            className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              'Create Group'
+            )}
+          </button>
         </div>
       </form>
     </div>

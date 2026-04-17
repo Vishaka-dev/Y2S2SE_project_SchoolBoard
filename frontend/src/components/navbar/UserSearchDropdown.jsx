@@ -56,15 +56,39 @@ const UserSearchDropdown = () => {
       setIsLoading(true);
       setError('');
       try {
-        const [userResponse, postResponse, groupResponse] = await Promise.allSettled([
-          searchUsers(sanitizedQuery, 0, 10),
-          postService.searchPosts(sanitizedQuery),
-          groupService.searchGroups(sanitizedQuery),
-        ]);
-        setResults(userResponse.status === 'fulfilled' ? (userResponse.value.data?.content || []) : []);
-        setPostResults(postResponse.status === 'fulfilled' ? (postResponse.value || []) : []);
-        setGroupResults(groupResponse.status === 'fulfilled' ? (groupResponse.value || []) : []);
+        const promises = [
+          searchUsers(sanitizedQuery, 0, 10).then(res => {
+             console.log("user response.status:", res.status);
+             console.log("user response.data:", res.data);
+             return res;
+          }),
+          postService.searchPosts(sanitizedQuery).then(data => {
+             console.log("post parsed search results:", data);
+             return data;
+          })
+        ];
+
+        if (typeof groupService.searchGroups === 'function') {
+          promises.push(groupService.searchGroups(sanitizedQuery));
+        } else {
+          promises.push(Promise.resolve([]));
+        }
+
+        const [userResponse, postResponse, groupResponse] = await Promise.allSettled(promises);
+        
+        const parsedUsers = userResponse.status === 'fulfilled' ? (userResponse.value.data?.content || []) : [];
+        const parsedPosts = postResponse.status === 'fulfilled' ? (postResponse.value || []) : [];
+        const parsedGroups = groupResponse.status === 'fulfilled' ? (groupResponse.value || []) : [];
+        
+        console.log("parsed search results (users):", parsedUsers);
+        console.log("parsed search results (posts):", parsedPosts);
+        console.log("parsed search results (groups):", parsedGroups);
+
+        setResults(parsedUsers);
+        setPostResults(parsedPosts);
+        setGroupResults(parsedGroups);
       } catch (searchError) {
+        console.error("Caught exception during search:", searchError);
         setResults([]);
         setPostResults([]);
         setGroupResults([]);
@@ -113,6 +137,13 @@ const UserSearchDropdown = () => {
   const truncateContent = (content, maxLength = 80) => {
     if (!content) return '';
     return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
+  };
+
+  const resolveImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    const serverUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/api\/?$/, '');
+    return `${serverUrl}${url.startsWith('/') ? url : `/${url}`}`;
   };
 
   return (
@@ -226,7 +257,7 @@ const UserSearchDropdown = () => {
                       >
                         <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5">
                           {group.imageUrl ? (
-                            <img src={group.imageUrl} alt="" className="w-full h-full rounded-lg object-cover" />
+                            <img src={resolveImageUrl(group.imageUrl)} alt="" className="w-full h-full rounded-lg object-cover" />
                           ) : (
                             <Users className="w-4 h-4 text-blue-500" />
                           )}

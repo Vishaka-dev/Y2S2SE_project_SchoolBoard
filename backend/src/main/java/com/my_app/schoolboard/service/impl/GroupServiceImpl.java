@@ -1,217 +1,239 @@
 package com.my_app.schoolboard.service.impl;
 
-import java.util.List;
-import java.util.Locale;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.my_app.schoolboard.dto.CreateGroupRequestDTO;
 import com.my_app.schoolboard.dto.GroupMemberDTO;
 import com.my_app.schoolboard.dto.GroupResponseDTO;
 import com.my_app.schoolboard.exception.ResourceNotFoundException;
-import com.my_app.schoolboard.model.Group;
-import com.my_app.schoolboard.model.GroupMember;
-import com.my_app.schoolboard.model.GroupMemberRole;
-import com.my_app.schoolboard.model.GroupType;
-import com.my_app.schoolboard.model.GroupVisibility;
-import com.my_app.schoolboard.model.Role;
-import com.my_app.schoolboard.model.User;
+import com.my_app.schoolboard.factory.GroupTypeBehaviorFactory;
+import com.my_app.schoolboard.model.*;
 import com.my_app.schoolboard.repository.GroupMemberRepository;
-import com.my_app.schoolboard.repository.GroupRepository;
-import com.my_app.schoolboard.repository.InstituteProfileRepository;
-import com.my_app.schoolboard.repository.StudentProfileRepository;
-import com.my_app.schoolboard.repository.TeacherProfileRepository;
+import com.my_app.schoolboard.repository.StudyGroupRepository;
 import com.my_app.schoolboard.repository.UserRepository;
 import com.my_app.schoolboard.service.GroupService;
-import com.my_app.schoolboard.service.group.GroupTypeBehaviorFactory;
-
+import com.my_app.schoolboard.strategy.GroupTypeBehavior;
+import com.my_app.schoolboard.service.StorageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class GroupServiceImpl implements GroupService {
 
-    private final GroupRepository groupRepository;
+    private final StudyGroupRepository studyGroupRepository;
     private final GroupMemberRepository groupMemberRepository;
     private final UserRepository userRepository;
-    private final StudentProfileRepository studentProfileRepository;
-    private final TeacherProfileRepository teacherProfileRepository;
-    private final InstituteProfileRepository instituteProfileRepository;
     private final GroupTypeBehaviorFactory groupTypeBehaviorFactory;
+    private final StorageService storageService;
 
     @Override
     @Transactional
-    public GroupResponseDTO createGroup(CreateGroupRequestDTO request, String username) {
-        User creator = getUserByUsername(username);
-        groupTypeBehaviorFactory.getBehavior(request.getGroupType()).validateCreateRequest(request);
+    public GroupResponseDTO createGroup(CreateGroupRequestDTO request, MultipartFile image, String username) {
+        log.info("Creating group '{}' of type {} by user: {}", request.getName(), request.getGroupType(), username);
 
-        Group group = Group.builder()
-                .name(request.getName().trim())
-                .description(trimToNull(request.getDescription()))
+        User creator = findUserByUsername(username);
+
+        // Validate group-type-specific metadata via strategy
+        GroupTypeBehavior behavior = groupTypeBehaviorFactory.getBehavior(request.getGroupType());
+        behavior.validateMetadata(request);
+
+        String imageUrl = request.getImageUrl();
+        if (image != null && !image.isEmpty()) {
+            String filename = storageService.store(image, "groups");
+            imageUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/groups/")
+                    .path(filename)
+                    .toUriString();
+        }
+
+        // Build and save the group entity
+        StudyGroup group = StudyGroup.builder()
+                .name(request.getName())
+                .description(request.getDescription())
                 .groupType(request.getGroupType())
-                .subject(request.getSubject().trim())
-                .academicLevel(request.getAcademicLevel().trim())
-                .imageUrl(trimToNull(request.getImageUrl()))
-                .visibility(request.getVisibility() != null ? request.getVisibility() : GroupVisibility.PUBLIC)
+                .subject(request.getSubject())
+                .academicLevel(request.getAcademicLevel())
+                .imageUrl(imageUrl)
+                .visibility(GroupVisibility.PUBLIC)
                 .createdBy(creator)
                 .build();
 
-        Group savedGroup = groupRepository.save(group);
+        group = studyGroupRepository.save(group);
 
-        groupMemberRepository.save(GroupMember.builder()
-                .group(savedGroup)
+        // Auto-add creator as OWNER
+        GroupMember ownerMember = GroupMember.builder()
+                .group(group)
                 .user(creator)
                 .role(GroupMemberRole.OWNER)
-                .build());
+                .build();
 
-        return mapToGroupResponse(savedGroup, creator.getId(), GroupMemberRole.OWNER, true);
+        groupMemberRepository.save(ownerMember);
+
+        log.info("Group '{}' (id={}) created successfully with owner: {}", group.getName(), group.getId(), username);
+
+        return toResponseDTO(group, 1L, GroupMemberRole.OWNER);
     }
 
     @Override
     public GroupResponseDTO getGroupById(Long groupId, String username) {
-        User currentUser = getUserByUsername(username);
-        Group group = getGroupOrThrow(groupId);
-        GroupMember membership = getMembership(groupId, currentUser.getId()).orElse(null);
+        log.info("Fetching group by id: {} for user: {}", groupId, username);
 
-        validateCanAccessGroup(group, membership);
+        StudyGroup group = findGroupById(groupId);
+        long memberCount = groupMemberRepository.countByGroup_Id(groupId);
 
-        return mapToGroupResponse(group, currentUser.getId(), membership != null ? membership.getRole() : null,
-                membership != null);
+        // Determine current user's role in this group
+        GroupMemberRole currentUserRole = null;
+        if (username != null) {
+            User user = findUserByUsername(username);
+            currentUserRole = groupMemberRepository.findByGroup_IdAndUser_Id(groupId, user.getId())
+                    .map(GroupMember::getRole)
+                    .orElse(null);
+        }
+
+        return toResponseDTO(group, memberCount, currentUserRole);
     }
 
     @Override
-    public List<GroupResponseDTO> getGroups(String username) {
-        User currentUser = getUserByUsername(username);
-        return groupRepository.findAccessibleGroups(currentUser.getId()).stream()
+    public List<GroupResponseDTO> getAllGroups(String username) {
+        log.info("Fetching all groups for user: {}", username);
+
+        User user = findUserByUsername(username);
+        List<StudyGroup> groups = studyGroupRepository.findAll();
+
+        return groups.stream()
                 .map(group -> {
-                    GroupMember membership = getMembership(group.getId(), currentUser.getId()).orElse(null);
-                    return mapToGroupResponse(group, currentUser.getId(),
-                            membership != null ? membership.getRole() : null,
-                            membership != null);
+                    long memberCount = groupMemberRepository.countByGroup_Id(group.getId());
+                    GroupMemberRole role = groupMemberRepository.findByGroup_IdAndUser_Id(group.getId(), user.getId())
+                            .map(GroupMember::getRole)
+                            .orElse(null);
+                    return toResponseDTO(group, memberCount, role);
                 })
-                .toList();
-    }
-
-    @Override
-    public List<GroupResponseDTO> filterGroupsByCategory(String category, String username) {
-        if (category == null || category.trim().isEmpty()) {
-            return getGroups(username);
-        }
-
-        GroupType groupType;
-        try {
-            groupType = GroupType.valueOf(category.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ex) {
-            return List.of();
-        }
-
-        User currentUser = getUserByUsername(username);
-        return groupRepository.findAccessibleGroupsByCategory(groupType, currentUser.getId()).stream()
-                .map(group -> {
-                    GroupMember membership = getMembership(group.getId(), currentUser.getId()).orElse(null);
-                    return mapToGroupResponse(group, currentUser.getId(),
-                            membership != null ? membership.getRole() : null,
-                            membership != null);
-                })
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<GroupResponseDTO> getMyGroups(String username) {
-        User currentUser = getUserByUsername(username);
-        return groupMemberRepository.findAllByUserIdOrderByJoinedAtDesc(currentUser.getId()).stream()
-                .map(GroupMember::getGroup)
-                .map(group -> {
-                    GroupMember membership = getMembership(group.getId(), currentUser.getId()).orElse(null);
-                    return mapToGroupResponse(group, currentUser.getId(),
-                            membership != null ? membership.getRole() : null,
-                            membership != null);
+        log.info("Fetching groups for user: {}", username);
+
+        User user = findUserByUsername(username);
+        List<GroupMember> memberships = groupMemberRepository.findByUser_Id(user.getId());
+
+        return memberships.stream()
+                .map(membership -> {
+                    StudyGroup group = membership.getGroup();
+                    long memberCount = groupMemberRepository.countByGroup_Id(group.getId());
+                    return toResponseDTO(group, memberCount, membership.getRole());
                 })
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
     public void joinGroup(Long groupId, String username) {
-        User currentUser = getUserByUsername(username);
-        Group group = getGroupOrThrow(groupId);
+        log.info("User '{}' attempting to join group id: {}", username, groupId);
 
-        if (groupMemberRepository.existsByGroupIdAndUserId(groupId, currentUser.getId())) {
+        StudyGroup group = findGroupById(groupId);
+        User user = findUserByUsername(username);
+
+        // Prevent duplicate membership
+        if (groupMemberRepository.existsByGroup_IdAndUser_Id(groupId, user.getId())) {
             throw new IllegalStateException("You are already a member of this group");
         }
 
-        groupMemberRepository.save(GroupMember.builder()
+        GroupMember member = GroupMember.builder()
                 .group(group)
-                .user(currentUser)
+                .user(user)
                 .role(GroupMemberRole.MEMBER)
-                .build());
+                .build();
+
+        groupMemberRepository.save(member);
+
+        log.info("User '{}' joined group '{}' (id={})", username, group.getName(), groupId);
     }
 
     @Override
     @Transactional
     public void leaveGroup(Long groupId, String username) {
-        User currentUser = getUserByUsername(username);
-        GroupMember membership = groupMemberRepository.findByGroupIdAndUserId(groupId, currentUser.getId())
+        log.info("User '{}' attempting to leave group id: {}", username, groupId);
+
+        findGroupById(groupId);
+        User user = findUserByUsername(username);
+
+        GroupMember membership = groupMemberRepository.findByGroup_IdAndUser_Id(groupId, user.getId())
                 .orElseThrow(() -> new IllegalStateException("You are not a member of this group"));
 
+        // Prevent OWNER from leaving
         if (membership.getRole() == GroupMemberRole.OWNER) {
-            throw new IllegalStateException("Group owners cannot leave their own group");
+            throw new IllegalStateException(
+                    "Group owner cannot leave the group. Transfer ownership first or delete the group.");
         }
 
-        groupMemberRepository.delete(membership);
+        groupMemberRepository.deleteByGroup_IdAndUser_Id(groupId, user.getId());
+
+        log.info("User '{}' left group id: {}", username, groupId);
     }
 
     @Override
-    public List<GroupMemberDTO> getGroupMembers(Long groupId, String username) {
-        User currentUser = getUserByUsername(username);
-        Group group = getGroupOrThrow(groupId);
-        GroupMember membership = getMembership(groupId, currentUser.getId()).orElse(null);
+    public List<GroupMemberDTO> getGroupMembers(Long groupId) {
+        log.info("Fetching members for group id: {}", groupId);
 
-        validateCanAccessGroup(group, membership);
+        findGroupById(groupId);
 
-        return groupMemberRepository.findAllByGroupIdOrderByJoinedAtAsc(groupId).stream()
-                .map(this::mapToMemberResponse)
-                .toList();
+        List<GroupMember> members = groupMemberRepository.findByGroup_Id(groupId);
+
+        return members.stream()
+                .map(this::toMemberDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<GroupResponseDTO> searchGroups(String keyword, String username) {
-        User currentUser = getUserByUsername(username);
-        return groupRepository.searchGroups(keyword.trim(), currentUser.getId()).stream()
+        log.info("Searching groups with keyword: {} for user: {}", keyword, username);
+
+        List<StudyGroup> groups = studyGroupRepository.searchByName(keyword);
+        User user = (username != null && !username.isBlank()) ? userRepository.findByUsername(username).orElse(null)
+                : null;
+
+        return groups.stream()
                 .map(group -> {
-                    GroupMember membership = getMembership(group.getId(), currentUser.getId()).orElse(null);
-                    return mapToGroupResponse(group, currentUser.getId(),
-                            membership != null ? membership.getRole() : null,
-                            membership != null);
+                    long memberCount = groupMemberRepository.countByGroup_Id(group.getId());
+                    GroupMemberRole role = null;
+                    if (user != null) {
+                        role = groupMemberRepository.findByGroup_IdAndUser_Id(group.getId(), user.getId())
+                                .map(GroupMember::getRole)
+                                .orElse(null);
+                    }
+                    return toResponseDTO(group, memberCount, role);
                 })
-                .toList();
+                .collect(Collectors.toList());
     }
 
-    private Group getGroupOrThrow(Long groupId) {
-        return groupRepository.findById(groupId)
-                .orElseThrow(() -> new ResourceNotFoundException("Group", "id", groupId));
-    }
+    // ===== Helper Methods =====
 
-    private User getUserByUsername(String username) {
+    private User findUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
     }
 
-    private java.util.Optional<GroupMember> getMembership(Long groupId, Long userId) {
-        return groupMemberRepository.findByGroupIdAndUserId(groupId, userId);
+    private StudyGroup findGroupById(Long groupId) {
+        return studyGroupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Group", "id", groupId));
     }
 
-    private void validateCanAccessGroup(Group group, GroupMember membership) {
-        if (group.getVisibility() == GroupVisibility.PRIVATE && membership == null) {
-            throw new IllegalStateException("This private group is only visible to members");
-        }
-    }
-
-    private GroupResponseDTO mapToGroupResponse(Group group, Long currentUserId, GroupMemberRole currentUserRole,
-            boolean joined) {
+    private GroupResponseDTO toResponseDTO(StudyGroup group, long memberCount, GroupMemberRole currentUserRole) {
         User creator = group.getCreatedBy();
+        String creatorImageUrl = creator.getProfileImageUrl() != null
+                ? creator.getProfileImageUrl()
+                : creator.getImageUrl();
+
         return GroupResponseDTO.builder()
                 .id(group.getId())
                 .name(group.getName())
@@ -221,55 +243,28 @@ public class GroupServiceImpl implements GroupService {
                 .academicLevel(group.getAcademicLevel())
                 .imageUrl(group.getImageUrl())
                 .visibility(group.getVisibility())
-                .creator(GroupResponseDTO.CreatorDTO.builder()
-                        .id(creator.getId())
-                        .username(creator.getUsername())
-                        .displayName(getDisplayName(creator))
-                        .profileImageUrl(getProfileImage(creator))
-                        .build())
-                .memberCount(groupMemberRepository.countByGroupId(group.getId()))
-                .joined(joined)
-                .currentUserRole(currentUserRole)
+                .creatorId(creator.getId())
+                .creatorUsername(creator.getUsername())
+                .creatorProfileImageUrl(creatorImageUrl)
+                .memberCount(memberCount)
                 .createdAt(group.getCreatedAt())
                 .updatedAt(group.getUpdatedAt())
+                .currentUserRole(currentUserRole)
                 .build();
     }
 
-    private GroupMemberDTO mapToMemberResponse(GroupMember groupMember) {
-        User user = groupMember.getUser();
+    private GroupMemberDTO toMemberDTO(GroupMember member) {
+        User memberUser = member.getUser();
+        String memberImageUrl = memberUser.getProfileImageUrl() != null
+                ? memberUser.getProfileImageUrl()
+                : memberUser.getImageUrl();
+
         return GroupMemberDTO.builder()
-                .userId(user.getId())
-                .username(user.getUsername())
-                .displayName(getDisplayName(user))
-                .profileImageUrl(getProfileImage(user))
-                .role(groupMember.getRole())
-                .joinedAt(groupMember.getJoinedAt())
+                .userId(memberUser.getId())
+                .username(memberUser.getUsername())
+                .profileImageUrl(memberImageUrl)
+                .role(member.getRole())
+                .joinedAt(member.getJoinedAt())
                 .build();
-    }
-
-    private String getDisplayName(User user) {
-        Role role = user.getRole();
-        return switch (role) {
-            case SCHOOL_STUDENT, UNIVERSITY_STUDENT, STUDENT ->
-                studentProfileRepository.findByUser(user).map(profile -> profile.getFullName()).orElse(user.getUsername());
-            case TEACHER ->
-                teacherProfileRepository.findByUser(user).map(profile -> profile.getFullName()).orElse(user.getUsername());
-            case INSTITUTE ->
-                instituteProfileRepository.findByUser(user).map(profile -> profile.getInstitutionName())
-                        .orElse(user.getUsername());
-            default -> user.getUsername();
-        };
-    }
-
-    private String getProfileImage(User user) {
-        return user.getProfileImageUrl() != null ? user.getProfileImageUrl() : user.getImageUrl();
-    }
-
-    private String trimToNull(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
     }
 }

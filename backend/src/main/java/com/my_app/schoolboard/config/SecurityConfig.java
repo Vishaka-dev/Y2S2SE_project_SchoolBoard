@@ -55,6 +55,8 @@ public class SecurityConfig {
                                                                 "/uploads/profile-images/**", "/uploads/resources/**",
                                                                 "/uploads/groups/**",
                                                                 "/ws", "/ws/**")
+                                                                "/uploads/groups/**",
+                                                                "/uploads/profile-images/**", "/uploads/resources/**")
                                                 .permitAll()
                                                 // Swagger/OpenAPI endpoints
                                                 .requestMatchers("/api-docs", "/api-docs/**", "/swagger-ui/**",
