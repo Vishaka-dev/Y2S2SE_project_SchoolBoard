@@ -44,22 +44,23 @@ const TopNavbar = () => {
   };
 
   return (
-    <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
-      <div 
-        onClick={() => navigate(user ? '/feed' : '/')} 
-        className="flex items-center gap-3 cursor-pointer select-none"
-      >
-        <img src={learnlinkLogo} alt="LearnLink" className="h-8 w-auto" />
-        <h1 className="text-xl font-bold text-gray-900 hidden sm:block">LearnLink</h1>
-      </div>
-      
-      {/* Search Bar */}
-      <div className="flex-1 flex justify-center px-4 sm:px-8">
-        <UserSearchDropdown />
-      </div>
+    <div className="h-16 bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+      <div className="h-full mx-auto px-6 flex items-center justify-between">
+        <div 
+          onClick={() => navigate(user ? '/feed' : '/')} 
+          className="flex items-center gap-3 cursor-pointer select-none"
+        >
+          <img src={learnlinkLogo} alt="LearnLink" className="h-8 w-auto" />
+          <h1 className="text-xl font-bold text-gray-900 hidden sm:block">LearnLink</h1>
+        </div>
+        
+        {/* Search Bar */}
+        <div className="flex-1 flex justify-center px-4 sm:px-8">
+          <UserSearchDropdown />
+        </div>
 
-      {/* Right Side - Icons & Profile */}
-      <div className="flex items-center gap-3 ml-6">
+        {/* Right Side - Icons & Profile */}
+        <div className="flex items-center gap-3 ml-6">
         {/* Home */}
         <button
           onClick={() => navigate('/feed')}
@@ -188,6 +189,7 @@ const TopNavbar = () => {
             )}
           </div>
         )}
+      </div>
       </div>
     </div>
   );

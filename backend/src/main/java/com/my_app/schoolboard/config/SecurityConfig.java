@@ -52,6 +52,9 @@ public class SecurityConfig {
                                                 // Public endpoints
                                                 .requestMatchers("/api/auth/**", "/api/health/**", "/oauth2/**",
                                                                 "/login/oauth2/**", "/uploads/posts/**",
+                                                                "/uploads/profile-images/**", "/uploads/resources/**",
+                                                                "/uploads/groups/**",
+                                                                "/ws", "/ws/**")
                                                                 "/uploads/groups/**",
                                                                 "/uploads/profile-images/**", "/uploads/resources/**")
                                                 .permitAll()

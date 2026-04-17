@@ -130,14 +130,6 @@ const FeedLeftRail = () => {
           Browse Groups
         </button>
       </div>
-
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-        <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-          <User className="w-4 h-4 text-blue-600" />
-          Profile Tip
-        </h3>
-        <p className="text-sm text-gray-600">Complete your profile details to get better connection and content suggestions.</p>
-      </div>
     </aside>
   );
 };

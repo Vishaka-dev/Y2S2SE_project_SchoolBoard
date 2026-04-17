@@ -375,15 +375,24 @@ const Profile = () => {
                     Edit Profile
                   </button>
                 ) : (
-                  <FollowButton
-                    targetUserId={profileUser.id}
-                    initialIsFollowing={relationship.isFollowing}
-                    size="md"
-                    onFollowChange={(newIsFollowing) => {
-                      setRelationship((prev) => ({ ...prev, isFollowing: newIsFollowing }));
-                      setFollowersCount((prev) => prev + (newIsFollowing ? 1 : -1));
-                    }}
-                  />
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => navigate(`/messages?userId=${profileUser.id}`)}
+                      className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition text-sm flex-shrink-0"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      Message
+                    </button>
+                    <FollowButton
+                      targetUserId={profileUser.id}
+                      initialIsFollowing={relationship.isFollowing}
+                      size="md"
+                      onFollowChange={(newIsFollowing) => {
+                        setRelationship((prev) => ({ ...prev, isFollowing: newIsFollowing }));
+                        setFollowersCount((prev) => prev + (newIsFollowing ? 1 : -1));
+                      }}
+                    />
+                  </div>
                 )}
               </div>
 
