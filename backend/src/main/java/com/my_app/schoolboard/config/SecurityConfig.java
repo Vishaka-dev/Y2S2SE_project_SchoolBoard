@@ -52,8 +52,9 @@ public class SecurityConfig {
                                                 // Public endpoints
                                                 .requestMatchers("/api/auth/**", "/api/health/**", "/oauth2/**",
                                                                 "/login/oauth2/**", "/uploads/posts/**",
+                                                                "/uploads/profile-images/**", "/uploads/resources/**",
                                                                 "/uploads/groups/**",
-                                                                "/uploads/profile-images/**", "/uploads/resources/**")
+                                                                "/ws", "/ws/**")
                                                 .permitAll()
                                                 // Swagger/OpenAPI endpoints
                                                 .requestMatchers("/api-docs", "/api-docs/**", "/swagger-ui/**",
