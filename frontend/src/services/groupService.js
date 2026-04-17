@@ -3,6 +3,8 @@ import apiClient from '../api/apiClient';
 const groupService = {
   createGroup: async (groupData) => {
     try {
+      // Keep same upload style as post image creation:
+      // pass FormData directly and let Axios set multipart boundaries automatically.
       const response = await apiClient.post('/groups', groupData);
       return response.data;
     } catch (error) {

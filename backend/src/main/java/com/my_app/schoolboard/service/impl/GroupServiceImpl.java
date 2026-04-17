@@ -11,10 +11,13 @@ import com.my_app.schoolboard.repository.StudyGroupRepository;
 import com.my_app.schoolboard.repository.UserRepository;
 import com.my_app.schoolboard.service.GroupService;
 import com.my_app.schoolboard.strategy.GroupTypeBehavior;
+import com.my_app.schoolboard.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,10 +32,11 @@ public class GroupServiceImpl implements GroupService {
     private final GroupMemberRepository groupMemberRepository;
     private final UserRepository userRepository;
     private final GroupTypeBehaviorFactory groupTypeBehaviorFactory;
+    private final StorageService storageService;
 
     @Override
     @Transactional
-    public GroupResponseDTO createGroup(CreateGroupRequestDTO request, String username) {
+    public GroupResponseDTO createGroup(CreateGroupRequestDTO request, MultipartFile image, String username) {
         log.info("Creating group '{}' of type {} by user: {}", request.getName(), request.getGroupType(), username);
 
         User creator = findUserByUsername(username);
@@ -41,6 +45,15 @@ public class GroupServiceImpl implements GroupService {
         GroupTypeBehavior behavior = groupTypeBehaviorFactory.getBehavior(request.getGroupType());
         behavior.validateMetadata(request);
 
+        String imageUrl = request.getImageUrl();
+        if (image != null && !image.isEmpty()) {
+            String filename = storageService.store(image, "groups");
+            imageUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/groups/")
+                    .path(filename)
+                    .toUriString();
+        }
+
         // Build and save the group entity
         StudyGroup group = StudyGroup.builder()
                 .name(request.getName())
@@ -48,7 +61,7 @@ public class GroupServiceImpl implements GroupService {
                 .groupType(request.getGroupType())
                 .subject(request.getSubject())
                 .academicLevel(request.getAcademicLevel())
-                .imageUrl(request.getImageUrl())
+                .imageUrl(imageUrl)
                 .visibility(GroupVisibility.PUBLIC)
                 .createdBy(creator)
                 .build();
@@ -159,7 +172,8 @@ public class GroupServiceImpl implements GroupService {
 
         // Prevent OWNER from leaving
         if (membership.getRole() == GroupMemberRole.OWNER) {
-            throw new IllegalStateException("Group owner cannot leave the group. Transfer ownership first or delete the group.");
+            throw new IllegalStateException(
+                    "Group owner cannot leave the group. Transfer ownership first or delete the group.");
         }
 
         groupMemberRepository.deleteByGroup_IdAndUser_Id(groupId, user.getId());
@@ -185,7 +199,8 @@ public class GroupServiceImpl implements GroupService {
         log.info("Searching groups with keyword: {} for user: {}", keyword, username);
 
         List<StudyGroup> groups = studyGroupRepository.searchByName(keyword);
-        User user = (username != null && !username.isBlank()) ? userRepository.findByUsername(username).orElse(null) : null;
+        User user = (username != null && !username.isBlank()) ? userRepository.findByUsername(username).orElse(null)
+                : null;
 
         return groups.stream()
                 .map(group -> {
@@ -214,6 +229,11 @@ public class GroupServiceImpl implements GroupService {
     }
 
     private GroupResponseDTO toResponseDTO(StudyGroup group, long memberCount, GroupMemberRole currentUserRole) {
+        User creator = group.getCreatedBy();
+        String creatorImageUrl = creator.getProfileImageUrl() != null
+                ? creator.getProfileImageUrl()
+                : creator.getImageUrl();
+
         return GroupResponseDTO.builder()
                 .id(group.getId())
                 .name(group.getName())
@@ -223,9 +243,9 @@ public class GroupServiceImpl implements GroupService {
                 .academicLevel(group.getAcademicLevel())
                 .imageUrl(group.getImageUrl())
                 .visibility(group.getVisibility())
-                .creatorId(group.getCreatedBy().getId())
-                .creatorUsername(group.getCreatedBy().getUsername())
-                .creatorProfileImageUrl(group.getCreatedBy().getProfileImageUrl())
+                .creatorId(creator.getId())
+                .creatorUsername(creator.getUsername())
+                .creatorProfileImageUrl(creatorImageUrl)
                 .memberCount(memberCount)
                 .createdAt(group.getCreatedAt())
                 .updatedAt(group.getUpdatedAt())
@@ -234,10 +254,15 @@ public class GroupServiceImpl implements GroupService {
     }
 
     private GroupMemberDTO toMemberDTO(GroupMember member) {
+        User memberUser = member.getUser();
+        String memberImageUrl = memberUser.getProfileImageUrl() != null
+                ? memberUser.getProfileImageUrl()
+                : memberUser.getImageUrl();
+
         return GroupMemberDTO.builder()
-                .userId(member.getUser().getId())
-                .username(member.getUser().getUsername())
-                .profileImageUrl(member.getUser().getProfileImageUrl())
+                .userId(memberUser.getId())
+                .username(memberUser.getUsername())
+                .profileImageUrl(memberImageUrl)
                 .role(member.getRole())
                 .joinedAt(member.getJoinedAt())
                 .build();

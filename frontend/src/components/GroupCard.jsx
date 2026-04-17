@@ -15,6 +15,12 @@ const GroupCard = ({ group, onClick }) => {
   const navigate = useNavigate();
   const config = GROUP_TYPE_CONFIG[group.groupType] || GROUP_TYPE_CONFIG.COURSE;
   const Icon = config.icon;
+  const resolveImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    const serverUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/api\/?$/, '');
+    return `${serverUrl}${url.startsWith('/') ? url : `/${url}`}`;
+  };
 
   const handleClick = () => {
     if (onClick) {
@@ -42,8 +48,12 @@ const GroupCard = ({ group, onClick }) => {
         <div className="absolute inset-0 bg-black/5" />
         <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white/20 to-transparent" />
         <div className="absolute -bottom-5 left-5">
-          <div className={`w-12 h-12 rounded-xl ${config.bg} ${config.border} border-2 shadow-md flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-            <Icon className={`w-6 h-6 ${config.text}`} />
+          <div className={`w-12 h-12 rounded-xl ${config.bg} ${config.border} border-2 shadow-md flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden bg-white`}>
+            {group.imageUrl ? (
+              <img src={resolveImageUrl(group.imageUrl)} alt={group.name} className="w-full h-full object-cover" />
+            ) : (
+              <Icon className={`w-6 h-6 ${config.text}`} />
+            )}
           </div>
         </div>
       </div>

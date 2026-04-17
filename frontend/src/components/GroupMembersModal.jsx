@@ -33,6 +33,12 @@ const GroupMembersModal = ({ groupId, groupName, isOpen, onClose }) => {
   };
 
   if (!isOpen) return null;
+  const resolveImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    const serverUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/api\/?$/, '');
+    return `${serverUrl}${url.startsWith('/') ? url : `/${url}`}`;
+  };
 
   const sortedMembers = [...members].sort((a, b) => {
     const order = { OWNER: 0, ADMIN: 1, MEMBER: 2 };
@@ -111,7 +117,7 @@ const GroupMembersModal = ({ groupId, groupName, isOpen, onClose }) => {
                       <div className="w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
                         {member.profileImageUrl ? (
                           <img
-                            src={member.profileImageUrl}
+                            src={resolveImageUrl(member.profileImageUrl)}
                             alt={member.username}
                             className="w-full h-full object-cover"
                           />
