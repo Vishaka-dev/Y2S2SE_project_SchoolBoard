@@ -15,9 +15,9 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
 
     @Query("""
             SELECT DISTINCT g
-            FROM StudyGroup g
+            FROM Group g
             LEFT JOIN GroupMember gm
-                ON gm.group = g
+                ON gm.group.id = g.id
                AND gm.user.id = :userId
             WHERE g.visibility = com.my_app.schoolboard.model.GroupVisibility.PUBLIC
                OR gm.id IS NOT NULL
@@ -27,9 +27,9 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
 
        @Query("""
           SELECT DISTINCT g
-          FROM StudyGroup g
+          FROM Group g
           LEFT JOIN GroupMember gm
-         ON gm.group = g
+         ON gm.group.id = g.id
              AND gm.user.id = :userId
           WHERE g.groupType = :groupType
             AND (g.visibility = com.my_app.schoolboard.model.GroupVisibility.PUBLIC
@@ -40,9 +40,9 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
 
     @Query("""
             SELECT DISTINCT g
-            FROM StudyGroup g
+            FROM Group g
             LEFT JOIN GroupMember gm
-                ON gm.group = g
+                ON gm.group.id = g.id
                AND gm.user.id = :userId
             WHERE (LOWER(g.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
                OR LOWER(g.description) LIKE LOWER(CONCAT('%', :keyword, '%')))

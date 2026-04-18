@@ -147,29 +147,29 @@ export const postService = {
      * Delete a comment
      * @param {string|number} commentId Comment ID
      */
-  deleteComment: async (commentId) => {
-      try {
-          await apiClient.delete(`/comments/${commentId}`);
-      } catch (error) {
-          console.error('Error deleting comment:', error);
-          throw error.response?.data || new Error('Network error deleting comment');
-      }
-  },
+    deleteComment: async (commentId) => {
+        try {
+            await apiClient.delete(`/comments/${commentId}`);
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+            throw error.response?.data || new Error('Network error deleting comment');
+        }
+    },
 
-  /**
-   * React to a post
-   * @param {number|string} postId Post ID
-   * @param {string} reactionType Reaction type enum value
-   */
-  reactToPost: async (postId, reactionType) => {
-      try {
-          const response = await apiClient.post(`/posts/${postId}/reactions`, { reactionType });
-          return response.data;
-      } catch (error) {
-          console.error('Error reacting to post:', error);
-          throw error.response?.data || new Error('Network error reacting to post');
-      }
-  },
+    /**
+     * React to a post
+     * @param {number|string} postId Post ID
+     * @param {string} reactionType Reaction type enum value
+     */
+    reactToPost: async (postId, reactionType) => {
+        try {
+            const response = await apiClient.post(`/posts/${postId}/reactions`, { reactionType });
+            return response.data;
+        } catch (error) {
+            console.error('Error reacting to post:', error);
+            throw error.response?.data || new Error('Network error reacting to post');
+        }
+    },
 
     /**
      * Get reactions for a post

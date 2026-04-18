@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -11,9 +12,10 @@ import Connections from './pages/Connections';
 import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import ResourceHub from './pages/ResourceHub';
+import MyGroups from './pages/MyGroups';
 import CreateGroup from './pages/CreateGroup';
 import GroupDetails from './pages/GroupDetails';
-import MyGroups from './pages/MyGroups';
+import EditGroup from './pages/EditGroup';
 import Events from './pages/Events';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -152,6 +154,18 @@ function AppRoutes() {
         <Route index element={<ResourceHub />} />
       </Route>
 
+      {/* Group Routes */}
+      <Route
+        path="/groups"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<MyGroups />} />
+      </Route>
+
       <Route
         path="/groups/create"
         element={
@@ -164,7 +178,7 @@ function AppRoutes() {
       </Route>
 
       <Route
-        path="/groups/:id"
+        path="/groups/:groupId"
         element={
           <ProtectedRoute>
             <DashboardLayout />
@@ -175,14 +189,14 @@ function AppRoutes() {
       </Route>
 
       <Route
-        path="/my-groups"
+        path="/groups/:groupId/edit"
         element={
           <ProtectedRoute>
             <DashboardLayout />
           </ProtectedRoute>
         }
       >
-        <Route index element={<MyGroups />} />
+        <Route index element={<EditGroup />} />
       </Route>
 
       <Route
@@ -216,7 +230,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        <NotificationProvider>
+          <AppRoutes />
+        </NotificationProvider>
       </AuthProvider>
     </Router>
   );

@@ -1,12 +1,15 @@
 package com.my_app.schoolboard.controller;
 
+import com.my_app.schoolboard.dto.SuggestionPageDTO;
 import com.my_app.schoolboard.model.User;
 import com.my_app.schoolboard.repository.UserRepository;
+import com.my_app.schoolboard.service.SuggestionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.my_app.schoolboard.dto.AccountResponseDTO;
@@ -30,6 +33,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final AccountService accountService;
+    private final SuggestionService suggestionService;
 
     /**
      * Get all users
@@ -188,9 +192,26 @@ public class UserController {
      * POST /api/users/{username}/view
      */
     @PostMapping("/{username}/view")
-    public ResponseEntity<Void> incrementProfileViews(@PathVariable("username") String username, Authentication authentication) {
+    public ResponseEntity<Void> incrementProfileViews(@PathVariable("username") String username,
+            Authentication authentication) {
         log.info("Incrementing profile views for username: {} by {}", username, authentication.getName());
         accountService.incrementProfileViews(username, authentication.getName());
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/suggestions")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SuggestionPageDTO> getSuggestions(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "5") int size,
+            Authentication authentication) {
+        int normalizedPage = Math.max(page, 0);
+        int normalizedSize = Math.min(Math.max(size, 5), 10);
+
+        SuggestionPageDTO response = suggestionService.getSuggestions(
+                authentication.getName(),
+                normalizedPage,
+                normalizedSize);
+        return ResponseEntity.ok(response);
     }
 }

@@ -4,6 +4,7 @@ import com.my_app.schoolboard.dto.FollowPageDTO;
 import com.my_app.schoolboard.dto.FollowRelationshipDTO;
 import com.my_app.schoolboard.dto.FollowStatsDTO;
 import com.my_app.schoolboard.dto.FollowUserSummaryDTO;
+import com.my_app.schoolboard.event.UserFollowedEvent;
 import com.my_app.schoolboard.exception.ResourceNotFoundException;
 import com.my_app.schoolboard.model.Follow;
 import com.my_app.schoolboard.model.User;
@@ -11,6 +12,8 @@ import com.my_app.schoolboard.repository.FollowRepository;
 import com.my_app.schoolboard.repository.UserRepository;
 import com.my_app.schoolboard.service.FollowService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -25,9 +28,11 @@ public class FollowServiceImpl implements FollowService {
 
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "userSuggestions", allEntries = true)
     public void followUser(Long currentUserId, Long targetUserId) {
         if (currentUserId.equals(targetUserId)) {
             throw new IllegalArgumentException("Cannot follow yourself");
@@ -50,10 +55,19 @@ public class FollowServiceImpl implements FollowService {
                 .build();
 
         followRepository.save(follow);
+
+        eventPublisher.publishEvent(UserFollowedEvent.builder()
+                .recipientId(following.getId())
+                .followerId(follower.getId())
+                .followerUsername(follower.getUsername())
+                .followedUserId(following.getId())
+                .followedUsername(following.getUsername())
+                .build());
     }
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "userSuggestions", allEntries = true)
     public void unfollowUser(Long currentUserId, Long targetUserId) {
         userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", targetUserId));
