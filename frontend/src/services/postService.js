@@ -1,24 +1,4 @@
-import axios from 'axios';
-
-// Get base URL from environment or use default
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-
-// Create axios instance with default config
-const apiClient = axios.create({
-    baseURL: API_URL,
-});
-
-// Add interceptor to include auth token in requests
-apiClient.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
+import apiClient from '../api/apiClient';
 
 export const postService = {
     /**
@@ -152,9 +132,12 @@ export const postService = {
      */
     createComment: async (postId, content) => {
         try {
+            console.log(`API Call: POST /api/posts/${postId}/comments`, { content });
             const response = await apiClient.post(`/posts/${postId}/comments`, { content });
+            console.log('API Response:', response.data);
             return response.data;
         } catch (error) {
+            console.error('API Error details:', error.response?.data || error.message);
             console.error('Error creating comment:', error);
             throw error.response?.data || new Error('Network error creating comment');
         }

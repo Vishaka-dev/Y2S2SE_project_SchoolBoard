@@ -1,4 +1,4 @@
-import { Bell, MessageSquare, ChevronDown, Home, BookOpenText } from 'lucide-react';
+import { Bell, MessageSquare, ChevronDown, Home, BookOpenText, Calendar } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -70,6 +70,15 @@ const TopNavbar = () => {
           title="Resource Hub"
         >
           <BookOpenText className="h-5 w-5 group-hover:text-blue-600 transition" />
+        </button>
+        
+        {/* Events Board */}
+        <button
+          onClick={() => navigate('/events')}
+          className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
+          title="Events Board"
+        >
+          <Calendar className="h-5 w-5 group-hover:text-blue-600 transition" />
         </button>
 
         {/* Notification Bell */}
