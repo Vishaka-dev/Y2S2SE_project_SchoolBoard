@@ -22,6 +22,8 @@ const GroupCard = ({ group, onClick }) => {
     return `${serverUrl}${url.startsWith('/') ? url : `/${url}`}`;
   };
 
+  const coverBgUrl = group.coverPictureUrl ? resolveImageUrl(group.coverPictureUrl) : null;
+
   const handleClick = () => {
     if (onClick) {
       onClick();
@@ -43,8 +45,19 @@ const GroupCard = ({ group, onClick }) => {
         }
       }}
     >
-      {/* Gradient Header */}
-      <div className={`h-20 bg-gradient-to-r ${config.color} relative`}>
+      {/* Cover image or gradient header */}
+      <div
+        className={`h-20 relative ${!coverBgUrl ? `bg-gradient-to-r ${config.color}` : ''}`}
+        style={
+          coverBgUrl
+            ? {
+                backgroundImage: `url(${coverBgUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }
+            : undefined
+        }
+      >
         <div className="absolute inset-0 bg-black/5" />
         <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white/20 to-transparent" />
         <div className="absolute -bottom-5 left-5">
