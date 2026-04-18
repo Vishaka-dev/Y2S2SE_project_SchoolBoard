@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ThumbsUp, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react';
+import { ThumbsUp, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, X, Smile } from 'lucide-react';
+import EmojiPicker from 'emoji-picker-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { postService } from '../services/postService';
 import RoleBasedWidget from '../components/widgets/RoleBasedWidget';
@@ -22,6 +23,11 @@ const Home = () => {
   const [activeMenu, setActiveMenu] = useState(null);
   const [isDeleting, setIsDeleting] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
+  const [expandedComments, setExpandedComments] = useState(new Set());
+  const [commentsByPost, setCommentsByPost] = useState({});
+  const [commentInputs, setCommentInputs] = useState({});
+  const [isSubmittingComment, setIsSubmittingComment] = useState({});
+  const [showCommentEmojiPicker, setShowCommentEmojiPicker] = useState(null); // stores postId
   const POSTS_PER_PAGE = 10;
 
   const loadPosts = async (pageToLoad, isInitial = false) => {
@@ -148,6 +154,205 @@ const Home = () => {
     }
   };
 
+  const handleToggleComments = async (postId) => {
+    const isExpanded = expandedComments.has(postId);
+    const newExpanded = new Set(expandedComments);
+
+    if (isExpanded) {
+      newExpanded.delete(postId);
+    } else {
+      newExpanded.add(postId);
+      // Fetch comments if not already loaded or to refresh
+      try {
+        const comments = await postService.getCommentsByPost(postId);
+        setCommentsByPost(prev => ({ ...prev, [postId]: comments }));
+      } catch (error) {
+        console.error('Failed to load comments:', error);
+      }
+    }
+    setExpandedComments(newExpanded);
+  };
+
+  const handleSubmitComment = async (postId) => {
+    const content = commentInputs[postId]?.trim();
+    if (!content) return;
+
+    setIsSubmittingComment(prev => ({ ...prev, [postId]: true }));
+    try {
+      const newComment = await postService.createComment(postId, content);
+      
+      // Update comments list (prepend for consistency with backend DESC order)
+      setCommentsByPost(prev => ({
+        ...prev,
+        [postId]: [newComment, ...(prev[postId] || [])]
+      }));
+
+      // Clear input and picker
+      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+      setShowCommentEmojiPicker(null);
+
+      // Increment comment count in posts state
+      setPosts(prevPosts => prevPosts.map(post => {
+        if (post.id === postId) {
+          return { ...post, commentCount: (post.commentCount || 0) + 1 };
+        }
+        return post;
+      }));
+
+      setSinglePost(prev => {
+        if (!prev || prev.id !== postId) return prev;
+        return { ...prev, commentCount: (prev.commentCount || 0) + 1 };
+      });
+    } catch (error) {
+      alert('Failed to post comment: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsSubmittingComment(prev => ({ ...prev, [postId]: false }));
+    }
+  };
+
+  const handleDeleteComment = async (commentId, postId) => {
+    if (!window.confirm('Delete this comment?')) return;
+
+    try {
+      await postService.deleteComment(commentId);
+      
+      // Update comments list
+      setCommentsByPost(prev => ({
+        ...prev,
+        [postId]: (prev[postId] || []).filter(c => c.id !== commentId)
+      }));
+
+      // Decrement comment count
+      setPosts(prevPosts => prevPosts.map(post => {
+        if (post.id === postId) {
+          return { ...post, commentCount: Math.max(0, (post.commentCount || 0) - 1) };
+        }
+        return post;
+      }));
+
+      setSinglePost(prev => {
+        if (!prev || prev.id !== postId) return prev;
+        return { ...prev, commentCount: Math.max(0, (prev.commentCount || 0) - 1) };
+      });
+    } catch (error) {
+      alert('Failed to delete comment: ' + (error.message || 'Unknown error'));
+    }
+    };
+
+  const renderCommentsSection = (post) => {
+    if (!expandedComments.has(post.id)) return null;
+
+    return (
+      <div
+        className="mt-4 pt-4 border-t border-gray-100 space-y-4 animate-in slide-in-from-top-2 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex gap-3">
+          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+            {user?.initials || user?.fullName?.[0] || user?.username?.[0] || 'U'}
+          </div>
+          <div className="flex-1 flex gap-2 items-center relative">
+            <div className="flex-1 relative flex items-center">
+              <input
+                type="text"
+                placeholder="Write a comment..."
+                value={commentInputs[post.id] || ''}
+                onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment(post.id)}
+                className="flex-1 bg-gray-50 border-none rounded-lg px-4 py-2 pr-10 text-sm focus:ring-1 focus:ring-blue-500 outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCommentEmojiPicker(showCommentEmojiPicker === post.id ? null : post.id)}
+                className="absolute right-2 p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                title="Add emoji"
+              >
+                <Smile className="w-5 h-5" />
+              </button>
+
+              {showCommentEmojiPicker === post.id && (
+                <div 
+                  className="absolute bottom-full right-0 mb-2 shadow-xl rounded-lg z-[60]"
+                  onMouseLeave={() => setShowCommentEmojiPicker(null)}
+                >
+                  <EmojiPicker
+                    onEmojiClick={(emojiObject) => {
+                      setCommentInputs(prev => ({ 
+                        ...prev, 
+                        [post.id]: (prev[post.id] || '') + emojiObject.emoji 
+                      }));
+                    }}
+                    autoFocusSearch={false}
+                    width={300}
+                    height={400}
+                  />
+                </div>
+              )}
+            </div>
+            
+            <button
+              onClick={() => handleSubmitComment(post.id)}
+              disabled={!commentInputs[post.id]?.trim() || isSubmittingComment[post.id]}
+              className="text-blue-600 font-bold text-sm px-2 disabled:opacity-50 hover:text-blue-700 transition-colors"
+            >
+              {isSubmittingComment[post.id] ? '...' : 'Post'}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {commentsByPost[post.id]?.length === 0 ? (
+            <p className="text-center text-gray-400 text-xs py-2">No comments yet. Be the first to comment!</p>
+          ) : (
+            commentsByPost[post.id]?.map((comment) => (
+              <div key={comment.id} className="flex gap-3 group/comment">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden">
+                  {comment.authorImageUrl ? (
+                    <img
+                      src={comment.authorImageUrl.startsWith('http')
+                        ? comment.authorImageUrl
+                        : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/api\/?$/, '')}${comment.authorImageUrl.startsWith('/') ? comment.authorImageUrl : '/' + comment.authorImageUrl}`
+                      }
+                      alt={comment.authorName}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        const fallback = e.target.parentElement.querySelector('.avatar-fallback');
+                        if (fallback) fallback.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <span className={`avatar-fallback ${comment.authorImageUrl ? 'hidden' : ''}`}>
+                    {comment.authorName?.[0] || 'U'}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <div className="bg-gray-50 rounded-2xl px-4 py-2 relative">
+                    <div className="flex items-center justify-between gap-2 mb-0.5">
+                      <span className="text-xs font-bold text-gray-900">{comment.authorName || 'Unknown User'}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">{formatDate(comment.createdAt)}</span>
+                    </div>
+                    <p className="text-sm text-gray-700 leading-relaxed font-dm-sans">
+                      {comment.content}
+                    </p>
+
+                    {(user?.username === comment.authorUsername || user?.role === 'ADMIN') && (
+                      <button
+                        onClick={() => handleDeleteComment(comment.id, post.id)}
+                        className="absolute -right-2 -top-2 p-1.5 bg-white shadow-sm border border-gray-100 rounded-full text-gray-400 hover:text-red-500 opacity-0 group-hover/comment:opacity-100 transition-all hover:scale-110"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
   const handleReact = async (postId, reactionType) => {
     try {
       const summary = await postService.reactToPost(postId, reactionType);

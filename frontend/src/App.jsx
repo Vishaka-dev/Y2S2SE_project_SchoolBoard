@@ -16,6 +16,7 @@ import MyGroups from './pages/MyGroups';
 import CreateGroup from './pages/CreateGroup';
 import GroupDetails from './pages/GroupDetails';
 import EditGroup from './pages/EditGroup';
+import Events from './pages/Events';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -196,6 +197,17 @@ function AppRoutes() {
         }
       >
         <Route index element={<EditGroup />} />
+      </Route>
+
+      <Route
+        path="/events"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Events />} />
       </Route>
       
       {/* Account Management Routes - Also in DashboardLayout */}

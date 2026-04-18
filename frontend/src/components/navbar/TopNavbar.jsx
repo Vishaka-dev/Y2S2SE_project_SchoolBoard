@@ -1,4 +1,4 @@
-import { Bell, MessageSquare, ChevronDown, Home, BookOpenText, Users } from 'lucide-react';
+import { Bell, MessageSquare, ChevronDown, Home, BookOpenText, Calendar, Users } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { useState, useRef, useEffect } from 'react';
@@ -79,6 +79,15 @@ const TopNavbar = () => {
           title="Resource Hub"
         >
           <BookOpenText className="h-5 w-5 group-hover:text-blue-600 transition" />
+        </button>
+        
+        {/* Events Board */}
+        <button
+          onClick={() => navigate('/events')}
+          className={getNavButtonClass(location.pathname === '/events')}
+          title="Events Board"
+        >
+          <Calendar className="h-5 w-5 group-hover:text-blue-600 transition" />
         </button>
 
         {/* Groups */}

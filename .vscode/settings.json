@@ -17,9 +17,8 @@
             "icon": "terminal-git-bash"
         }
     },
-
     "terminal.integrated.defaultProfile.windows": "PowerShell",
-
     "code-runner.runInTerminal": true,
-    "java.compile.nullAnalysis.mode": "automatic"
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

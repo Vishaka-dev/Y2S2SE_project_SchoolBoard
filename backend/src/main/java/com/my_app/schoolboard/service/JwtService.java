@@ -120,7 +120,20 @@ public class JwtService {
      * Get signing key from secret
      */
     private SecretKey getSigningKey() {
-        byte[] keyBytes = secretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(keyBytes);
+        try {
+            // Try URL-safe Base64 decoding first (handles '_' and '-')
+            byte[] keyBytes = java.util.Base64.getUrlDecoder().decode(secretKey);
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (IllegalArgumentException e) {
+            try {
+                // Try standard Base64 decoding
+                byte[] keyBytes = java.util.Base64.getDecoder().decode(secretKey);
+                return Keys.hmacShaKeyFor(keyBytes);
+            } catch (IllegalArgumentException e2) {
+                // If not Base64, treat as raw string bytes
+                byte[] keyBytes = secretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                return Keys.hmacShaKeyFor(keyBytes);
+            }
+        }
     }
 }
