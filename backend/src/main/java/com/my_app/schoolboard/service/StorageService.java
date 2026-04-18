@@ -12,6 +12,8 @@ public interface StorageService {
 
     String store(MultipartFile file);
 
+    String store(MultipartFile file, String folder);
+
     Stream<Path> loadAll();
 
     Path load(String filename);
@@ -19,6 +21,11 @@ public interface StorageService {
     Resource loadAsResource(String filename);
 
     void delete(String filename);
+
+    /**
+     * Deletes a file under {@code uploads/} given a full URL or path containing {@code /uploads/...}.
+     */
+    void deleteByUploadsUrl(String url);
 
     void deleteAll();
 }

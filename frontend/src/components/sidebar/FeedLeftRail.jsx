@@ -122,30 +122,13 @@ const FeedLeftRail = () => {
           Groups
         </h3>
         <p className="text-sm text-gray-600 mb-4">Discover and join study communities from your institution.</p>
-        <div className="space-y-2">
-          <button
-            type="button"
-            onClick={() => navigate('/my-groups')}
-            className="w-full rounded-lg bg-blue-600 text-white py-2 text-sm font-medium hover:bg-blue-700 transition"
-          >
-            View My Groups
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/groups/create')}
-            className="w-full rounded-lg border border-dashed border-blue-200 text-blue-700 py-2 text-sm font-medium hover:bg-blue-50 transition"
-          >
-            Create New Group
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-        <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-          <User className="w-4 h-4 text-blue-600" />
-          Profile Tip
-        </h3>
-        <p className="text-sm text-gray-600">Complete your profile details to get better connection and content suggestions.</p>
+        <button
+          type="button"
+          onClick={() => navigate('/groups')}
+          className="w-full rounded-lg border border-blue-200 bg-blue-50 text-blue-700 py-2 text-sm font-medium hover:bg-blue-100 transition"
+        >
+          Browse Groups
+        </button>
       </div>
     </aside>
   );

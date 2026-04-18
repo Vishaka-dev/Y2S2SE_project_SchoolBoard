@@ -42,8 +42,8 @@ CREATE DATABASE school_board;
 
 ### 2. Environment Configuration
 
-
 Fill in your credentials in `.env`:
+
 - Database credentials
 - JWT secret key (generate with: `openssl rand -hex 32`)
 - Google OAuth2 credentials (see OAUTH2_SETUP_GUIDE.md)
@@ -51,11 +51,13 @@ Fill in your credentials in `.env`:
 ### 3. Load Environment Variables
 
 **Windows PowerShell:**
+
 ```powershell
 .\load-env.ps1
 ```
 
 **Linux/Mac:**
+
 ```bash
 export $(cat .env | grep -v '^#' | xargs)
 ```
@@ -77,6 +79,7 @@ Application will start at `http://localhost:8080`
 ### Authentication Endpoints
 
 #### Register New User
+
 ```http
 POST /api/auth/register
 Content-Type: application/json
@@ -89,6 +92,7 @@ Content-Type: application/json
 ```
 
 **Response (201):**
+
 ```json
 {
   "id": 1,
@@ -102,6 +106,7 @@ Content-Type: application/json
 ```
 
 #### Login User
+
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -113,6 +118,7 @@ Content-Type: application/json
 ```
 
 **Response (200):**
+
 ```json
 {
   "id": 1,
@@ -126,11 +132,13 @@ Content-Type: application/json
 ```
 
 #### Google OAuth2 Login
+
 ```
 GET /oauth2/authorization/google
 ```
 
 Redirects to Google login, then back to:
+
 ```
 {FRONTEND_URL}/oauth2/redirect?token={JWT_TOKEN}
 ```
@@ -154,10 +162,12 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 ### 2. Use JWT Token
 
 **Method 1 - Authorization Tab:**
+
 - Type: `Bearer Token`
 - Token: `<paste your token>`
 
 **Method 2 - Headers:**
+
 - Key: `Authorization`
 - Value: `Bearer <paste your token>`
 
@@ -219,24 +229,28 @@ backend/
 ## Security Features
 
 ### Password Security
+
 - BCrypt hashing with salt
 - Minimum 6 characters enforced
 - Password never stored in plain text
 - Null password for OAuth2 users
 
 ### JWT Security
+
 - HS256 algorithm
 - 24-hour expiration
 - Stateless authentication
 - Include user claims (id, email, role)
 
 ### OAuth2 Security
+
 - Stateless CSRF protection
 - Secure redirect URIs
 - Provider validation
 - Prevent account hijacking
 
 ### Application Security
+
 - Environment-based configuration
 - No hardcoded secrets
 - CORS configuration ready
@@ -247,18 +261,18 @@ backend/
 
 Required environment variables:
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DB_URL` | PostgreSQL connection URL | `jdbc:postgresql://localhost:5432/school_board` |
-| `DB_USERNAME` | Database username | `postgres` |
-| `DB_PASSWORD` | Database password | `your_password` |
-| `JWT_SECRET_KEY` | JWT signing key (256+ bits) | `generate with openssl` |
-| `JWT_EXPIRATION_MS` | Token expiration time | `86400000` (24h) |
-| `GOOGLE_CLIENT_ID` | Google OAuth2 client ID | From Google Console |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth2 client secret | From Google Console |
-| `APP_BASE_URL` | Backend URL | `http://localhost:8080` |
-| `FRONTEND_URL` | Frontend URL | `http://localhost:3000` |
-| `SERVER_PORT` | Server port | `8080` |
+| Variable               | Description                 | Example                                         |
+| ---------------------- | --------------------------- | ----------------------------------------------- |
+| `DB_URL`               | PostgreSQL connection URL   | `jdbc:postgresql://localhost:5432/school_board` |
+| `DB_USERNAME`          | Database username           | `postgres`                                      |
+| `DB_PASSWORD`          | Database password           | `your_password`                                 |
+| `JWT_SECRET_KEY`       | JWT signing key (256+ bits) | `generate with openssl`                         |
+| `JWT_EXPIRATION_MS`    | Token expiration time       | `86400000` (24h)                                |
+| `GOOGLE_CLIENT_ID`     | Google OAuth2 client ID     | From Google Console                             |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth2 client secret | From Google Console                             |
+| `APP_BASE_URL`         | Backend URL                 | `http://localhost:8080`                         |
+| `FRONTEND_URL`         | Frontend URL                | `http://localhost:3000`                         |
+| `SERVER_PORT`          | Server port                 | `8080`                                          |
 
 ## Production Deployment
 
@@ -276,6 +290,7 @@ FRONTEND_URL=https://yourdomain.com
 ### 2. Update Google OAuth2 Redirect URIs
 
 Add to Google Console:
+
 ```
 https://api.yourdomain.com/login/oauth2/code/google
 ```
@@ -283,6 +298,7 @@ https://api.yourdomain.com/login/oauth2/code/google
 ### 3. Set Environment Variables
 
 **Heroku:**
+
 ```bash
 heroku config:set KEY=value
 ```
@@ -332,19 +348,32 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ## Common Issues
 
 ### Database Connection Failed
+
 - Ensure PostgreSQL is running
 - Check database credentials in `.env`
 - Verify database exists
 
 ### OAuth2 redirect_uri_mismatch
+
 - Check Google Console redirect URIs
+
+### Follow/Reaction Fails with SQLState 23514
+
+- Symptom: `notifications_type_check` constraint violation when creating notifications with `USER_FOLLOWED` or `POST_REACTED`.
+- Cause: stale database check constraint that does not include newer notification enum values.
+- Fix: run `fix-notifications-type-constraint.sql` against your database, restart backend, and retry:
+  - `POST /api/users/{id}/follow`
+  - `POST /api/posts/{postId}/reactions`
+  - `GET /api/notifications`
 - Must exactly match: `http://localhost:8080/login/oauth2/code/google`
 
 ### Environment Variables Not Loading
+
 - Run `.\load-env.ps1` before starting app
 - Or use IDE environment configuration
 
 ### JWT Token Invalid
+
 - Check token expiration
 - Verify JWT_SECRET_KEY matches
 - Ensure token format: `Bearer <token>`
@@ -364,6 +393,7 @@ This project is licensed under the MIT License.
 ## Support
 
 For detailed documentation:
+
 - [JWT Documentation](JWT_DOCUMENTATION.md)
 - [OAuth2 Setup Guide](OAUTH2_SETUP_GUIDE.md)
 - [API Documentation](API_DOCUMENTATION.md)

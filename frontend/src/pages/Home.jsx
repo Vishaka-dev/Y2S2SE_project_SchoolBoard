@@ -11,9 +11,6 @@ import ReactionButton from '../components/ReactionButton';
 
 const Home = () => {
   const { user } = useAuth();
-  const token = localStorage.getItem('token');
-  console.log('Home Render - User:', user ? user.username : 'null', 'Token exists:', !!token);
-
   const navigate = useNavigate();
   const { targetPostId } = useParams();
   const [posts, setPosts] = useState([]);
@@ -176,16 +173,11 @@ const Home = () => {
     setExpandedComments(newExpanded);
   };
 
-  useEffect(() => {
-    window.postService = postService;
-  }, []);
-
   const handleSubmitComment = async (postId) => {
     const content = commentInputs[postId]?.trim();
     if (!content) return;
 
     setIsSubmittingComment(prev => ({ ...prev, [postId]: true }));
-    console.log(`Submitting comment for post ${postId}: ${content}`);
     try {
       const newComment = await postService.createComment(postId, content);
       
@@ -207,13 +199,11 @@ const Home = () => {
         return post;
       }));
 
-      // Update single post count if applicable
       setSinglePost(prev => {
         if (!prev || prev.id !== postId) return prev;
         return { ...prev, commentCount: (prev.commentCount || 0) + 1 };
       });
     } catch (error) {
-      console.error('Failed to post comment:', error);
       alert('Failed to post comment: ' + (error.message || 'Unknown error'));
     } finally {
       setIsSubmittingComment(prev => ({ ...prev, [postId]: false }));
@@ -247,27 +237,7 @@ const Home = () => {
     } catch (error) {
       alert('Failed to delete comment: ' + (error.message || 'Unknown error'));
     }
-  };
-
-  const handleReact = async (postId, reactionType) => {
-    try {
-      const summary = await postService.reactToPost(postId, reactionType);
-      
-      setPosts(prevPosts => prevPosts.map(p => {
-        if (p.id === postId) {
-          return {
-            ...p,
-            reactionCounts: summary.reactionCounts,
-            totalReactions: summary.totalReactions,
-            currentUserReaction: summary.currentUserReaction
-          };
-        }
-        return p;
-      }));
-    } catch (error) {
-      console.error('Failed to react to post:', error);
-    }
-  };
+    };
 
   const renderCommentsSection = (post) => {
     if (!expandedComments.has(post.id)) return null;
@@ -321,12 +291,9 @@ const Home = () => {
             </div>
             
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSubmitComment(post.id);
-              }}
+              onClick={() => handleSubmitComment(post.id)}
               disabled={!commentInputs[post.id]?.trim() || isSubmittingComment[post.id]}
-              className="relative z-20 text-blue-600 font-bold text-sm px-2 disabled:opacity-50 hover:text-blue-700 transition-colors"
+              className="text-blue-600 font-bold text-sm px-2 disabled:opacity-50 hover:text-blue-700 transition-colors"
             >
               {isSubmittingComment[post.id] ? '...' : 'Post'}
             </button>
@@ -385,6 +352,25 @@ const Home = () => {
         </div>
       </div>
     );
+  };
+  const handleReact = async (postId, reactionType) => {
+    try {
+      const summary = await postService.reactToPost(postId, reactionType);
+      
+      setPosts(prevPosts => prevPosts.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            reactionCounts: summary.reactionCounts,
+            totalReactions: summary.totalReactions,
+            currentUserReaction: summary.currentUserReaction
+          };
+        }
+        return p;
+      }));
+    } catch (error) {
+      console.error('Failed to react to post:', error);
+    }
   };
 
   const getRoleBadgeColor = (role) => {
@@ -522,25 +508,16 @@ const Home = () => {
                 </div>
               )}
               <div className="flex items-center gap-4 text-[13px] text-gray-500 pb-3 mb-3 border-b border-gray-50 font-medium">
-                {singlePost.totalReactions > 0 ? (
-                  <span className="hover:text-blue-600 cursor-pointer flex items-center gap-1">
-                    <span className="text-base">👍</span> {singlePost.totalReactions}
-                  </span>
-                ) : (
-                  <span className="hover:text-blue-600 cursor-pointer">0 reactions</span>
-                )}
-                <span className="hover:text-blue-600 cursor-pointer">{singlePost.commentCount || 0} comments</span>
+                <span className="hover:text-blue-600 cursor-pointer">0 likes</span>
+                <span className="hover:text-blue-600 cursor-pointer">0 comments</span>
                 <span className="hover:text-blue-600 cursor-pointer">0 shares</span>
               </div>
               <div className="flex items-center gap-2">
-                <ReactionButton 
-                  currentUserReaction={singlePost.currentUserReaction} 
-                  onReact={(reactionType) => handleReact(singlePost.id, reactionType)} 
-                />
-                <button
-                  onClick={() => handleToggleComments(singlePost.id)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn"
-                >
+                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+                  <ThumbsUp className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                  <span className="text-sm font-bold">Like</span>
+                </button>
+                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
                   <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                   <span className="text-sm font-bold">Comment</span>
                 </button>
@@ -549,7 +526,6 @@ const Home = () => {
                   <span className="text-sm font-bold">Share</span>
                 </button>
               </div>
-              {renderCommentsSection(singlePost)}
             </div>
           )
         ) : (
@@ -683,6 +659,7 @@ const Home = () => {
                         />
                       </div>
                     )}
+                    {/* Engagement Stats */}
                     <div className="flex items-center gap-4 text-[13px] text-gray-500 pb-3 mb-3 border-b border-gray-50 font-medium">
                       {post.totalReactions > 0 ? (
                         <span className="hover:text-blue-600 cursor-pointer flex items-center gap-1">
@@ -691,21 +668,17 @@ const Home = () => {
                       ) : (
                         <span className="hover:text-blue-600 cursor-pointer">0 reactions</span>
                       )}
-                      <span className="hover:text-blue-600 cursor-pointer">{post.commentCount || 0} comments</span>
+                      <span className="hover:text-blue-600 cursor-pointer">0 comments</span>
                       <span className="hover:text-blue-600 cursor-pointer">0 shares</span>
                     </div>
+
+                    {/* Action Buttons */}
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <ReactionButton 
                         currentUserReaction={post.currentUserReaction} 
                         onReact={(reactionType) => handleReact(post.id, reactionType)} 
                       />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleComments(post.id);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn"
-                      >
+                      <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
                         <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                         <span className="text-sm font-bold">Comment</span>
                       </button>
@@ -714,33 +687,34 @@ const Home = () => {
                         <span className="text-sm font-bold">Share</span>
                       </button>
                     </div>
-                    {renderCommentsSection(post)}
                   </div>
                 ))}
-                {hasMore && (
-                  <div className="text-center py-6">
-                    <button
-                      onClick={handleLoadMore}
-                      disabled={isFetchingMore}
-                      className="px-8 py-3 bg-white text-blue-600 border border-blue-100 hover:border-blue-600 hover:bg-blue-50 rounded-full font-bold text-sm transition shadow-sm disabled:opacity-50 flex items-center gap-2 mx-auto"
-                    >
-                      {isFetchingMore ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                          Loading...
-                        </>
-                      ) : (
-                        'Load more posts'
-                      )}
-                    </button>
-                  </div>
-                )}
-              </>
+
+            {hasMore && (
+              <div className="text-center py-6">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={isFetchingMore}
+                  className="px-8 py-3 bg-white text-blue-600 border border-blue-100 hover:border-blue-600 hover:bg-blue-50 rounded-full font-bold text-sm transition shadow-sm disabled:opacity-50 flex items-center gap-2 mx-auto"
+                >
+                  {isFetchingMore ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                      Loading...
+                    </>
+                  ) : (
+                    'Load more posts'
+                  )}
+                </button>
+              </div>
             )}
+
             {!hasMore && posts.length > 0 && (
               <div className="text-center py-8 text-gray-400 font-medium text-sm">
                 You've reached the end of the feed ✨
               </div>
+            )}
+              </>
             )}
           </>
         )}

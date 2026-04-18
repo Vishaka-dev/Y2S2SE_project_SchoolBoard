@@ -1,6 +1,7 @@
 package com.my_app.schoolboard.service.impl;
 
 import com.my_app.schoolboard.dto.ReactionSummaryDTO;
+import com.my_app.schoolboard.event.PostReactedEvent;
 import com.my_app.schoolboard.model.Post;
 import com.my_app.schoolboard.model.PostReaction;
 import com.my_app.schoolboard.model.ReactionType;
@@ -11,6 +12,7 @@ import com.my_app.schoolboard.repository.UserRepository;
 import com.my_app.schoolboard.service.ReactionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ public class ReactionServiceImpl implements ReactionService {
     private final PostReactionRepository postReactionRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -33,6 +36,9 @@ public class ReactionServiceImpl implements ReactionService {
                 .orElseThrow(() -> new RuntimeException("Post not found"));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        boolean shouldNotify = false;
+        ReactionType effectiveReactionType = null;
 
         Optional<PostReaction> existingReactionOpt = postReactionRepository.findByPostIdAndUserId(postId, userId);
 
@@ -45,6 +51,8 @@ public class ReactionServiceImpl implements ReactionService {
                 // Update to new type
                 existingReaction.setReactionType(reactionType);
                 postReactionRepository.save(existingReaction);
+                shouldNotify = true;
+                effectiveReactionType = reactionType;
             }
         } else {
             // Create new
@@ -54,6 +62,20 @@ public class ReactionServiceImpl implements ReactionService {
                     .reactionType(reactionType)
                     .build();
             postReactionRepository.save(newReaction);
+            shouldNotify = true;
+            effectiveReactionType = reactionType;
+        }
+
+        if (shouldNotify && !post.getAuthor().getId().equals(user.getId())) {
+            eventPublisher.publishEvent(PostReactedEvent.builder()
+                    .recipientId(post.getAuthor().getId())
+                    .postId(post.getId())
+                    .postAuthorId(post.getAuthor().getId())
+                    .postAuthorUsername(post.getAuthor().getUsername())
+                    .reactorId(user.getId())
+                    .reactorUsername(user.getUsername())
+                    .reactionType(effectiveReactionType)
+                    .build());
         }
 
         return getReactionSummary(postId, userId);
@@ -106,7 +128,8 @@ public class ReactionServiceImpl implements ReactionService {
             }
         }
 
-        // Clean up counts with 0 if necessary, but returning all is fine for the frontend
+        // Clean up counts with 0 if necessary, but returning all is fine for the
+        // frontend
         return ReactionSummaryDTO.builder()
                 .reactionCounts(counts)
                 .totalReactions(total)
