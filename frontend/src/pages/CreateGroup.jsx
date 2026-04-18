@@ -34,10 +34,11 @@ const CreateGroup = () => {
     subject: '',
     academicLevel: '',
   });
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  const [profileFile, setProfileFile] = useState(null);
+  const [profilePreviewUrl, setProfilePreviewUrl] = useState('');
+  const [coverFile, setCoverFile] = useState(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState('');
 
-  const selectedType = GROUP_TYPES.find((t) => t.value === form.groupType);
   const helpText = HELP_TEXT[form.groupType] || {};
 
   const handleChange = (field) => (e) => {
@@ -45,25 +46,46 @@ const CreateGroup = () => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
-  const handleImageChange = (e) => {
+  const handleProfileImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         setError('Image size should be less than 5MB');
         return;
       }
-      setImageFile(file);
-      setImagePreviewUrl(URL.createObjectURL(file));
+      setProfileFile(file);
+      setProfilePreviewUrl(URL.createObjectURL(file));
       setError('');
     }
   };
 
-  const removeImage = () => {
-    setImageFile(null);
-    if (imagePreviewUrl) {
-      URL.revokeObjectURL(imagePreviewUrl);
+  const removeProfileImage = () => {
+    setProfileFile(null);
+    if (profilePreviewUrl) {
+      URL.revokeObjectURL(profilePreviewUrl);
     }
-    setImagePreviewUrl('');
+    setProfilePreviewUrl('');
+  };
+
+  const handleCoverImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image size should be less than 5MB');
+        return;
+      }
+      setCoverFile(file);
+      setCoverPreviewUrl(URL.createObjectURL(file));
+      setError('');
+    }
+  };
+
+  const removeCoverImage = () => {
+    setCoverFile(null);
+    if (coverPreviewUrl) {
+      URL.revokeObjectURL(coverPreviewUrl);
+    }
+    setCoverPreviewUrl('');
   };
 
   const handleTypeSelect = (typeValue) => {
@@ -90,12 +112,14 @@ const CreateGroup = () => {
       formData.append('name', form.name.trim());
       formData.append('description', form.description.trim());
       formData.append('groupType', form.groupType);
-      
-      if (form.subject.trim()) formData.append('subject', form.subject.trim());
-      if (form.academicLevel.trim()) formData.append('academicLevel', form.academicLevel.trim());
-      
-      if (imageFile) {
-        formData.append('image', imageFile);
+      formData.append('subject', form.subject.trim());
+      formData.append('academicLevel', form.academicLevel.trim());
+
+      if (profileFile) {
+        formData.append('profilePicture', profileFile);
+      }
+      if (coverFile) {
+        formData.append('coverPicture', coverFile);
       }
 
       const created = await groupService.createGroup(formData);
@@ -225,19 +249,19 @@ const CreateGroup = () => {
             />
           </div>
 
-          {/* Image Upload */}
+          {/* Profile picture */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Group Profile Picture <span className="text-xs text-gray-400 font-normal">(optional)</span>
+              Group profile picture <span className="text-xs text-gray-400 font-normal">(optional)</span>
             </label>
-            
-            {imagePreviewUrl ? (
+
+            {profilePreviewUrl ? (
               <div className="relative w-32 h-32 rounded-xl overflow-hidden group border border-gray-200">
-                <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                <img src={profilePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <button
                     type="button"
-                    onClick={removeImage}
+                    onClick={removeProfileImage}
                     className="p-1.5 bg-white/20 hover:bg-red-500 rounded-full text-white backdrop-blur-sm transition-colors"
                   >
                     <X className="w-5 h-5" />
@@ -249,12 +273,48 @@ const CreateGroup = () => {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={handleImageChange}
+                  onChange={handleProfileImageChange}
                   className="hidden"
                 />
                 <div className="flex flex-col items-center gap-2 text-gray-500 group-hover:text-blue-600 transition-colors">
                   <ImagePlus className="w-6 h-6" />
                   <span className="text-xs font-medium">Upload</span>
+                </div>
+              </label>
+            )}
+          </div>
+
+          {/* Cover image */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Group cover image <span className="text-xs text-gray-400 font-normal">(optional)</span>
+            </label>
+            <p className="text-xs text-gray-500 mb-2 font-dm-sans">Shown as the wide banner on the group page.</p>
+
+            {coverPreviewUrl ? (
+              <div className="relative w-full max-w-md h-28 rounded-xl overflow-hidden group border border-gray-200">
+                <img src={coverPreviewUrl} alt="Cover preview" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={removeCoverImage}
+                    className="p-1.5 bg-white/20 hover:bg-red-500 rounded-full text-white backdrop-blur-sm transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="flex items-center justify-center w-full max-w-md h-28 rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer group">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverImageChange}
+                  className="hidden"
+                />
+                <div className="flex flex-col items-center gap-2 text-gray-500 group-hover:text-blue-600 transition-colors">
+                  <ImagePlus className="w-6 h-6" />
+                  <span className="text-xs font-medium">Upload cover</span>
                 </div>
               </label>
             )}

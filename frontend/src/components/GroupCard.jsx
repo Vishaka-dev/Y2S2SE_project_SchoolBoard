@@ -49,8 +49,8 @@ const GroupCard = ({ group, onClick }) => {
         <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white/20 to-transparent" />
         <div className="absolute -bottom-5 left-5">
           <div className={`w-12 h-12 rounded-xl ${config.bg} ${config.border} border-2 shadow-md flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden bg-white`}>
-            {group.imageUrl ? (
-              <img src={resolveImageUrl(group.imageUrl)} alt={group.name} className="w-full h-full object-cover" />
+            {group.profilePictureUrl ? (
+              <img src={resolveImageUrl(group.profilePictureUrl)} alt={group.name} className="w-full h-full object-cover" />
             ) : (
               <Icon className={`w-6 h-6 ${config.text}`} />
             )}

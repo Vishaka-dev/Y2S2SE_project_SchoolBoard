@@ -22,5 +22,10 @@ public interface StorageService {
 
     void delete(String filename);
 
+    /**
+     * Deletes a file under {@code uploads/} given a full URL or path containing {@code /uploads/...}.
+     */
+    void deleteByUploadsUrl(String url);
+
     void deleteAll();
 }

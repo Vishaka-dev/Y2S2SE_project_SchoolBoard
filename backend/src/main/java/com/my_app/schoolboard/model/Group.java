@@ -52,9 +52,6 @@ public class Group {
     @Column(name = "academic_level", nullable = false, length = 120)
     private String academicLevel;
 
-    @Column(name = "image_url")
-    private String imageUrl;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default

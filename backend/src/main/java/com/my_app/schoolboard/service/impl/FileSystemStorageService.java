@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -19,6 +21,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 @Service
+@Slf4j
 public class FileSystemStorageService implements StorageService {
 
     private final Path rootLocation;
@@ -139,6 +142,28 @@ public class FileSystemStorageService implements StorageService {
             Files.deleteIfExists(file);
         } catch (IOException e) {
             throw new RuntimeException("Could not delete file: " + filename, e);
+        }
+    }
+
+    @Override
+    public void deleteByUploadsUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return;
+        }
+        int idx = url.indexOf("/uploads/");
+        if (idx < 0) {
+            return;
+        }
+        String relative = url.substring(idx + "/uploads/".length());
+        Path base = Paths.get("uploads").toAbsolutePath().normalize();
+        Path target = base.resolve(relative).normalize();
+        if (!target.startsWith(base)) {
+            throw new RuntimeException("Cannot delete file outside uploads directory.");
+        }
+        try {
+            Files.deleteIfExists(target);
+        } catch (IOException e) {
+            log.warn("Could not delete file: {}", target, e);
         }
     }
 
