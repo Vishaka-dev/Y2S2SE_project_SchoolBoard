@@ -102,6 +102,8 @@ const GroupDetails = () => {
     return `${serverUrl}${url.startsWith('/') ? url : `/${url}`}`;
   };
 
+  const coverBgUrl = group.coverPictureUrl ? resolveImageUrl(group.coverPictureUrl) : null;
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-8">
       {/* Back Button */}
@@ -115,14 +117,25 @@ const GroupDetails = () => {
 
       {/* Hero Header */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Gradient Banner */}
-        <div className={`h-32 bg-gradient-to-r ${config.color} relative`}>
+        {/* Cover image or gradient banner */}
+        <div
+          className={`h-32 relative ${!coverBgUrl ? `bg-gradient-to-r ${config.color}` : ''}`}
+          style={
+            coverBgUrl
+              ? {
+                  backgroundImage: `url(${coverBgUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }
+              : undefined
+          }
+        >
           <div className="absolute inset-0 bg-black/10" />
-          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/20 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
           <div className="absolute -bottom-8 left-6">
             <div className={`w-16 h-16 rounded-2xl ${config.bg} ${config.border} border-2 shadow-lg flex items-center justify-center overflow-hidden bg-white`}>
-              {group.imageUrl ? (
-                <img src={resolveImageUrl(group.imageUrl)} alt={group.name} className="w-full h-full object-cover" />
+              {group.profilePictureUrl ? (
+                <img src={resolveImageUrl(group.profilePictureUrl)} alt={group.name} className="w-full h-full object-cover" />
               ) : (
                 <Icon className={`w-8 h-8 ${config.text}`} />
               )}

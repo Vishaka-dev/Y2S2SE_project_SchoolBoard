@@ -9,16 +9,14 @@ import com.my_app.schoolboard.model.*;
 import com.my_app.schoolboard.repository.GroupMemberRepository;
 import com.my_app.schoolboard.repository.StudyGroupRepository;
 import com.my_app.schoolboard.repository.UserRepository;
+import com.my_app.schoolboard.service.GroupPictureService;
 import com.my_app.schoolboard.service.GroupService;
 import com.my_app.schoolboard.strategy.GroupTypeBehavior;
-import com.my_app.schoolboard.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,11 +30,12 @@ public class GroupServiceImpl implements GroupService {
     private final GroupMemberRepository groupMemberRepository;
     private final UserRepository userRepository;
     private final GroupTypeBehaviorFactory groupTypeBehaviorFactory;
-    private final StorageService storageService;
+    private final GroupPictureService groupPictureService;
 
     @Override
     @Transactional
-    public GroupResponseDTO createGroup(CreateGroupRequestDTO request, MultipartFile image, String username) {
+    public GroupResponseDTO createGroup(CreateGroupRequestDTO request, MultipartFile profilePicture,
+            MultipartFile coverPicture, String username) {
         log.info("Creating group '{}' of type {} by user: {}", request.getName(), request.getGroupType(), username);
 
         User creator = findUserByUsername(username);
@@ -45,26 +44,19 @@ public class GroupServiceImpl implements GroupService {
         GroupTypeBehavior behavior = groupTypeBehaviorFactory.getBehavior(request.getGroupType());
         behavior.validateMetadata(request);
 
-        String imageUrl = request.getImageUrl();
-        if (image != null && !image.isEmpty()) {
-            String filename = storageService.store(image, "groups");
-            imageUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/uploads/groups/")
-                    .path(filename)
-                    .toUriString();
-        }
-
-        // Build and save the group entity
         StudyGroup group = StudyGroup.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .groupType(request.getGroupType())
                 .subject(request.getSubject())
                 .academicLevel(request.getAcademicLevel())
-                .imageUrl(imageUrl)
                 .visibility(GroupVisibility.PUBLIC)
                 .createdBy(creator)
                 .build();
+
+        GroupPicture picture = GroupPicture.builder().group(group).build();
+        group.setPicture(picture);
+        groupPictureService.applyOnCreate(picture, profilePicture, coverPicture);
 
         group = studyGroupRepository.save(group);
 
@@ -106,7 +98,7 @@ public class GroupServiceImpl implements GroupService {
         log.info("Fetching all groups for user: {}", username);
 
         User user = findUserByUsername(username);
-        List<StudyGroup> groups = studyGroupRepository.findAll();
+        List<StudyGroup> groups = studyGroupRepository.findAllWithPictures();
 
         return groups.stream()
                 .map(group -> {
@@ -124,7 +116,7 @@ public class GroupServiceImpl implements GroupService {
         log.info("Fetching groups for user: {}", username);
 
         User user = findUserByUsername(username);
-        List<GroupMember> memberships = groupMemberRepository.findByUser_Id(user.getId());
+        List<GroupMember> memberships = groupMemberRepository.findByUser_IdWithGroupAndPicture(user.getId());
 
         return memberships.stream()
                 .map(membership -> {
@@ -198,7 +190,7 @@ public class GroupServiceImpl implements GroupService {
     public List<GroupResponseDTO> searchGroups(String keyword, String username) {
         log.info("Searching groups with keyword: {} for user: {}", keyword, username);
 
-        List<StudyGroup> groups = studyGroupRepository.searchByName(keyword);
+        List<StudyGroup> groups = studyGroupRepository.searchByNameWithPicture(keyword);
         User user = (username != null && !username.isBlank()) ? userRepository.findByUsername(username).orElse(null)
                 : null;
 
@@ -219,8 +211,8 @@ public class GroupServiceImpl implements GroupService {
     @Override
     @Transactional
     public GroupResponseDTO updateGroup(Long groupId, String name, String description, String groupType,
-                                         String subject, String academicLevel, boolean removeImage,
-                                         MultipartFile image, String username) {
+            String subject, String academicLevel, boolean removeProfilePicture, boolean removeCoverPicture,
+            MultipartFile profilePicture, MultipartFile coverPicture, String username) {
         log.info("Updating group {} by user {}", groupId, username);
 
         StudyGroup group = findGroupById(groupId);
@@ -241,20 +233,13 @@ public class GroupServiceImpl implements GroupService {
         group.setSubject(subject);
         group.setAcademicLevel(academicLevel);
 
-        // Image handling — matches PostServiceImpl.updatePost pattern exactly
-        if (image != null && !image.isEmpty()) {
-            // Store new image using same storageService pattern as posts
-            String filename = storageService.store(image, "groups");
-            String imageUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/uploads/groups/")
-                    .path(filename)
-                    .toUriString();
-            group.setImageUrl(imageUrl);
-        } else if (removeImage) {
-            // Remove image only if explicitly requested
-            group.setImageUrl(null);
+        GroupPicture picture = group.getPicture();
+        if (picture == null) {
+            picture = GroupPicture.builder().group(group).build();
+            group.setPicture(picture);
         }
-        // else: keep existing image (do nothing)
+        groupPictureService.applyOnUpdate(picture, profilePicture, coverPicture, removeProfilePicture,
+                removeCoverPicture);
 
         StudyGroup updatedGroup = studyGroupRepository.save(group);
         long memberCount = groupMemberRepository.countByGroup_Id(groupId);
@@ -272,7 +257,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     private StudyGroup findGroupById(Long groupId) {
-        return studyGroupRepository.findById(groupId)
+        return studyGroupRepository.findWithPictureById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Group", "id", groupId));
     }
 
@@ -282,6 +267,10 @@ public class GroupServiceImpl implements GroupService {
                 ? creator.getProfileImageUrl()
                 : creator.getImageUrl();
 
+        GroupPicture pic = group.getPicture();
+        String profileUrl = pic != null ? pic.getProfilePictureUrl() : null;
+        String coverUrl = pic != null ? pic.getCoverPictureUrl() : null;
+
         return GroupResponseDTO.builder()
                 .id(group.getId())
                 .name(group.getName())
@@ -289,7 +278,9 @@ public class GroupServiceImpl implements GroupService {
                 .groupType(group.getGroupType())
                 .subject(group.getSubject())
                 .academicLevel(group.getAcademicLevel())
-                .imageUrl(group.getImageUrl())
+                .profilePictureUrl(profileUrl)
+                .coverPictureUrl(coverUrl)
+                .imageUrl(profileUrl)
                 .visibility(group.getVisibility())
                 .creatorId(creator.getId())
                 .creatorUsername(creator.getUsername())

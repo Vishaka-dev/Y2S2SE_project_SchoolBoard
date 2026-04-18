@@ -1,11 +1,18 @@
 import apiClient from '../api/apiClient';
 
 const groupService = {
+  /**
+   * @param {FormData} groupData multipart: name, groupType, … optional profilePicture, coverPicture
+   */
   createGroup: async (groupData) => {
     try {
-      // Keep same upload style as post image creation:
-      // pass FormData directly and let Axios set multipart boundaries automatically.
-      const response = await apiClient.post('/groups', groupData);
+      // apiClient defaults to Content-Type: application/json; override for FormData
+      // (same pattern as accountService.uploadProfilePhoto).
+      const response = await apiClient.post('/groups', groupData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       return response.data;
     } catch (error) {
       throw error.response?.data || new Error('Failed to create group');
@@ -75,12 +82,12 @@ const groupService = {
   },
 
   /**
-   * Update an existing group
-   * Sends FormData (multipart/form-data) — matching postService.updatePost pattern.
-   * Axios auto-sets Content-Type to multipart/form-data when data is FormData.
+   * Update an existing group (multipart FormData).
+   * Typical fields: name, description, groupType, subject, academicLevel,
+   * profilePicture, coverPicture, removeProfilePicture, removeCoverPicture.
    * @param {string|number} groupId Group ID
-   * @param {FormData} formData FormData containing name, description, groupType, subject, academicLevel, image
-   * @returns {Promise<Object>} Updated group data
+   * @param {FormData} formData
+   * @returns {Promise<Object>} Updated group (profilePictureUrl, coverPictureUrl, …)
    */
   updateGroup: async (groupId, formData) => {
     try {

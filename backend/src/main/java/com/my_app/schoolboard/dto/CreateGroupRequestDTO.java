@@ -31,7 +31,4 @@ public class CreateGroupRequestDTO {
 
     @Size(max = 50, message = "Academic level must not exceed 50 characters")
     private String academicLevel;
-
-    @Size(max = 500, message = "Image URL must not exceed 500 characters")
-    private String imageUrl;
 }

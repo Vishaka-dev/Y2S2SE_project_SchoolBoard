@@ -12,7 +12,8 @@ import java.util.List;
  */
 public interface GroupService {
 
-    GroupResponseDTO createGroup(CreateGroupRequestDTO request, MultipartFile image, String username);
+    GroupResponseDTO createGroup(CreateGroupRequestDTO request, MultipartFile profilePicture,
+            MultipartFile coverPicture, String username);
 
     GroupResponseDTO getGroupById(Long groupId, String username);
 
@@ -29,6 +30,6 @@ public interface GroupService {
     List<GroupResponseDTO> searchGroups(String keyword, String username);
 
     GroupResponseDTO updateGroup(Long groupId, String name, String description, String groupType,
-                                 String subject, String academicLevel, boolean removeImage,
-                                 MultipartFile image, String username);
+            String subject, String academicLevel, boolean removeProfilePicture, boolean removeCoverPicture,
+            MultipartFile profilePicture, MultipartFile coverPicture, String username);
 }

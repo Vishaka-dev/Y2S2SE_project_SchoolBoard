@@ -25,7 +25,14 @@ public class GroupResponseDTO {
     private GroupType groupType;
     private String subject;
     private String academicLevel;
+    private String profilePictureUrl;
+    private String coverPictureUrl;
+
+    /**
+     * Deprecated alias for {@link #profilePictureUrl}. Same value; kept for clients not yet migrated.
+     */
     private String imageUrl;
+
     private GroupVisibility visibility;
     private Long creatorId;
     private String creatorUsername;

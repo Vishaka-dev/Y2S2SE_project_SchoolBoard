@@ -33,8 +33,8 @@ public class UpdateGroupRequestDTO {
     private String academicLevel;
 
     /**
-     * Optional image removal flag. If true and no new image is uploaded,
-     * the current image is removed.
+     * Optional flags: if true and no new file is uploaded, the current image is removed.
      */
-    private Boolean removeImage;
+    private Boolean removeProfilePicture;
+    private Boolean removeCoverPicture;
 }

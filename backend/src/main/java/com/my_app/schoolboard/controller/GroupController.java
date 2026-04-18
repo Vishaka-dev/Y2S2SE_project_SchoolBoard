@@ -35,12 +35,16 @@ public class GroupController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<GroupResponseDTO> createGroup(
             @Valid @ModelAttribute CreateGroupRequestDTO request,
+            @RequestParam(value = "profilePicture", required = false) MultipartFile profilePicture,
+            @RequestParam(value = "coverPicture", required = false) MultipartFile coverPicture,
             @RequestParam(value = "image", required = false) MultipartFile image,
             Authentication authentication) {
 
         log.info("Received request to create group '{}' from user: {}", request.getName(), authentication.getName());
 
-        GroupResponseDTO response = groupService.createGroup(request, image, authentication.getName());
+        MultipartFile profile = (profilePicture != null && !profilePicture.isEmpty()) ? profilePicture : image;
+
+        GroupResponseDTO response = groupService.createGroup(request, profile, coverPicture, authentication.getName());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -155,15 +159,23 @@ public class GroupController {
             @RequestParam("groupType") String groupType,
             @RequestParam(value = "subject", required = false) String subject,
             @RequestParam(value = "academicLevel", required = false) String academicLevel,
+            @RequestParam(value = "removeProfilePicture", required = false, defaultValue = "false") boolean removeProfilePicture,
+            @RequestParam(value = "removeCoverPicture", required = false, defaultValue = "false") boolean removeCoverPicture,
             @RequestParam(value = "removeImage", required = false, defaultValue = "false") boolean removeImage,
+            @RequestParam(value = "profilePicture", required = false) MultipartFile profilePicture,
+            @RequestParam(value = "coverPicture", required = false) MultipartFile coverPicture,
             @RequestParam(value = "image", required = false) MultipartFile image,
             Authentication authentication) {
 
         log.info("Received request to update group {} from user: {}", groupId, authentication.getName());
 
+        MultipartFile profile = (profilePicture != null && !profilePicture.isEmpty()) ? profilePicture : image;
+        boolean removeProfile = removeProfilePicture || removeImage;
+
         GroupResponseDTO response = groupService.updateGroup(
                 groupId, name, description, groupType, subject, academicLevel,
-                removeImage, image, authentication.getName());
+                removeProfile, removeCoverPicture,
+                profile, coverPicture, authentication.getName());
 
         return ResponseEntity.ok(response);
     }

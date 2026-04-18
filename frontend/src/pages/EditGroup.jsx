@@ -36,10 +36,14 @@ const EditGroup = () => {
     subject: '',
     academicLevel: '',
   });
-  const [currentImageUrl, setCurrentImageUrl] = useState('');
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
-  const [removeImage, setRemoveImage] = useState(false);
+  const [currentProfileUrl, setCurrentProfileUrl] = useState('');
+  const [currentCoverUrl, setCurrentCoverUrl] = useState('');
+  const [profileFile, setProfileFile] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [profilePreviewUrl, setProfilePreviewUrl] = useState('');
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState('');
+  const [removeProfile, setRemoveProfile] = useState(false);
+  const [removeCover, setRemoveCover] = useState(false);
 
   const helpText = HELP_TEXT[form.groupType] || {};
 
@@ -66,7 +70,8 @@ const EditGroup = () => {
           subject: group.subject || '',
           academicLevel: group.academicLevel || '',
         });
-        setCurrentImageUrl(group.imageUrl || '');
+        setCurrentProfileUrl(group.profilePictureUrl || '');
+        setCurrentCoverUrl(group.coverPictureUrl || '');
       } catch (err) {
         setError(err.message || 'Failed to load group');
       } finally {
@@ -87,26 +92,48 @@ const EditGroup = () => {
     setForm((prev) => ({ ...prev, groupType: typeValue }));
   };
 
-  const handleImageChange = (e) => {
+  const handleProfileImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
       setError('Image size should be less than 5MB');
       return;
     }
-    setImageFile(file);
-    setImagePreviewUrl(URL.createObjectURL(file));
-    setRemoveImage(false);
+    setProfileFile(file);
+    setProfilePreviewUrl(URL.createObjectURL(file));
+    setRemoveProfile(false);
     setError('');
   };
 
-  const removeSelectedImage = () => {
-    setImageFile(null);
-    if (imagePreviewUrl) {
-      URL.revokeObjectURL(imagePreviewUrl);
+  const handleCoverImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size should be less than 5MB');
+      return;
     }
-    setImagePreviewUrl('');
-    setRemoveImage(true);
+    setCoverFile(file);
+    setCoverPreviewUrl(URL.createObjectURL(file));
+    setRemoveCover(false);
+    setError('');
+  };
+
+  const removeSelectedProfile = () => {
+    setProfileFile(null);
+    if (profilePreviewUrl) {
+      URL.revokeObjectURL(profilePreviewUrl);
+    }
+    setProfilePreviewUrl('');
+    setRemoveProfile(true);
+  };
+
+  const removeSelectedCover = () => {
+    setCoverFile(null);
+    if (coverPreviewUrl) {
+      URL.revokeObjectURL(coverPreviewUrl);
+    }
+    setCoverPreviewUrl('');
+    setRemoveCover(true);
   };
 
   const handleSubmit = async (e) => {
@@ -130,10 +157,14 @@ const EditGroup = () => {
       formData.append('groupType', form.groupType);
       formData.append('subject', form.subject.trim());
       formData.append('academicLevel', form.academicLevel.trim());
-      formData.append('removeImage', removeImage ? 'true' : 'false');
+      formData.append('removeProfilePicture', removeProfile ? 'true' : 'false');
+      formData.append('removeCoverPicture', removeCover ? 'true' : 'false');
 
-      if (imageFile) {
-        formData.append('image', imageFile);
+      if (profileFile) {
+        formData.append('profilePicture', profileFile);
+      }
+      if (coverFile) {
+        formData.append('coverPicture', coverFile);
       }
 
       const updated = await groupService.updateGroup(groupId, formData);
@@ -167,7 +198,7 @@ const EditGroup = () => {
       <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
         <h1 className="text-2xl font-bold text-gray-900 font-manrope">Edit Group</h1>
         <p className="text-sm text-gray-500 mt-1 font-dm-sans">
-          Update your group details and profile image
+          Update your group details, profile picture, and cover image
         </p>
       </div>
 
@@ -261,16 +292,16 @@ const EditGroup = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Group Profile Picture <span className="text-xs text-gray-400 font-normal">(optional)</span>
+              Group profile picture <span className="text-xs text-gray-400 font-normal">(optional)</span>
             </label>
 
-            {(imagePreviewUrl || currentImageUrl) ? (
+            {(profilePreviewUrl || currentProfileUrl) && !removeProfile ? (
               <div className="relative w-32 h-32 rounded-xl overflow-hidden group border border-gray-200">
-                <img src={imagePreviewUrl || resolveImageUrl(currentImageUrl)} alt="Group preview" className="w-full h-full object-cover" />
+                <img src={profilePreviewUrl || resolveImageUrl(currentProfileUrl)} alt="Group profile" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <button
                     type="button"
-                    onClick={removeSelectedImage}
+                    onClick={removeSelectedProfile}
                     className="p-1.5 bg-white/20 hover:bg-red-500 rounded-full text-white backdrop-blur-sm transition-colors"
                   >
                     <X className="w-5 h-5" />
@@ -282,7 +313,7 @@ const EditGroup = () => {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={handleImageChange}
+                  onChange={handleProfileImageChange}
                   className="hidden"
                 />
                 <div className="flex flex-col items-center gap-2 text-gray-500 group-hover:text-blue-600 transition-colors">
@@ -292,25 +323,83 @@ const EditGroup = () => {
               </label>
             )}
 
-            {(imagePreviewUrl || currentImageUrl) && (
+            {(profilePreviewUrl || currentProfileUrl) && (
               <div className="mt-3">
                 <label className="inline-flex items-center gap-2 text-xs text-gray-600">
                   <input
                     type="checkbox"
-                    checked={removeImage}
+                    checked={removeProfile}
                     onChange={(e) => {
-                      setRemoveImage(e.target.checked);
+                      setRemoveProfile(e.target.checked);
                       if (e.target.checked) {
-                        if (imagePreviewUrl) {
-                          URL.revokeObjectURL(imagePreviewUrl);
+                        if (profilePreviewUrl) {
+                          URL.revokeObjectURL(profilePreviewUrl);
                         }
-                        setImagePreviewUrl('');
-                        setImageFile(null);
+                        setProfilePreviewUrl('');
+                        setProfileFile(null);
                       }
                     }}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  Remove current image
+                  Remove current profile picture
+                </label>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Group cover image <span className="text-xs text-gray-400 font-normal">(optional)</span>
+            </label>
+            <p className="text-xs text-gray-500 mb-2 font-dm-sans">Banner on the group details page.</p>
+
+            {(coverPreviewUrl || currentCoverUrl) && !removeCover ? (
+              <div className="relative w-full max-w-md h-28 rounded-xl overflow-hidden group border border-gray-200">
+                <img src={coverPreviewUrl || resolveImageUrl(currentCoverUrl)} alt="Cover" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={removeSelectedCover}
+                    className="p-1.5 bg-white/20 hover:bg-red-500 rounded-full text-white backdrop-blur-sm transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="flex items-center justify-center w-full max-w-md h-28 rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer group">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverImageChange}
+                  className="hidden"
+                />
+                <div className="flex flex-col items-center gap-2 text-gray-500 group-hover:text-blue-600 transition-colors">
+                  <ImagePlus className="w-6 h-6" />
+                  <span className="text-xs font-medium">Upload cover</span>
+                </div>
+              </label>
+            )}
+
+            {(coverPreviewUrl || currentCoverUrl) && (
+              <div className="mt-3">
+                <label className="inline-flex items-center gap-2 text-xs text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={removeCover}
+                    onChange={(e) => {
+                      setRemoveCover(e.target.checked);
+                      if (e.target.checked) {
+                        if (coverPreviewUrl) {
+                          URL.revokeObjectURL(coverPreviewUrl);
+                        }
+                        setCoverPreviewUrl('');
+                        setCoverFile(null);
+                      }
+                    }}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  Remove current cover image
                 </label>
               </div>
             )}
