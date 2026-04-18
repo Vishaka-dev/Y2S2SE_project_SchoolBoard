@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, Users, Crown, Shield, User } from 'lucide-react';
 import groupService from '../services/groupService';
+import { useAuth } from '../context/AuthContext';
 
 const ROLE_CONFIG = {
   OWNER: { icon: Crown, label: 'Owner', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' },
@@ -9,6 +11,8 @@ const ROLE_CONFIG = {
 };
 
 const GroupMembersModal = ({ groupId, groupName, isOpen, onClose }) => {
+  const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const [members, setMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -44,6 +48,12 @@ const GroupMembersModal = ({ groupId, groupName, isOpen, onClose }) => {
     const order = { OWNER: 0, ADMIN: 1, MEMBER: 2 };
     return (order[a.role] ?? 3) - (order[b.role] ?? 3);
   });
+
+  const handleMemberRowClick = (member) => {
+    if (!member?.username) return;
+    navigate(`/profile/${encodeURIComponent(member.username)}`);
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -108,17 +118,35 @@ const GroupMembersModal = ({ groupId, groupName, isOpen, onClose }) => {
                   .toUpperCase()
                   .slice(0, 2);
 
+                const isCurrentUser =
+                  Boolean(currentUser?.username && member.username) &&
+                  member.username === currentUser.username;
+
+                const canOpenProfile = Boolean(member.username);
+
                 return (
                   <div
                     key={member.userId}
-                    className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                    role={canOpenProfile ? 'button' : undefined}
+                    tabIndex={canOpenProfile ? 0 : undefined}
+                    onClick={() => canOpenProfile && handleMemberRowClick(member)}
+                    onKeyDown={(e) => {
+                      if (!canOpenProfile) return;
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleMemberRowClick(member);
+                      }
+                    }}
+                    className={`flex items-center justify-between p-3 rounded-xl transition-colors ${
+                      canOpenProfile ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default'
+                    }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
                         {member.profileImageUrl ? (
                           <img
                             src={resolveImageUrl(member.profileImageUrl)}
-                            alt={member.username}
+                            alt={member.username || 'Member'}
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -126,15 +154,20 @@ const GroupMembersModal = ({ groupId, groupName, isOpen, onClose }) => {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
-                          {member.username}
+                        <p className="text-sm font-semibold text-gray-900 truncate flex items-center gap-2 flex-wrap">
+                          <span className="truncate">{member.username}</span>
+                          {isCurrentUser && (
+                            <span className="text-xs font-semibold text-green-600 shrink-0">You</span>
+                          )}
                         </p>
                         <p className="text-xs text-gray-400">
                           Joined {new Date(member.joinedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </p>
                       </div>
                     </div>
-                    <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${roleConf.bg} ${roleConf.color} ${roleConf.border} border inline-flex items-center gap-1`}>
+                    <span
+                      className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${roleConf.bg} ${roleConf.color} ${roleConf.border} border inline-flex items-center gap-1 shrink-0 ml-2`}
+                    >
                       <RoleIcon className="w-3 h-3" />
                       {roleConf.label}
                     </span>
