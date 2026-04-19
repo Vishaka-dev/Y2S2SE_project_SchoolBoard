@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
  * GroupMessageInput Component
  * Input field for composing and sending group messages
  */
-const GroupMessageInput = ({ onSend, disabled, isLoading }) => {
+const GroupMessageInput = ({ onSend, onTyping, disabled, isLoading }) => {
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const fileInputRef = useRef(null);
@@ -18,22 +18,22 @@ const GroupMessageInput = ({ onSend, disabled, isLoading }) => {
     // Typing indicator logic (debounced)
     if (!isTyping) {
       setIsTyping(true);
-      if (onTyping) onTyping(true);
+      onTyping?.(true);
     }
 
     clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
-      if (onTyping) onTyping(false);
+      onTyping?.(false);
     }, 3000);
   };
 
   const handleSend = () => {
     if (message.trim() && !isLoading && !disabled) {
-      onSend(message.trim());
+      onSend?.(message.trim());
       setMessage('');
       setIsTyping(false);
-      if (onTyping) onTyping(false);
+      onTyping?.(false);
     }
   };
 

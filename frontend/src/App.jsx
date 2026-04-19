@@ -17,7 +17,6 @@ import CreateGroup from './pages/CreateGroup';
 import GroupDetails from './pages/GroupDetails';
 import EditGroup from './pages/EditGroup';
 import Events from './pages/Events';
-import GroupChat from './pages/GroupChat';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -210,15 +209,6 @@ function AppRoutes() {
       >
         <Route index element={<Events />} />
       </Route>
-
-      <Route
-        path="/chats"
-        element={
-          <ProtectedRoute>
-            <GroupChat />
-          </ProtectedRoute>
-        }
-      />
       
       {/* Account Management Routes - Also in DashboardLayout */}
       <Route 
