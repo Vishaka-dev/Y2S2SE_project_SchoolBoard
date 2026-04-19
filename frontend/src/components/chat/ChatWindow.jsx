@@ -84,9 +84,12 @@ const ChatWindow = ({
               <h3 className="font-semibold text-gray-900 hover:text-blue-600 transition">
                 {otherUser?.username || 'Unknown User'}
               </h3>
-              <p className="text-xs text-gray-500">
-                {typingUsers.size > 0 ? 'Typing...' : 'Online'}
-              </p>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <p className="text-xs text-gray-500">
+                  {typingUsers.size > 0 ? 'Typing...' : 'Online'}
+                </p>
+              </div>
             </div>
           </div>
 

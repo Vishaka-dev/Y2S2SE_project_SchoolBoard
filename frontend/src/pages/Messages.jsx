@@ -180,10 +180,13 @@ const Messages = () => {
     };
   }, [selectedChat, user?.id]);
 
-  // Handle typing indicator
-  const handleInputChange = (e) => {
-    setMessageInput(e.target.value);
+  // Handle input value changes
+  const handleInputChange = (value) => {
+    setMessageInput(value);
+  };
 
+  // Handle typing indicator
+  const handleTyping = () => {
     if (!isTyping && webSocketService.isWebSocketConnected()) {
       setIsTyping(true);
       webSocketService.sendTypingIndicator(selectedChat.id, true).catch(err => {
@@ -228,11 +231,11 @@ const Messages = () => {
       return;
     }
 
+    setSending(true);
+    setError('');
+    let messageId = null;
+    
     try {
-      setSending(true);
-      setError('');
-      let messageId = null;
-      
       // Determine content to send
       const contentToSend = trimmedContent || (attachments.length > 0 ? '📎 Attachment' : '');
       
@@ -250,45 +253,50 @@ const Messages = () => {
       // Send message via REST API to get the messageId for attachments
       const newMessage = await messageAPI.sendMessage(selectedChat.id, contentToSend);
       messageId = newMessage.id;
-      
+
       // Add message to local state immediately
       setMessages(prev => [...prev, newMessage]);
-
       setMessageInput('');
       
-      // Upload attachments if present
+      // Upload attachments if present (don't block on this)
       if (attachments.length > 0 && messageId) {
-        try {
-          console.log('📎 Starting attachment upload:', {
-            messageId,
-            attachmentCount: attachments.length
-          });
-          
-          // Convert attachment objects to File objects for upload
-          const filesToUpload = attachments.map(att => att.file);
-          await attachmentAPI.uploadAttachments(messageId, filesToUpload);
-          
-          console.log('✅ Attachments uploaded successfully');
-        } catch (attachErr) {
-          console.error('❌ Attachment upload failed:', {
-            messageId,
-            status: attachErr.response?.status,
-            statusText: attachErr.response?.statusText,
-            error: attachErr.response?.data || attachErr.message
-          });
-          setError('Message sent but attachments failed to upload');
-        }
+        (async () => {
+          try {
+            console.log('📎 Starting attachment upload:', {
+              messageId,
+              attachmentCount: attachments.length
+            });
+            
+            // Convert attachment objects to File objects for upload
+            const filesToUpload = attachments.map(att => att.file);
+            await attachmentAPI.uploadAttachments(messageId, filesToUpload);
+            
+            console.log('✅ Attachments uploaded successfully');
+          } catch (attachErr) {
+            console.error('❌ Attachment upload failed:', {
+              messageId,
+              status: attachErr.response?.status,
+              statusText: attachErr.response?.statusText,
+              error: attachErr.response?.data || attachErr.message
+            });
+            setError('Message sent but attachments failed to upload');
+          }
+        })();
       }
-      
+
       // Stop typing indicator
       if (webSocketService.isWebSocketConnected()) {
-        await webSocketService.sendTypingIndicator(selectedChat.id, false);
+        webSocketService.sendTypingIndicator(selectedChat.id, false).catch(err => {
+          console.error('Failed to stop typing indicator:', err);
+        });
         setIsTyping(false);
       }
+
+      console.log('✅ Message sent successfully');
+      setSending(false);
     } catch (err) {
       console.error('❌ Failed to send message:', err);
       setError('Failed to send message');
-    } finally {
       setSending(false);
     }
   };
@@ -376,7 +384,7 @@ const Messages = () => {
                 onSend={handleSendMessage}
                 sending={sending}
                 disabled={false}
-                onTyping={handleInputChange}
+                onTyping={handleTyping}
                 maxLength={5000}
               />
             </div>
