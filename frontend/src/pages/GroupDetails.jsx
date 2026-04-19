@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Crown, Loader2, LogIn, LogOut, Calendar, BookOpen, GraduationCap, Pencil } from 'lucide-react';
+import { ArrowLeft, Users, Crown, Loader2, LogIn, LogOut, Calendar, BookOpen, GraduationCap, Pencil, MessageSquare } from 'lucide-react';
 import groupService from '../services/groupService';
 import { GROUP_TYPE_CONFIG } from '../components/GroupCard';
 import GroupMembersModal from '../components/GroupMembersModal';
@@ -168,6 +168,13 @@ const GroupDetails = () => {
                       Owner
                     </span>
                     <button
+                      onClick={() => navigate('/messages', { state: { selectedGroupId: groupId } })}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      Chat
+                    </button>
+                    <button
                       onClick={() => navigate(`/groups/${groupId}/edit`)}
                       className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition"
                     >
@@ -176,27 +183,34 @@ const GroupDetails = () => {
                     </button>
                   </div>
                 ) : (
-                  <button
-                    onClick={handleLeave}
-                    disabled={actionLoading}
-                    className="group relative inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold border rounded-lg transition-all disabled:opacity-60
-                      bg-blue-600 text-white border-blue-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
-                  >
-                    {actionLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <span className="group-hover:hidden">Joined ✓</span>
-                        <span className="hidden group-hover:inline-flex items-center gap-1">
-                          <LogOut className="w-4 h-4" />
-                          Leave
-                        </span>
-                      </>
-                    )}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => navigate('/messages', { state: { selectedGroupId: groupId } })}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      Chat
+                    </button>
+                    <button
+                      onClick={handleLeave}
+                      disabled={actionLoading}
+                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition disabled:opacity-60"
+                    >
+                      {actionLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <span className="inline-flex items-center gap-1">
+                            <LogOut className="w-4 h-4" />
+                            Leave
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 )
               ) : (
                 <button

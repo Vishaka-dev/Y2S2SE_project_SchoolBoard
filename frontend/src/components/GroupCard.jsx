@@ -25,11 +25,8 @@ const GroupCard = ({ group, onClick }) => {
   const coverBgUrl = group.coverPictureUrl ? resolveImageUrl(group.coverPictureUrl) : null;
 
   const handleClick = () => {
-    if (onClick) {
-      onClick();
-    } else {
-      navigate(`/groups/${group.id}`);
-    }
+    // Navigate to group details page
+    navigate(`/groups/${group.id}`);
   };
 
   return (
