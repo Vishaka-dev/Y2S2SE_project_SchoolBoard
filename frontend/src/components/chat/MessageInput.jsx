@@ -44,7 +44,7 @@ const MessageInput = ({
     }
     
     console.log('✅ Form submitted with content:', { trimmedValue, attachmentCount: attachments.length });
-    onSend(attachments);
+    onSend(trimmedValue, attachments);
     setAttachments([]);
     setShowFileUpload(false);
   };

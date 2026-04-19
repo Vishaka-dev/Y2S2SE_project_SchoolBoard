@@ -58,22 +58,32 @@ const groupChatService = {
    * Send a message to a group
    * @param {number} groupConversationId - Group Conversation ID
    * @param {string} content - Message content
-   * @param {File} file - Optional file attachment
+   * @param {Array} attachments - Optional file attachments array
    */
-  sendMessage: async (groupConversationId, content, file = null) => {
+  sendMessage: async (groupConversationId, content, attachments = []) => {
     try {
-      const formData = new FormData();
-      formData.append('groupConversationId', groupConversationId);
-      formData.append('content', content);
-      if (file) {
-        formData.append('file', file);
+      let response;
+
+      if (attachments.length > 0) {
+        // Send with files using FormData
+        const formData = new FormData();
+        formData.append('groupConversationId', groupConversationId);
+        formData.append('content', content || '');
+        
+        attachments.forEach((attachment) => {
+          formData.append('files', attachment.file);
+        });
+
+        // Don't set Content-Type header - let axios/browser set it with proper boundary
+        response = await apiClient.post('/group-messages', formData);
+      } else {
+        // Send text-only message as JSON
+        response = await apiClient.post('/group-messages', {
+          groupConversationId,
+          content
+        });
       }
 
-      const response = await apiClient.post('/group-messages', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
       return response;
     } catch (error) {
       console.error('Error sending message:', error);

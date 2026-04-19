@@ -20,8 +20,6 @@ public class UserDto {
     private Long id;
     private String username;
     private String profileImageUrl;
-    private String firstName;
-    private String lastName;
 
     public static UserDto fromUser(User user) {
         if (user == null) return null;
@@ -29,8 +27,6 @@ public class UserDto {
                 .id(user.getId())
                 .username(user.getUsername())
                 .profileImageUrl(user.getProfileImageUrl())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
                 .build();
     }
 }

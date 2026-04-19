@@ -10,9 +10,10 @@ import apiClient from './apiClient';
  * Send a new message in a conversation
  * @param {number} conversationId - Conversation ID
  * @param {string} content - Message text content (1-5000 characters)
+ * @param {Array} attachments - Optional file attachments array
  * @returns {Promise} Created message object with id, timestamps, etc.
  */
-export const sendMessage = async (conversationId, content) => {
+export const sendMessage = async (conversationId, content, attachments = []) => {
   try {
     // Validate inputs
     if (typeof conversationId !== 'number' || conversationId <= 0) {
@@ -23,9 +24,9 @@ export const sendMessage = async (conversationId, content) => {
 
     const trimmedContent = String(content).trim();
     
-    if (trimmedContent.length === 0) {
-      const err = new Error('Content cannot be empty');
-      console.error('❌ messageAPI.sendMessage - Empty content');
+    if (trimmedContent.length === 0 && attachments.length === 0) {
+      const err = new Error('Content and attachments cannot both be empty');
+      console.error('❌ messageAPI.sendMessage - Empty content and no attachments');
       throw err;
     }
 
@@ -35,18 +36,41 @@ export const sendMessage = async (conversationId, content) => {
       throw err;
     }
 
-    const payload = {
-      conversationId,
-      content: trimmedContent
-    };
+    let response;
 
-    console.log('📤 messageAPI.sendMessage - Sending:', {
-      conversationId,
-      contentLength: trimmedContent.length,
-      contentPreview: trimmedContent.substring(0, 50)
-    });
+    if (attachments.length > 0) {
+      // Send with files using FormData
+      const formData = new FormData();
+      formData.append('conversationId', conversationId);
+      formData.append('content', trimmedContent || '');
+      
+      attachments.forEach((attachment) => {
+        formData.append('files', attachment.file);
+      });
 
-    const response = await apiClient.post('/messages', payload);
+      console.log('📤 messageAPI.sendMessage - Sending with files:', {
+        conversationId,
+        contentLength: trimmedContent.length,
+        fileCount: attachments.length
+      });
+
+      // Don't set Content-Type header - let axios/browser set it with proper boundary
+      response = await apiClient.post('/messages', formData);
+    } else {
+      // Send text-only message as JSON
+      const payload = {
+        conversationId,
+        content: trimmedContent
+      };
+
+      console.log('📤 messageAPI.sendMessage - Sending:', {
+        conversationId,
+        contentLength: trimmedContent.length,
+        contentPreview: trimmedContent.substring(0, 50)
+      });
+
+      response = await apiClient.post('/messages', payload);
+    }
     
     console.log('✅ messageAPI.sendMessage - Success:', {
       messageId: response.data?.id,

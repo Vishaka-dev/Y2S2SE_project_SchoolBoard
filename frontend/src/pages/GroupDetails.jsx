@@ -168,7 +168,7 @@ const GroupDetails = () => {
                       Owner
                     </span>
                     <button
-                      onClick={() => navigate(`/messages`)}
+                      onClick={() => navigate('/messages', { state: { selectedGroupId: groupId } })}
                       className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
                     >
                       <MessageSquare className="w-4 h-4" />
@@ -185,7 +185,7 @@ const GroupDetails = () => {
                 ) : (
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => navigate(`/messages`)}
+                      onClick={() => navigate('/messages', { state: { selectedGroupId: groupId } })}
                       className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
                     >
                       <MessageSquare className="w-4 h-4" />

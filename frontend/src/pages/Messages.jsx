@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from 'react-router-dom';
 import conversationAPI from '../api/conversationAPI';
 import messageAPI from '../api/messageAPI';
 import groupChatService from '../services/groupChatService';
@@ -21,6 +22,8 @@ import { Search, Loader2 } from 'lucide-react';
  */
 const Messages = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const selectedGroupIdFromNav = location.state?.selectedGroupId;
   
   // Combined chat list
   const [allChats, setAllChats] = useState([]);
@@ -58,11 +61,36 @@ const Messages = () => {
       let groups = [];
       try {
         const groupData = await groupChatService.getUserGroups();
-        groups = (groupData.data || []).map(group => ({
-          ...group,
-          type: 'group',
-          displayName: group.name,
-        }));
+        const groupsWithMessages = await Promise.all(
+          (groupData.data || []).map(async (group) => {
+            let lastMessagePreview = group.lastMessagePreview;
+            
+            // If no last message preview, fetch the latest message
+            if (!lastMessagePreview) {
+              try {
+                const convResponse = await groupChatService.getOrCreateGroupConversation(group.id);
+                const conversationId = convResponse.data?.id || convResponse.data?.conversationId;
+                if (conversationId) {
+                  const msgResponse = await groupChatService.getGroupMessages(conversationId, 0, 1);
+                  const messages = msgResponse.data?.content || msgResponse.data || [];
+                  if (messages.length > 0) {
+                    lastMessagePreview = messages[messages.length - 1].content;
+                  }
+                }
+              } catch (err) {
+                console.warn('Failed to fetch last message for group:', group.id, err);
+              }
+            }
+            
+            return {
+              ...group,
+              type: 'group',
+              displayName: group.name,
+              lastMessagePreview
+            };
+          })
+        );
+        groups = groupsWithMessages;
       } catch (groupErr) {
         console.warn('Failed to load groups:', groupErr);
         // Continue with just conversations if groups fail
@@ -105,6 +133,23 @@ const Messages = () => {
     };
   }, [loadAllChats, user]);
 
+  // Auto-select group if navigated from group card
+  useEffect(() => {
+    console.log('Auto-select effect:', { selectedGroupIdFromNav, allChatsLength: allChats.length });
+    if (selectedGroupIdFromNav && allChats.length > 0) {
+      console.log('Looking for group with ID:', selectedGroupIdFromNav);
+      console.log('Available groups:', allChats.filter(c => c.type === 'group').map(c => ({ id: c.id, name: c.displayName })));
+      // Convert IDs to strings for comparison to handle both number and string IDs
+      const selectedGroupIdStr = String(selectedGroupIdFromNav);
+      const groupChat = allChats.find(chat => chat.type === 'group' && String(chat.id) === selectedGroupIdStr);
+      console.log('Found group chat:', groupChat);
+      if (groupChat) {
+        console.log('Selecting group chat:', groupChat.displayName);
+        setSelectedChat(groupChat);
+      }
+    }
+  }, [selectedGroupIdFromNav, allChats]);
+
   // Load messages based on selected chat type
   useEffect(() => {
     if (!selectedChat) {
@@ -123,7 +168,7 @@ const Messages = () => {
           if (conversationId) {
             setGroupConversationMap(prev => ({ ...prev, [selectedChat.id]: conversationId }));
             const msgResponse = await groupChatService.getGroupMessages(conversationId, 0, 50);
-            setGroupMessages(msgResponse.data?.content || msgResponse.data || []);
+            setGroupMessages((msgResponse.data?.content || msgResponse.data || []).reverse());
           }
         } else {
           // Load 1-to-1 messages
@@ -144,12 +189,12 @@ const Messages = () => {
   }, [selectedChat]);
 
   // Send 1-to-1 message
-  const handleSendMessage = async (content) => {
-    if (!selectedChat || selectedChat.type !== 'conversation' || !content.trim()) return;
+  const handleSendMessage = async (content = '', attachments = []) => {
+    if (!selectedChat || selectedChat.type !== 'conversation' || (!content.trim() && attachments.length === 0)) return;
 
     try {
       setSending(true);
-      const response = await messageAPI.sendMessage(selectedChat.id, content);
+      const response = await messageAPI.sendMessage(selectedChat.id, content, attachments);
       setMessages(prev => [...prev, response]);
     } catch (err) {
       console.error('Failed to send message:', err);
@@ -160,16 +205,37 @@ const Messages = () => {
   };
 
   // Send group message
-  const handleSendGroupMessage = async (content) => {
-    if (!selectedChat || selectedChat.type !== 'group' || !content.trim()) return;
+  const handleSendGroupMessage = async (content, attachments = []) => {
+    if (!selectedChat || selectedChat.type !== 'group' || (!content.trim() && attachments.length === 0)) return;
 
     try {
       setSending(true);
       const conversationId = groupConversationMap[selectedChat.id];
-      const response = await groupChatService.sendMessage(conversationId, content);
+      
+      if (!conversationId) {
+        console.error('GroupConversation ID not found for group:', selectedChat.id);
+        setError('Group conversation not initialized. Please refresh and try again.');
+        return;
+      }
+
+      console.log('Sending message to group conversation:', { conversationId, content, attachmentCount: attachments.length });
+      const response = await groupChatService.sendMessage(conversationId, content, attachments);
+      console.log('Message sent successfully:', response.data);
       setGroupMessages(prev => [...prev, response.data]);
+      
+      // Update chat list with the new last message preview
+      setAllChats(prev => prev.map(chat => 
+        chat.type === 'group' && chat.id === selectedChat.id
+          ? { ...chat, lastMessagePreview: content || `${attachments.length} file${attachments.length !== 1 ? 's' : ''}` }
+          : chat
+      ));
     } catch (err) {
       console.error('Failed to send message:', err);
+      // Log more details about the error
+      if (err.response) {
+        console.error('Error status:', err.response.status);
+        console.error('Error data:', err.response.data);
+      }
       setError('Failed to send message');
     } finally {
       setSending(false);
@@ -261,13 +327,9 @@ const Messages = () => {
                 <button
                   key={`${chat.type}-${chat.id}`}
                   onClick={() => setSelectedChat(chat)}
-                  className={`w-full px-4 py-3 border-b border-gray-100 text-left transition ${
-                    selectedChat?.id === chat.id && selectedChat?.type === chat.type
-                      ? 'bg-blue-50 border-l-4 border-l-blue-600'
-                      : 'hover:bg-gray-100'
-                  }`}
+                  className={selectedChat?.id === chat.id && selectedChat?.type === chat.type ? 'w-full px-4 py-3 text-left transition border-b-2 border-gray-200 flex items-center gap-3 bg-blue-50 rounded-lg' : 'w-full px-4 py-3 text-left transition border-b-2 border-gray-200 flex items-center gap-3 hover:bg-gray-50 rounded-lg'}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="relative">
                     {/* Avatar - show profile photo if available */}
                     {chat.type === 'group' ? (
                       // Group avatar
@@ -284,9 +346,9 @@ const Messages = () => {
                       )
                     ) : (
                       // User avatar - show profile photo if available
-                      chat.otherUser?.profilePhoto ? (
+                      chat.otherUser?.profileImageUrl ? (
                         <img
-                          src={chat.otherUser.profilePhoto}
+                          src={chat.otherUser.profileImageUrl}
                           alt={chat.displayName}
                           className="w-10 h-10 rounded-full object-cover"
                         />
@@ -296,12 +358,15 @@ const Messages = () => {
                         </div>
                       )
                     )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{chat.displayName}</p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {chat.type === 'group' ? `${chat.memberCount} members` : 'Direct message'}
-                      </p>
-                    </div>
+                    {(chat.unreadCount > 0 || chat.hasUnread) && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{chat.displayName}</p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {chat.lastMessagePreview || chat.description || '(No messages yet)'}
+                    </p>
                   </div>
                 </button>
               ))
@@ -335,7 +400,7 @@ const Messages = () => {
               />
               <div className="flex-shrink-0 border-t border-gray-200">
                 <GroupMessageInput
-                  onSendMessage={handleSendGroupMessage}
+                  onSend={handleSendGroupMessage}
                   isLoading={sending}
                 />
               </div>
@@ -374,3 +439,4 @@ const Messages = () => {
 };
 
 export default Messages;
+

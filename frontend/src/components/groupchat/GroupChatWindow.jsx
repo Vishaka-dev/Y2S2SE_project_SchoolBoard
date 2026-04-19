@@ -82,7 +82,7 @@ const GroupChatWindow = ({
             <div>
               <h3 className="font-semibold text-gray-900">{group.name}</h3>
               <p className="text-xs text-gray-500">
-                {group.memberCount || 0} members • {typingUsers.size > 0 ? 'Typing...' : 'Online'}
+                {group.memberCount || 0} members {typingUsers.size > 0 && '• Typing...'}
               </p>
             </div>
           </div>
@@ -111,7 +111,7 @@ const GroupChatWindow = ({
                 </button>
                 <button
                   onClick={handleLeaveGroup}
-                  className="w-full text-left px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 flex items-center gap-2 transition font-semibold"
+                  className="w-full text-left px-4 py-2 text-sm text-white rounded-lg bg-red-600 hover:bg-red-700 flex items-center gap-2 transition font-semibold"
                 >
                   <LogOut className="w-4 h-4" />
                   Leave Group
@@ -149,7 +149,7 @@ const GroupChatWindow = ({
       )}
 
       {/* Messages - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 bg-gray-50">
         <div className="space-y-2 pb-4">
           {messages.length === 0 ? (
             <div className="text-center text-gray-500 py-8">
