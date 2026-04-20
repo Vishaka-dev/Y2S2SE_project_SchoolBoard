@@ -105,7 +105,7 @@ const GroupDetails = () => {
   const coverBgUrl = group.coverPictureUrl ? resolveImageUrl(group.coverPictureUrl) : null;
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto pb-8">
+    <div className="space-y-6 max-w-7xl mx-auto pb-8">
       {/* Back Button */}
       <button
         onClick={() => navigate('/groups')}
