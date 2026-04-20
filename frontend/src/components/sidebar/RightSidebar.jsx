@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Users, Calendar as CalendarIcon, UserPlus, ChevronLeft, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
+import { Users, Calendar as CalendarIcon, UserPlus, ChevronLeft, ChevronRight, Loader2, RefreshCw, Clock } from 'lucide-react';
 import { getSuggestedConnections } from '../../services/suggestionService';
+import { eventService } from '../../services/eventService';
 import FollowButton from '../FollowButton';
 
 const RightSidebar = () => {
@@ -11,6 +12,10 @@ const RightSidebar = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(true);
   const [suggestionError, setSuggestionError] = useState(null);
+
+  // Upcoming events state
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
 
   const fetchSuggestions = useCallback(async () => {
     setIsLoadingSuggestions(true);
@@ -26,9 +31,23 @@ const RightSidebar = () => {
     }
   }, []);
 
+  const fetchEvents = useCallback(async () => {
+    setIsLoadingEvents(true);
+    try {
+      const data = await eventService.getUpcomingEvents();
+      // Take only first 3
+      setUpcomingEvents(data.slice(0, 3));
+    } catch (err) {
+      console.error('Failed to load events:', err);
+    } finally {
+      setIsLoadingEvents(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchSuggestions();
-  }, [fetchSuggestions]);
+    fetchEvents();
+  }, [fetchSuggestions, fetchEvents]);
 
   // Handle follow/unfollow events to refresh suggestions if a user is followed
   useEffect(() => {
@@ -46,27 +65,17 @@ const RightSidebar = () => {
     return () => window.removeEventListener('followChanged', handleFollowChanged);
   }, []);
 
-  // Mock data - Keep for events until real service is available
-  const upcomingEvents = [
-    {
-      id: 1,
-      title: 'Math Workshop',
-      date: 'Mar 5',
-      time: '2:00 PM'
-    },
-    {
-      id: 2,
-      title: 'Career Fair 2026',
-      date: 'Mar 8',
-      time: '10:00 AM'
-    },
-    {
-      id: 3,
-      title: 'Science Symposium',
-      date: 'Mar 12',
-      time: '9:00 AM'
-    }
-  ];
+  const formatEventDate = (dateString) => {
+    const date = new Date(dateString);
+    const month = date.toLocaleString('en-US', { month: 'short' });
+    const day = date.getDate();
+    return { month, day };
+  };
+
+  const formatEventTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  };
 
   const getInitials = (name) => {
     return name
@@ -187,24 +196,39 @@ const RightSidebar = () => {
             Upcoming Events
           </h3>
           <div className="space-y-4">
-            {upcomingEvents.map((event) => (
-              <div key={event.id} className="flex gap-3">
-                <div className="flex-shrink-0 w-12 h-12 bg-blue-50 rounded-lg flex flex-col items-center justify-center">
-                  <span className="text-xs font-semibold text-blue-600">
-                    {event.date.split(' ')[0]}
-                  </span>
-                  <span className="text-lg font-bold text-blue-600">
-                    {event.date.split(' ')[1]}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {event.title}
-                  </p>
-                  <p className="text-xs text-gray-500">{event.time}</p>
-                </div>
+            {isLoadingEvents ? (
+              <div className="py-6 flex flex-col items-center justify-center text-gray-400">
+                <Loader2 className="w-6 h-6 animate-spin mb-2" />
+                <p className="text-xs">Loading events...</p>
               </div>
-            ))}
+            ) : upcomingEvents.length > 0 ? (
+              upcomingEvents.map((event) => {
+                const { month, day } = formatEventDate(event.startTime || event.date);
+                return (
+                  <div key={event.id} className="flex gap-3 animate-in fade-in slide-in-from-right-2 duration-300">
+                    <div className="flex-shrink-0 w-12 h-12 bg-blue-50 rounded-lg flex flex-col items-center justify-center">
+                      <span className="text-[10px] uppercase font-bold text-blue-600 leading-none mb-0.5">
+                        {month}
+                      </span>
+                      <span className="text-lg font-bold text-blue-700 leading-none">
+                        {day}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate hover:text-blue-600 cursor-pointer">
+                        {event.title}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5 text-gray-500">
+                        <Clock className="w-3 h-3" />
+                        <p className="text-xs">{formatEventTime(event.startTime || event.date)}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-xs text-gray-400 italic text-center py-4">No upcoming events found.</p>
+            )}
           </div>
           
           <button 
@@ -268,20 +292,6 @@ const RightSidebar = () => {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Footer Links */}
-        <div className="text-center text-xs text-gray-500 space-y-1">
-          <div className="flex flex-wrap justify-center gap-3">
-            <a href="#" className="hover:text-blue-600 transition">About</a>
-            <span>•</span>
-            <a href="#" className="hover:text-blue-600 transition">Help</a>
-            <span>•</span>
-            <a href="#" className="hover:text-blue-600 transition">Privacy</a>
-            <span>•</span>
-            <a href="#" className="hover:text-blue-600 transition">Terms</a>
-          </div>
-          <p className="pt-2">© 2026 LearnLink</p>
         </div>
       </div>
     </aside>

@@ -512,16 +512,16 @@ const Home = () => {
                 <span className="hover:text-blue-600 cursor-pointer">0 comments</span>
                 <span className="hover:text-blue-600 cursor-pointer">0 shares</span>
               </div>
-              <div className="flex items-center gap-2">
-                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+              <div className="flex items-center gap-2 h-11">
+                <button className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
                   <ThumbsUp className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                   <span className="text-sm font-bold">Like</span>
                 </button>
-                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+                <button className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
                   <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                   <span className="text-sm font-bold">Comment</span>
                 </button>
-                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+                <button className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
                   <Share2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                   <span className="text-sm font-bold">Share</span>
                 </button>
@@ -659,7 +659,6 @@ const Home = () => {
                         />
                       </div>
                     )}
-                    {/* Engagement Stats */}
                     <div className="flex items-center gap-4 text-[13px] text-gray-500 pb-3 mb-3 border-b border-gray-50 font-medium">
                       {post.totalReactions > 0 ? (
                         <span className="hover:text-blue-600 cursor-pointer flex items-center gap-1">
@@ -673,16 +672,16 @@ const Home = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-2 h-11" onClick={(e) => e.stopPropagation()}>
                       <ReactionButton 
                         currentUserReaction={post.currentUserReaction} 
                         onReact={(reactionType) => handleReact(post.id, reactionType)} 
                       />
-                      <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+                      <button className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
                         <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                         <span className="text-sm font-bold">Comment</span>
                       </button>
-                      <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+                      <button className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
                         <Share2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                         <span className="text-sm font-bold">Share</span>
                       </button>

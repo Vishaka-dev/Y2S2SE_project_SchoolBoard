@@ -1,4 +1,4 @@
-import { Bell, MessageSquare, ChevronDown, Home, BookOpenText, Calendar, Users } from 'lucide-react';
+import { Bell, MessageSquare, ChevronDown, Home, BookOpenText, Calendar, Users, User, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { useState, useRef, useEffect } from 'react';
@@ -175,7 +175,7 @@ const TopNavbar = () => {
                     onClick={handleProfileClick}
                     className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-3"
                   >
-                    <span className="text-lg">👤</span>
+                    <User className="w-4 h-4 text-gray-500" />
                     <span className="font-medium">View Profile</span>
                   </button>
 
@@ -183,7 +183,7 @@ const TopNavbar = () => {
                     onClick={handleSettingsClick}
                     className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-3"
                   >
-                    <span className="text-lg">⚙️</span>
+                    <Settings className="w-4 h-4 text-gray-500" />
                     <span className="font-medium">Edit Profile</span>
                   </button>
                 </div>
@@ -194,7 +194,7 @@ const TopNavbar = () => {
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition flex items-center gap-3 font-medium"
                   >
-                    <span className="text-lg">🚪</span>
+                    <LogOut className="w-4 h-4" />
                     <span>Sign Out</span>
                   </button>
                 </div>

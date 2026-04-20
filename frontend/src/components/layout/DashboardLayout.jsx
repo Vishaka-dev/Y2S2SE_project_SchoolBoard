@@ -3,6 +3,7 @@ import { useState } from 'react';
 import TopNavbar from '../navbar/TopNavbar';
 import RightSidebar from '../sidebar/RightSidebar';
 import FeedLeftRail from '../sidebar/FeedLeftRail';
+import Footer from './Footer';
 import { useAuth } from '../../context/AuthContext';
 import { Loader } from 'lucide-react';
 import CreatePostModal from '../CreatePostModal';
@@ -126,6 +127,8 @@ const DashboardLayout = () => {
           onClose={() => setToast(null)}
         />
       )}
+
+      <Footer />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { Download, ExternalLink, Trash2, MoreVertical } from 'lucide-react';
+import { Download, ExternalLink, Trash2, MoreVertical, Share2 } from 'lucide-react';
 
 const ResourceCard = ({
   resource,
@@ -86,10 +86,10 @@ const ResourceCard = ({
             href={resource.fileUrl}
             target="_blank"
             rel="noreferrer"
-            className="bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-medium rounded-lg shadow-sm transition-colors duration-200 px-3 py-2 text-xs inline-flex items-center gap-1.5"
+            className="flex-1 bg-blue-600 text-white hover:bg-blue-700 font-bold rounded-xl shadow-sm transition-all duration-200 px-4 py-2 text-xs inline-flex items-center justify-center gap-2 group/btn"
           >
-            <Download className="w-3.5 h-3.5" />
-            Open File
+            <Download className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
+            Download
           </a>
         )}
 
@@ -98,12 +98,19 @@ const ResourceCard = ({
             href={resource.externalUrl}
             target="_blank"
             rel="noreferrer"
-            className="bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-medium rounded-lg shadow-sm transition-colors duration-200 px-3 py-2 text-xs inline-flex items-center gap-1.5"
+            className="flex-1 bg-white text-blue-600 border border-blue-100 hover:bg-blue-50 font-bold rounded-xl shadow-sm transition-all duration-200 px-4 py-2 text-xs inline-flex items-center justify-center gap-2 group/btn"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
             Visit Link
           </a>
         )}
+
+        <button 
+          className="flex-1 bg-white text-gray-600 border border-gray-100 hover:bg-gray-50 font-bold rounded-xl shadow-sm transition-all duration-200 px-4 py-2 text-xs inline-flex items-center justify-center gap-2 group/btn"
+        >
+          <Share2 className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
+          Share
+        </button>
       </div>
     </article>
   );

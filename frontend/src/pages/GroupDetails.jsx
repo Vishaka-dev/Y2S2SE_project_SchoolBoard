@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Trash2, Crown, Loader2, LogIn, LogOut, Calendar, BookOpen, GraduationCap, Pencil, MessageSquare, PlusCircle, Paperclip, MessageCircle, X, Smile, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Users, Trash2, Crown, Loader2, LogIn, LogOut, Calendar, BookOpen, GraduationCap, Pencil, MessageSquare, PlusCircle, Paperclip, MessageCircle, X, Smile, MoreVertical, Share2 } from 'lucide-react';
 import groupService from '../services/groupService';
 import { GROUP_TYPE_CONFIG } from '../components/GroupCard';
 import GroupMembersModal from '../components/GroupMembersModal';
@@ -683,10 +683,11 @@ const GroupDetails = () => {
                           <span className="hover:text-blue-600 cursor-pointer">0 reactions</span>
                         )}
                         <span className="hover:text-blue-600 cursor-pointer" onClick={() => handleToggleComments(item.id)}>{item.commentCount || 0} comments</span>
+                        <span className="hover:text-blue-600 cursor-pointer">0 shares</span>
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-2 h-11" onClick={(e) => e.stopPropagation()}>
                         <ReactionButton 
                           currentUserReaction={item.currentUserReaction} 
                           onReact={(reactionType) => handleReact(item.id, reactionType)} 
@@ -694,6 +695,10 @@ const GroupDetails = () => {
                         <button onClick={() => handleToggleComments(item.id)} className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
                           <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                           <span className="text-sm font-bold">Comment</span>
+                        </button>
+                        <button className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+                          <Share2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                          <span className="text-sm font-bold">Share</span>
                         </button>
                       </div>
 
