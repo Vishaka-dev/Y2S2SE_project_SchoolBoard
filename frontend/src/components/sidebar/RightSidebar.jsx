@@ -1,13 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Users, Calendar as CalendarIcon, UserPlus, ChevronLeft, ChevronRight, Loader2, RefreshCw, Clock } from 'lucide-react';
+import { Users, Calendar as CalendarIcon, UserPlus, Loader2, Clock, RefreshCw } from 'lucide-react';
 import { getSuggestedConnections } from '../../services/suggestionService';
 import { eventService } from '../../services/eventService';
 import FollowButton from '../FollowButton';
 
 const RightSidebar = () => {
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  
   // Suggested connections state
   const [suggestions, setSuggestions] = useState([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(true);
@@ -22,7 +19,7 @@ const RightSidebar = () => {
     setSuggestionError(null);
     try {
       const data = await getSuggestedConnections(3);
-      setSuggestions(data);
+      setSuggestions(data?.suggestions || (Array.isArray(data) ? data : []));
     } catch (err) {
       console.error('Failed to load suggestions:', err);
       setSuggestionError('Unable to load suggestions');
@@ -66,14 +63,18 @@ const RightSidebar = () => {
   }, []);
 
   const formatEventDate = (dateString) => {
+    if (!dateString) return { month: 'N/A', day: '--' };
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return { month: 'N/A', day: '--' };
     const month = date.toLocaleString('en-US', { month: 'short' });
     const day = date.getDate();
     return { month, day };
   };
 
   const formatEventTime = (dateString) => {
+    if (!dateString) return 'Time TBA';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Time TBA';
     return date.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   };
 
@@ -203,95 +204,37 @@ const RightSidebar = () => {
               </div>
             ) : upcomingEvents.length > 0 ? (
               upcomingEvents.map((event) => {
-                const { month, day } = formatEventDate(event.startTime || event.date);
+                const dateToFormat = event.eventDate || event.startTime || event.date;
+                const { month, day } = formatEventDate(dateToFormat);
                 return (
                   <div key={event.id} className="flex gap-3 animate-in fade-in slide-in-from-right-2 duration-300">
-                    <div className="flex-shrink-0 w-12 h-12 bg-blue-50 rounded-lg flex flex-col items-center justify-center">
+                    <div className="flex-shrink-0 w-12 h-12 bg-blue-50 rounded-lg flex flex-col items-center justify-center border border-blue-100">
                       <span className="text-[10px] uppercase font-bold text-blue-600 leading-none mb-0.5">
                         {month}
                       </span>
-                      <span className="text-lg font-bold text-blue-700 leading-none">
+                      <span className="text-lg font-black text-blue-700 leading-none">
                         {day}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate hover:text-blue-600 cursor-pointer">
+                      <p className="text-sm font-semibold text-gray-900 truncate hover:text-blue-600 cursor-pointer transition-colors" title={event.title}>
                         {event.title}
                       </p>
-                      <div className="flex items-center gap-1.5 mt-0.5 text-gray-500">
-                        <Clock className="w-3 h-3" />
-                        <p className="text-xs">{formatEventTime(event.startTime || event.date)}</p>
+                      <div className="flex items-center gap-1.5 mt-1 text-gray-500">
+                        <Clock className="w-3 h-3 text-blue-400" />
+                        <p className="text-xs font-medium">{formatEventTime(dateToFormat)}</p>
                       </div>
                     </div>
                   </div>
                 );
               })
             ) : (
-              <p className="text-xs text-gray-400 italic text-center py-4">No upcoming events found.</p>
+              <div className="py-8 px-4 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                <CalendarIcon className="w-8 h-8 text-gray-300 mx-auto mb-2 opacity-50" />
+                <p className="text-xs text-gray-400 font-medium">No upcoming events found</p>
+              </div>
             )}
           </div>
-          
-          <button 
-            onClick={() => setShowCalendar(!showCalendar)}
-            className="w-full mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium transition"
-          >
-            {showCalendar ? 'Hide calendar ↑' : 'View calendar →'}
-          </button>
-
-          {showCalendar && (
-            <div className="mt-4 border-t pt-4">
-              <div className="flex items-center justify-between mb-4">
-                <button 
-                  onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} 
-                  className="p-1 hover:bg-gray-100 rounded-full transition"
-                >
-                  <ChevronLeft className="w-4 h-4 text-gray-600" />
-                </button>
-                <span className="text-sm font-semibold text-gray-900">
-                  {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][currentDate.getMonth()]} {currentDate.getFullYear()}
-                </span>
-                <button 
-                  onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} 
-                  className="p-1 hover:bg-gray-100 rounded-full transition"
-                >
-                  <ChevronRight className="w-4 h-4 text-gray-600" />
-                </button>
-              </div>
-              <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                  <div key={day} className="text-xs font-medium text-gray-500">{day}</div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-1 text-center">
-                {Array.from({ length: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() }).map((_, i) => (
-                  <div key={`pad-${i}`} className="h-8"></div>
-                ))}
-                {Array.from({ length: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
-                  const day = i + 1;
-                  const monthName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][currentDate.getMonth()];
-                  const eventForDay = upcomingEvents.find(event => event.date === `${monthName} ${day}`);
-                  const isToday = new Date().getDate() === day && new Date().getMonth() === currentDate.getMonth() && new Date().getFullYear() === currentDate.getFullYear();
-                  
-                  return (
-                    <div 
-                      key={day} 
-                      className={`
-                        h-8 w-8 mx-auto flex flex-col items-center justify-center rounded-full text-sm relative transition
-                        ${eventForDay ? 'bg-blue-50 text-blue-700 font-semibold cursor-pointer hover:bg-blue-100' : 'text-gray-700 hover:bg-gray-50 cursor-pointer'}
-                        ${isToday && !eventForDay ? 'ring-2 ring-blue-500' : ''}
-                      `}
-                      title={eventForDay ? eventForDay.title : undefined}
-                    >
-                      <span className="z-10">{day}</span>
-                      {eventForDay && (
-                        <span className="absolute bottom-1 w-1 h-1 bg-blue-600 rounded-full"></span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </aside>

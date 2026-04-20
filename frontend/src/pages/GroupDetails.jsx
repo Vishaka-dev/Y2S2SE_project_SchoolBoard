@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Trash2, Crown, Loader2, LogIn, LogOut, Calendar, BookOpen, GraduationCap, Pencil, MessageSquare, PlusCircle, Paperclip, MessageCircle, X, Smile, MoreVertical, Share2 } from 'lucide-react';
+import { ArrowLeft, Users, Trash2, Crown, Loader2, LogIn, LogOut, Calendar, BookOpen, GraduationCap, Pencil, MessageSquare, PlusCircle, Paperclip, MessageCircle, X, Smile, MoreVertical, Share2, Download, ExternalLink, BookOpenText } from 'lucide-react';
 import groupService from '../services/groupService';
 import { GROUP_TYPE_CONFIG } from '../components/GroupCard';
 import GroupMembersModal from '../components/GroupMembersModal';
@@ -12,6 +12,7 @@ import ResourceCard from '../components/resource-hub/ResourceCard';
 import ReactionButton from '../components/ReactionButton';
 import EmojiPicker from 'emoji-picker-react';
 import { useAuth } from '../context/AuthContext';
+import ShareModal from '../components/ShareModal';
 
 const GroupDetails = () => {
   const { groupId } = useParams();
@@ -46,6 +47,16 @@ const GroupDetails = () => {
   const [commentInputs, setCommentInputs] = useState({});
   const [isSubmittingComment, setIsSubmittingComment] = useState({});
   const [showCommentEmojiPicker, setShowCommentEmojiPicker] = useState(null);
+
+  // Sharing state
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareContent, setShareContent] = useState(null);
+
+  const handleShareClick = (e, item) => {
+    e.stopPropagation();
+    setShareContent(item);
+    setIsShareModalOpen(true);
+  };
 
   useEffect(() => {
     if (groupId) {
@@ -322,6 +333,61 @@ const GroupDetails = () => {
     if (!role) return 'Student';
     return role.toLowerCase().replace('role_', '').replace(/\b\w/g, l => l.toUpperCase());
   };
+
+  const renderPostContent = (postContent) => {
+    let resourceData = null;
+
+    if (postContent?.startsWith('[RES_SHARE]')) {
+      try {
+        resourceData = JSON.parse(postContent.replace('[RES_SHARE]', ''));
+      } catch (e) {
+        console.error('Failed to parse shared resource:', e);
+      }
+    } else if (postContent?.startsWith('Shared a resource:')) {
+      // Backwards compatibility for older share texts
+      const lines = postContent.split('\n\n');
+      const titleLine = lines[0]?.replace('Shared a resource: ', '').replace(/"/g, '') || 'Unknown Title';
+      const linkLine = lines[1] || ''; 
+      
+      const isFile = linkLine.startsWith('File: ');
+      const url = isFile ? linkLine.replace('File: ', '') : linkLine.replace('Link: ', '');
+      
+      resourceData = {
+          id: `legacy-${Date.now()}`,
+          title: titleLine,
+          fileUrl: isFile ? url : null,
+          externalUrl: !isFile ? url : null,
+          category: 'LEGACY_SHARE',
+          type: isFile ? 'DOCUMENT' : 'LINK',
+          uploadedBy: { username: 'Shared' },
+          createdAt: new Date().toISOString()
+      };
+    }
+
+    if (resourceData) {
+        return (
+          <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+             <p className="text-[10px] text-blue-600 font-bold uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+               <Share2 className="w-3 h-3" />
+               Shared Academic Resource
+             </p>
+             <ResourceCard
+                resource={resourceData}
+                user={user}
+                deleteTarget={null}
+                onDelete={() => {}} 
+                prettyLabel={(l) => l.replace(/_/g, ' ')}
+                normalizeRoleLabel={normalizeRoleLabel}
+                formatDate={formatDate}
+                onShare={() => handleShareClick(null, { ...resourceData, feedType: 'resource' })}
+             />
+          </div>
+        );
+    }
+    
+    return <p className="text-gray-800 text-sm whitespace-pre-wrap font-dm-sans mb-3">{postContent}</p>;
+  };
+
 
   if (isLoading) {
     return (
@@ -663,9 +729,9 @@ const GroupDetails = () => {
                         )}
                       </div>
                       
-                      <p className="text-gray-800 text-sm whitespace-pre-wrap font-dm-sans mb-3">
-                        {item.content}
-                      </p>
+                      <div className="mb-4">
+                        {renderPostContent(item.content)}
+                      </div>
                       
                       {item.imageUrl && (
                         <div className="mt-3 mb-4 rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50">
@@ -696,7 +762,10 @@ const GroupDetails = () => {
                           <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                           <span className="text-sm font-bold">Comment</span>
                         </button>
-                        <button className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+                        <button 
+                          onClick={(e) => handleShareClick(e, item)}
+                          className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn"
+                        >
                           <Share2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                           <span className="text-sm font-bold">Share</span>
                         </button>
@@ -836,6 +905,12 @@ const GroupDetails = () => {
         groupName={group.name}
         isOpen={showMembers}
         onClose={() => setShowMembers(false)}
+      />
+      <ShareModal 
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        content={shareContent}
+        contentType={shareContent?.feedType === 'resource' ? 'RESOURCE' : 'POST'}
       />
     </div>
   );

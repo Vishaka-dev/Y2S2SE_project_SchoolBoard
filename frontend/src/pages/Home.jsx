@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ThumbsUp, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, X, Smile } from 'lucide-react';
+import { ThumbsUp, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, X, Smile, Download, ExternalLink, BookOpenText } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { postService } from '../services/postService';
@@ -8,6 +8,8 @@ import RoleBasedWidget from '../components/widgets/RoleBasedWidget';
 import EditPostModal from '../components/EditPostModal';
 import FollowButton from '../components/FollowButton';
 import ReactionButton from '../components/ReactionButton';
+import ResourceCard from '../components/resource-hub/ResourceCard';
+import ShareModal from '../components/ShareModal';
 
 const Home = () => {
   const { user } = useAuth();
@@ -28,6 +30,17 @@ const Home = () => {
   const [commentInputs, setCommentInputs] = useState({});
   const [isSubmittingComment, setIsSubmittingComment] = useState({});
   const [showCommentEmojiPicker, setShowCommentEmojiPicker] = useState(null); // stores postId
+  
+  // Sharing state
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareContent, setShareContent] = useState(null);
+
+  const handleShareClick = (e, post) => {
+    e.stopPropagation();
+    setShareContent(post);
+    setIsShareModalOpen(true);
+  };
+
   const POSTS_PER_PAGE = 10;
 
   const loadPosts = async (pageToLoad, isInitial = false) => {
@@ -411,6 +424,7 @@ const Home = () => {
     });
   };
 
+
   return (
     <div className="space-y-6">
       {/* Feed Posts */}
@@ -681,7 +695,10 @@ const Home = () => {
                         <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                         <span className="text-sm font-bold">Comment</span>
                       </button>
-                      <button className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+                      <button 
+                        onClick={(e) => handleShareClick(e, post)}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn"
+                      >
                         <Share2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                         <span className="text-sm font-bold">Share</span>
                       </button>
@@ -734,6 +751,12 @@ const Home = () => {
           }}
         />
       )}
+      <ShareModal 
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        content={shareContent}
+        contentType="POST"
+      />
     </div>
   );
 };

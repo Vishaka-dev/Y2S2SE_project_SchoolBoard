@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import resourceHubService from '../services/resourceHubService';
 import ResourceUploadModal from '../components/resource-hub/ResourceUploadModal';
 import ResourceCard from '../components/resource-hub/ResourceCard';
+import ShareModal from '../components/ShareModal';
 
 const RESOURCE_CATEGORIES = [
   'STEM',
@@ -75,6 +76,15 @@ const ResourceHub = () => {
   const [fetchError, setFetchError] = useState('');
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
+
+  // Sharing state
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareContent, setShareContent] = useState(null);
+
+  const handleShareClick = (resource) => {
+    setShareContent(resource);
+    setIsShareModalOpen(true);
+  };
 
   const [filters, setFilters] = useState({
     search: '',
@@ -481,6 +491,7 @@ const ResourceHub = () => {
                   prettyLabel={prettyLabel}
                   normalizeRoleLabel={normalizeRoleLabel}
                   formatDate={formatDate}
+                  onShare={() => handleShareClick(resource)}
                 />
               ))}
             </div>
@@ -525,6 +536,12 @@ const ResourceHub = () => {
         categories={RESOURCE_CATEGORIES}
         types={RESOURCE_TYPES}
         prettyLabel={prettyLabel}
+      />
+      <ShareModal 
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        content={shareContent}
+        contentType="RESOURCE"
       />
     </div>
   );

@@ -46,7 +46,7 @@ const TopNavbar = () => {
   };
 
   return (
-    <div className="h-16 bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+    <div className="h-16 bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
       <div className="h-full mx-auto px-6 flex items-center justify-between">
         <div 
           onClick={() => navigate(user ? '/feed' : '/')} 
@@ -202,7 +202,7 @@ const TopNavbar = () => {
             )}
           </div>
         )}
-      </div>
+        </div>
       </div>
     </div>
   );

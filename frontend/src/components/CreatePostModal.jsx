@@ -81,7 +81,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCompleted, groupId }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900 bg-opacity-50 transition-opacity font-dm-sans">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm transition-opacity font-dm-sans">
             <div
                 className="w-full max-w-2xl bg-white rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh] animate-fade-in"
             >

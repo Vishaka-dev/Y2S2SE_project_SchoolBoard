@@ -8,6 +8,7 @@ const ResourceCard = ({
   prettyLabel,
   normalizeRoleLabel,
   formatDate,
+  onShare,
 }) => {
   const isOwner = user?.id && resource.uploadedBy?.id === user.id;
 
@@ -106,6 +107,7 @@ const ResourceCard = ({
         )}
 
         <button 
+          onClick={onShare}
           className="flex-1 bg-white text-gray-600 border border-gray-100 hover:bg-gray-50 font-bold rounded-xl shadow-sm transition-all duration-200 px-4 py-2 text-xs inline-flex items-center justify-center gap-2 group/btn"
         >
           <Share2 className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
