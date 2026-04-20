@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { postService } from '../services/postService';
 import EmojiPicker from 'emoji-picker-react';
 import { Smile } from 'lucide-react';
@@ -79,8 +80,8 @@ const EditPostModal = ({ isOpen, onClose, post, onPostCompleted }) => {
         }
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900 bg-opacity-50 transition-opacity font-dm-sans">
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm transition-opacity font-dm-sans">
             <div className="w-full max-w-2xl bg-white rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
                 {/* Header */}
                 <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
@@ -181,7 +182,8 @@ const EditPostModal = ({ isOpen, onClose, post, onPostCompleted }) => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

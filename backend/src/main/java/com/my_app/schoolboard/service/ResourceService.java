@@ -12,7 +12,7 @@ public interface ResourceService {
     ResourceResponseDTO createResource(ResourceCreateRequestDTO request, String username);
 
     ResourcePageDTO getResources(int page, int size, ResourceCategory category, ResourceType type, String search,
-            Role role);
+            Role role, Long groupId);
 
     void deleteResource(Long id, String username);
 }

@@ -134,7 +134,8 @@ public class GroupMessageServiceImpl implements GroupMessageService {
 
         try {
             // Upload file
-            String fileUrl = fileUploadService.uploadFile(file, "group-messages");
+            FileUploadService.FileMetadata metadata = fileUploadService.saveFile(file);
+            String fileUrl = metadata.getDownloadUrl();
 
             // Create attachment
             GroupAttachment attachment = GroupAttachment.builder()

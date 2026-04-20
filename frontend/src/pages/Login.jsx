@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import authService from '../services/authService';
-import logo from '../../logos/learnlink_logo.png';
+import logo from '../../logos/learnlink_logo-transparent.png';
 import loginImage from '../../photos/login.jpg';
 
 const Login = () => {

@@ -13,7 +13,7 @@ const buildQueryString = (params = {}) => {
 };
 
 const resourceHubService = {
-  createResource: async ({ title, description, category, type, file, externalUrl, tags }) => {
+  createResource: async ({ title, description, category, type, file, externalUrl, tags, groupId }) => {
     const formData = new FormData();
 
     formData.append('title', title);
@@ -29,6 +29,10 @@ const resourceHubService = {
       formData.append('externalUrl', externalUrl);
     }
 
+    if (groupId) {
+      formData.append('groupId', groupId);
+    }
+
     if (Array.isArray(tags)) {
       tags.forEach((tag) => {
         if (tag && tag.trim()) {
@@ -40,7 +44,7 @@ const resourceHubService = {
     try {
       const response = await apiClient.post('/resources', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': undefined,
         },
       });
       return response.data;
@@ -49,8 +53,8 @@ const resourceHubService = {
     }
   },
 
-  getResources: async ({ page = 0, size = 10, category, type, search, role } = {}) => {
-    const queryString = buildQueryString({ page, size, category, type, search, role });
+  getResources: async ({ page = 0, size = 10, category, type, search, role, groupId } = {}) => {
+    const queryString = buildQueryString({ page, size, category, type, search, role, groupId });
 
     try {
       const response = await apiClient.get(`/resources${queryString ? `?${queryString}` : ''}`);

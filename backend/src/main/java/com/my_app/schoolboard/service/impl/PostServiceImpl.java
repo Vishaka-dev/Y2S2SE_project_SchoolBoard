@@ -24,6 +24,8 @@ import com.my_app.schoolboard.repository.PostRepository;
 import com.my_app.schoolboard.repository.StudentProfileRepository;
 import com.my_app.schoolboard.repository.TeacherProfileRepository;
 import com.my_app.schoolboard.repository.UserRepository;
+import com.my_app.schoolboard.model.StudyGroup;
+import com.my_app.schoolboard.repository.StudyGroupRepository;
 import com.my_app.schoolboard.service.PostService;
 import com.my_app.schoolboard.service.ReactionService;
 import com.my_app.schoolboard.service.StorageService;
@@ -44,6 +46,7 @@ public class PostServiceImpl implements PostService {
     private final TeacherProfileRepository teacherProfileRepository;
     private final InstituteProfileRepository instituteProfileRepository;
     private final FollowRepository followRepository;
+    private final StudyGroupRepository studyGroupRepository;
     private final StorageService storageService;
     private final ReactionService reactionService;
 
@@ -62,11 +65,17 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public PostResponseDTO createPost(String content, MultipartFile image, String username) {
-        log.info("Creating new post by user: {}", username);
+    public PostResponseDTO createPost(String content, MultipartFile image, String username, Long groupId) {
+        log.info("Creating new post by user: {} for group: {}", username, groupId);
 
         User author = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        StudyGroup group = null;
+        if (groupId != null) {
+            group = studyGroupRepository.findById(groupId)
+                    .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
+        }
 
         if ((content == null || content.trim().isEmpty()) && (image == null || image.isEmpty())) {
             throw new IllegalArgumentException("Post must contain either text content or an image");
@@ -75,7 +84,6 @@ public class PostServiceImpl implements PostService {
         String imageUrl = null;
         if (image != null && !image.isEmpty()) {
             String filename = storageService.store(image, "posts");
-            // Build the full URL to the image
             imageUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
                     .path("/uploads/posts/")
                     .path(filename)
@@ -86,12 +94,16 @@ public class PostServiceImpl implements PostService {
                 .content(content)
                 .imageUrl(imageUrl)
                 .author(author)
+                .group(group)
                 .hashtags(extractHashtags(content))
                 .build();
 
         Post savedPost = postRepository.save(post);
+        log.info("Successfully saved post {} in group {}", savedPost.getId(), groupId);
+
         ReactionSummaryDTO emptySummary = ReactionSummaryDTO.builder().reactionCounts(Map.of()).totalReactions(0L)
                 .build();
+        
         return mapToDTO(savedPost, author.getId(), emptySummary);
     }
 
@@ -100,7 +112,7 @@ public class PostServiceImpl implements PostService {
     public List<PostResponseDTO> getAllPosts(int page, int size) {
         Long currentUserId = getCurrentUserIdOrNull();
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
-        List<Post> posts = postRepository.findAllByOrderByCreatedAtDesc(pageable);
+        List<Post> posts = postRepository.findAllByGroupIsNullOrderByCreatedAtDesc(pageable);
 
         List<Long> postIds = posts.stream().map(Post::getId).collect(Collectors.toList());
         Map<Long, ReactionSummaryDTO> reactionMap = reactionService.getReactionSummaryMapForPosts(postIds,
@@ -109,6 +121,22 @@ public class PostServiceImpl implements PostService {
         return posts.stream()
                 .map(post -> mapToDTO(post, currentUserId, reactionMap.get(post.getId())))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PostResponseDTO> getPostsByGroupId(Long groupId, int page, int size) {
+        Long currentUserId = getCurrentUserIdOrNull();
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        List<Post> posts = postRepository.findAllByGroupIdOrderByCreatedAtDesc(groupId, pageable);
+
+        List<Long> postIds = posts.stream().map(Post::getId).collect(Collectors.toList());
+        Map<Long, ReactionSummaryDTO> reactionMap = reactionService.getReactionSummaryMapForPosts(postIds, currentUserId);
+
+        return posts.stream()
+                .map(post -> mapToDTO(post, currentUserId, reactionMap.get(post.getId())))
+                .collect(Collectors.toList());
+        
     }
 
     @Override

@@ -39,5 +39,7 @@ public class ResourceCreateRequestDTO {
     @Size(max = 1000, message = "External URL must be at most 1000 characters")
     private String externalUrl;
 
+    private Long groupId;
+
     private List<String> tags;
 }

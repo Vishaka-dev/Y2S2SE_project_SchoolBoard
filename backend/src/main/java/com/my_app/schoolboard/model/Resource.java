@@ -57,6 +57,10 @@ public class Resource {
     @Builder.Default
     private Boolean isDeleted = false;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id")
+    private StudyGroup group;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "resource_tags", joinColumns = @JoinColumn(name = "resource_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
     @Builder.Default
