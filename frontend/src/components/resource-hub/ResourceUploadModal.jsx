@@ -1,4 +1,5 @@
 import { Loader2, UploadCloud, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 const ResourceUploadModal = ({
   isOpen,
@@ -18,9 +19,9 @@ const ResourceUploadModal = ({
 }) => {
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 bg-black/40 p-4 md:p-6 flex items-center justify-center"
+      className="fixed inset-0 z-[9999] bg-gray-900/60 backdrop-blur-sm p-4 md:p-6 flex items-center justify-center"
       onClick={onClose}
       role="presentation"
     >
@@ -174,7 +175,8 @@ const ResourceUploadModal = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

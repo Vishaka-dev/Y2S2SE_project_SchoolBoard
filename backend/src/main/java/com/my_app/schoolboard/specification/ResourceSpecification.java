@@ -35,4 +35,12 @@ public final class ResourceSpecification {
     public static Specification<Resource> uploaderHasRole(Role role) {
         return (root, query, cb) -> role == null ? null : cb.equal(root.get("uploadedBy").get("role"), role);
     }
+
+    public static Specification<Resource> groupIsNull() {
+        return (root, query, cb) -> cb.isNull(root.get("group"));
+    }
+
+    public static Specification<Resource> hasGroupId(Long groupId) {
+        return (root, query, cb) -> groupId == null ? null : cb.equal(root.get("group").get("id"), groupId);
+    }
 }

@@ -43,9 +43,10 @@ public class ResourceController {
             @RequestParam(name="category", required = false) ResourceCategory category,
             @RequestParam(name="type", required = false) ResourceType type,
             @RequestParam(name="search", required = false) String search,
-            @RequestParam(name="role", required = false) Role role) {
+            @RequestParam(name="role", required = false) Role role,
+            @RequestParam(name="groupId", required = false) Long groupId) {
 
-        ResourcePageDTO response = resourceService.getResources(page, size, category, type, search, role);
+        ResourcePageDTO response = resourceService.getResources(page, size, category, type, search, role, groupId);
         return ResponseEntity.ok(response);
     }
 

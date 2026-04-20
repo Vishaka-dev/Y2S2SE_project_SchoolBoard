@@ -278,13 +278,163 @@ export const isWebSocketConnected = () => {
   return isConnected && stompClient !== null;
 };
 
+/**
+ * Subscribe to group chat messages
+ * Listens for new messages broadcast to a group
+ * @param {number} groupId - Group ID to subscribe to
+ * @param {Function} onMessage - Callback when message received
+ * @returns {Function} Unsubscribe function
+ */
+export const subscribeToGroupChat = (groupId, onMessage) => {
+  if (!isConnected || !stompClient) {
+    console.warn('WebSocket not connected. Cannot subscribe to group chat.');
+    return () => {};
+  }
+  
+  const destination = `/topic/group-chat.${groupId}`;
+  
+  const subscription = stompClient.subscribe(destination, (message) => {
+    try {
+      const payload = JSON.parse(message.body);
+      onMessage(payload);
+    } catch (error) {
+      console.error('Failed to parse group message:', error);
+    }
+  });
+  
+  subscriptions.set(destination, subscription);
+  
+  console.log(`Subscribed to group chat ${groupId}`);
+  
+  return () => {
+    subscription.unsubscribe();
+    subscriptions.delete(destination);
+    console.log(`Unsubscribed from group chat ${groupId}`);
+  };
+};
+
+/**
+ * Subscribe to group typing indicators
+ * Listens for typing events in a group
+ * @param {number} groupId - Group ID
+ * @param {Function} onTyping - Callback when typing indicator received
+ * @returns {Function} Unsubscribe function
+ */
+export const subscribeToGroupTyping = (groupId, onTyping) => {
+  if (!isConnected || !stompClient) {
+    console.warn('WebSocket not connected. Cannot subscribe to group typing indicators.');
+    return () => {};
+  }
+  
+  const destination = `/topic/group-chat.${groupId}.typing`;
+  
+  const subscription = stompClient.subscribe(destination, (message) => {
+    try {
+      const payload = JSON.parse(message.body);
+      onTyping(payload);
+    } catch (error) {
+      console.error('Failed to parse group typing indicator:', error);
+    }
+  });
+  
+  subscriptions.set(destination, subscription);
+  
+  console.log(`Subscribed to group typing indicators for group ${groupId}`);
+  
+  return () => {
+    subscription.unsubscribe();
+    subscriptions.delete(destination);
+    console.log(`Unsubscribed from group typing indicators for group ${groupId}`);
+  };
+};
+
+/**
+ * Send a group chat message via WebSocket
+ * @param {number} groupId - Group ID
+ * @param {number} senderId - Sender user ID
+ * @param {string} content - Message content
+ * @returns {Promise} Resolves when sent
+ */
+export const sendGroupMessage = (groupId, senderId, content) => {
+  return new Promise((resolve, reject) => {
+    if (!isConnected || !stompClient) {
+      reject(new Error('WebSocket not connected'));
+      return;
+    }
+    
+    try {
+      stompClient.send(
+        '/app/group-chat.send',
+        {},
+        JSON.stringify({
+          groupId,
+          senderId,
+          content,
+          timestamp: new Date().toISOString()
+        }),
+        (error) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        }
+      );
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+/**
+ * Send typing indicator in group chat
+ * @param {number} groupId - Group ID
+ * @param {number} userId - User ID
+ * @param {boolean} isTyping - True if typing, false if stopped
+ * @returns {Promise} Resolves when sent
+ */
+export const sendGroupTypingIndicator = (groupId, userId, isTyping) => {
+  return new Promise((resolve, reject) => {
+    if (!isConnected || !stompClient) {
+      reject(new Error('WebSocket not connected'));
+      return;
+    }
+    
+    try {
+      stompClient.send(
+        '/app/group-chat.typing',
+        {},
+        JSON.stringify({
+          groupId,
+          userId,
+          isTyping,
+          timestamp: new Date().toISOString()
+        }),
+        (error) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        }
+      );
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
 export default {
   connectWebSocket,
   disconnectWebSocket,
   subscribeToConversation,
   subscribeToTypingIndicators,
   subscribeToUserNotifications,
+  subscribeToGroupChat,
+  subscribeToGroupTyping,
   sendMessage,
   sendTypingIndicator,
+  sendGroupMessage,
+  sendGroupTypingIndicator,
   isWebSocketConnected
 };
