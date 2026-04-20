@@ -50,7 +50,7 @@ const ReactionButton = ({ currentUserReaction, onReact }) => {
 
   return (
     <div 
-      className="relative flex-1 flex"
+      className="relative flex"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -77,7 +77,7 @@ const ReactionButton = ({ currentUserReaction, onReact }) => {
       {/* Main Button */}
       <button 
         onClick={handleDefaultClick}
-        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition group/btn font-bold text-sm
+        className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition group/btn font-bold text-sm
           ${currentOption ? `${currentOption.color} ${currentOption.bgColor}` : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600'}`}
       >
         <span className="text-lg group-hover/btn:scale-110 transition-transform">

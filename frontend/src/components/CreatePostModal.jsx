@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { postService } from '../services/postService';
 import EmojiPicker from 'emoji-picker-react';
 import { Smile } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-const CreatePostModal = ({ isOpen, onClose, onPostCompleted }) => {
+const CreatePostModal = ({ isOpen, onClose, onPostCompleted, groupId }) => {
+    const { user, getUserInitials, getRoleDisplay } = useAuth();
     const [content, setContent] = useState('');
     const [image, setImage] = useState(null);
     const [imagePreview, setImagePreview] = useState('');
@@ -50,7 +52,8 @@ const CreatePostModal = ({ isOpen, onClose, onPostCompleted }) => {
         try {
             await postService.createPost({
                 content: content.trim(),
-                image: image
+                image: image,
+                groupId: groupId
             });
 
             // Notify other components (like Home feed) to refresh
@@ -99,12 +102,12 @@ const CreatePostModal = ({ isOpen, onClose, onPostCompleted }) => {
                 {/* Form Body */}
                 <div className="p-6 overflow-y-auto">
                     <div className="flex gap-4 mb-4">
-                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold flex-shrink-0">
-                            ME
+                        <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold flex-shrink-0 shadow-sm">
+                            {getUserInitials()}
                         </div>
                         <div className="flex flex-col justify-center">
-                            <span className="font-semibold text-gray-900 text-sm">Your Name</span>
-                            <span className="text-xs text-gray-500">Student</span>
+                            <span className="font-bold text-gray-900 text-sm">{user?.fullName || user?.username || 'User'}</span>
+                            <span className="text-xs text-blue-600 font-medium">{getRoleDisplay()}</span>
                         </div>
                     </div>
 

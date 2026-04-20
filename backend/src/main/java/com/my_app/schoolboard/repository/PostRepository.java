@@ -11,10 +11,12 @@ import com.my_app.schoolboard.model.Post;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
-    List<Post> findAllByOrderByCreatedAtDesc(org.springframework.data.domain.Pageable pageable);
+    List<Post> findAllByGroupIsNullOrderByCreatedAtDesc(org.springframework.data.domain.Pageable pageable);
+
+    List<Post> findAllByGroupIdOrderByCreatedAtDesc(Long groupId, org.springframework.data.domain.Pageable pageable);
 
     List<Post> findAllByAuthorUsernameOrderByCreatedAtDesc(String username);
     
-    @Query("SELECT p FROM Post p WHERE LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY p.createdAt DESC")
+    @Query("SELECT p FROM Post p WHERE LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) AND p.group IS NULL ORDER BY p.createdAt DESC")
     List<Post> searchByContentKeyword(@Param("keyword") String keyword);
 }

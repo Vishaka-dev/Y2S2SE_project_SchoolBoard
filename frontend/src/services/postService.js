@@ -1,5 +1,9 @@
 import apiClient from '../api/apiClient';
 
+const FORM_DATA_CONFIG = {
+    headers: { 'Content-Type': undefined },
+};
+
 export const postService = {
     /**
      * Create a new post
@@ -18,10 +22,15 @@ export const postService = {
             formData.append('image', postData.image);
         }
 
+        if (postData.groupId) {
+            formData.append('groupId', postData.groupId);
+        }
+
         try {
             // Note: We don't set 'Content-Type': 'multipart/form-data' explicitly here
             // when using FormData, Axios automatically sets it and generates the boundary
-            const response = await apiClient.post('/posts', formData);
+            // Note: We set 'Content-Type': undefined to let Axios set the proper multipart boundary
+            const response = await apiClient.post('/posts', formData, FORM_DATA_CONFIG);
             return response.data;
         } catch (error) {
             console.error('Error creating post:', error);
@@ -29,9 +38,11 @@ export const postService = {
         }
     },
 
-    getAllPosts: async (page = 0, size = 10) => {
+    getAllPosts: async (page = 0, size = 10, groupId = null) => {
         try {
-            const response = await apiClient.get(`/posts?page=${page}&size=${size}`);
+            const queryParams = new URLSearchParams({ page, size });
+            if (groupId) queryParams.append('groupId', groupId);
+            const response = await apiClient.get(`/posts?${queryParams.toString()}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching posts:', error);
@@ -65,7 +76,7 @@ export const postService = {
         if (postData.image) formData.append('image', postData.image);
 
         try {
-            const response = await apiClient.patch(`/posts/${id}`, formData);
+            const response = await apiClient.patch(`/posts/${id}`, formData, FORM_DATA_CONFIG);
             return response.data;
         } catch (error) {
             console.error('Error updating post:', error);

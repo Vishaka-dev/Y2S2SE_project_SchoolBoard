@@ -43,11 +43,12 @@ public class PostController {
     public ResponseEntity<PostResponseDTO> createPost(
             @RequestParam(value = "content", required = false) String content,
             @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "groupId", required = false) Long groupId,
             Authentication authentication) {
 
-        log.info("Received request to create post from user: {}", authentication.getName());
+        log.info("Received request to create post from user: {} for group: {}", authentication.getName(), groupId);
 
-        PostResponseDTO response = postService.createPost(content, image, authentication.getName());
+        PostResponseDTO response = postService.createPost(content, image, authentication.getName(), groupId);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -56,11 +57,17 @@ public class PostController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<PostResponseDTO>> getAllPosts(
             @RequestParam(name="page", defaultValue = "0") int page,
-            @RequestParam(name="size", defaultValue = "10") int size) {
+            @RequestParam(name="size", defaultValue = "10") int size,
+            @RequestParam(name="groupId", required = false) Long groupId) {
 
-        log.info("Fetching all posts for feed - page: {}, size: {}", page, size);
+        log.info("Fetching all posts for feed - page: {}, size: {}, groupId: {}", page, size, groupId);
 
-        List<PostResponseDTO> posts = postService.getAllPosts(page, size);
+        List<PostResponseDTO> posts;
+        if (groupId != null) {
+            posts = postService.getPostsByGroupId(groupId, page, size);
+        } else {
+            posts = postService.getAllPosts(page, size);
+        }
 
         return ResponseEntity.ok(posts);
     }
