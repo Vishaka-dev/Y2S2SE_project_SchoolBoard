@@ -63,7 +63,7 @@ const FeedLeftRail = () => {
   }, []);
 
   return (
-    <aside className="hidden xl:flex flex-col gap-6 h-full overflow-y-auto pr-1">
+    <div className="flex flex-col gap-6">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
         <button
           onClick={() => navigate('/profile')}
@@ -71,7 +71,7 @@ const FeedLeftRail = () => {
           title="Go to profile"
         >
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold overflow-hidden">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold overflow-hidden flex-shrink-0">
               {getAvatarUrl() ? (
                 <img
                   src={getAvatarUrl()}
@@ -128,22 +128,7 @@ const FeedLeftRail = () => {
           Browse Groups
         </button>
       </div>
-
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-        <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-          <BookOpen className="w-4 h-4 text-blue-600" />
-          Resources
-        </h3>
-        <p className="text-sm text-gray-600 mb-4">Access shared notes, past papers, and study guides.</p>
-        <button
-          type="button"
-          onClick={() => navigate('/resource-hub')}
-          className="w-full rounded-lg border border-blue-200 bg-blue-50 text-blue-700 py-2 text-sm font-medium hover:bg-blue-100 transition"
-        >
-          Resource Hub
-        </button>
-      </div>
-    </aside>
+    </div>
   );
 };
 
