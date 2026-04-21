@@ -67,22 +67,22 @@ const Landing = () => {
 
   const testimonials = [
     {
-      name: 'Dilshan P.',
+      name: 'Dinil Dilmith',
       role: 'STUDENT, COLOMBO',
       quote: 'LearnLink helped me find the exact notes I needed for my A/L exams. The community is incredibly supportive when you\'re stuck on a problem.',
-      avatar: '👨‍🎓'
+      image: '/images/landing/dinil.jpg'
     },
     {
-      name: 'Fatima R.',
+      name: 'Manuth Wilegoda',
       role: 'UNDERGRADUATE, GALLE',
       quote: 'I love writing articles here. It\'s a great way to improve my writing skills and share what I know about tech with other students.',
-      avatar: '👩‍🎓'
+      image: '/images/landing/manuth.png'
     },
     {
-      name: 'Thushara K.',
+      name: 'Amaya Gunasekara',
       role: 'STUDENT, JAFFNA',
       quote: 'The past paper archive is a lifesaver. Everything is organized perfectly for easy access. Highly recommended!',
-      avatar: '👨‍🎓'
+      image: '/images/landing/amaya.jpg'
     }
   ];
 
@@ -249,7 +249,7 @@ const Landing = () => {
             {features.map((feature, index) => (
               <div 
                 key={index} 
-                className="bg-white rounded-xl p-8 hover:shadow-lg transition-shadow border border-blue-100"
+                className="bg-white rounded-xl p-8 hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 border border-blue-100 cursor-default"
               >
                 <div className="bg-gradient-to-br from-blue-100 to-blue-200 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
                   {feature.icon}
@@ -336,10 +336,16 @@ const Landing = () => {
             {testimonials.map((testimonial, index) => (
               <div 
                 key={index} 
-                className="bg-white rounded-xl p-8 shadow-md hover:shadow-xl transition-shadow"
+                className="bg-white rounded-xl p-8 shadow-md hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 cursor-default border border-transparent hover:border-blue-100"
               >
-                <div className="flex items-center mb-4">
-                  <div className="text-4xl mr-4">{testimonial.avatar}</div>
+                <div className="flex items-center mb-6">
+                  <div className="w-16 h-16 rounded-full overflow-hidden mr-4 border-2 border-blue-100 shadow-sm">
+                    <img 
+                      src={testimonial.image} 
+                      alt={testimonial.name}
+                      className="w-full h-full object-cover" 
+                    />
+                  </div>
                   <div>
                     <h4 className="font-bold text-gray-900">{testimonial.name}</h4>
                     <p className="text-sm text-gray-600">{testimonial.role}</p>
@@ -430,7 +436,7 @@ const Landing = () => {
           {/* Social Links */}
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-400 mb-4 md:mb-0">
-              © 2026 LearnLink SL. All rights reserved. Made with ❤️ in Sri Lanka
+              © 2026 LearnLink SL. All rights reserved.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="hover:text-white transition-colors">
