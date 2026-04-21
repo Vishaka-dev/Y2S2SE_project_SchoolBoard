@@ -88,12 +88,10 @@ const RightSidebar = () => {
   };
 
   return (
-    <aside className="hidden xl:block h-full overflow-y-auto">
-      <div className="space-y-6">
-
-        {/* Suggested Connections */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
+    <div className="space-y-6">
+      {/* Suggested Connections */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-600" />
               Suggested Connections
@@ -237,7 +235,6 @@ const RightSidebar = () => {
           </div>
         </div>
       </div>
-    </aside>
   );
 };
 
