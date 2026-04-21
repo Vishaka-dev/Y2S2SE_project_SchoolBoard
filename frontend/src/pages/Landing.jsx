@@ -249,7 +249,7 @@ const Landing = () => {
             {features.map((feature, index) => (
               <div 
                 key={index} 
-                className="bg-white rounded-xl p-8 hover:shadow-lg transition-shadow border border-blue-100"
+                className="bg-white rounded-xl p-8 hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 border border-blue-100 cursor-default"
               >
                 <div className="bg-gradient-to-br from-blue-100 to-blue-200 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
                   {feature.icon}
@@ -430,7 +430,7 @@ const Landing = () => {
           {/* Social Links */}
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-400 mb-4 md:mb-0">
-              © 2026 LearnLink SL. All rights reserved. Made with ❤️ in Sri Lanka
+              © 2026 LearnLink SL. All rights reserved.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="hover:text-white transition-colors">
