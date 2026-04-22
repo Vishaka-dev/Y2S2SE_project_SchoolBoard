@@ -11,33 +11,38 @@ import java.nio.file.Paths;
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
-    @Value("${file.upload-dir:uploads/posts}")
-    private String uploadDir;
+        @Value("${file.upload-dir:uploads/posts}")
+        private String uploadDir;
 
-    @Value("${file.profile-image-dir:uploads/profile-images}")
-    private String profileImageDir;
+        @Value("${file.profile-image-dir:uploads/profile-images}")
+        private String profileImageDir;
 
-    @Value("${file.resource-dir:uploads/resources}")
-    private String resourceDir;
+        @Value("${file.resource-dir:uploads/resources}")
+        private String resourceDir;
 
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Serve post files from the upload directory via /uploads/posts/** URL
-        Path uploadPath = Paths.get(uploadDir);
-        String uploadAbsolutePath = uploadPath.toFile().getAbsolutePath();
-        registry.addResourceHandler("/uploads/posts/**")
-                .addResourceLocations("file:" + uploadAbsolutePath + "/");
+        @Override
+        public void addResourceHandlers(ResourceHandlerRegistry registry) {
+                // Serve post files from the upload directory via /uploads/posts/** URL
+                Path uploadPath = Paths.get(uploadDir);
+                String uploadAbsolutePath = uploadPath.toFile().getAbsolutePath();
+                registry.addResourceHandler("/uploads/posts/**")
+                                .addResourceLocations("file:" + uploadAbsolutePath + "/");
 
-        // Serve profile images from the profile-images directory via
-        // /uploads/profile-images/** URL
-        Path profileImagePath = Paths.get(profileImageDir);
-        String profileImageAbsolutePath = profileImagePath.toFile().getAbsolutePath();
-        registry.addResourceHandler("/uploads/profile-images/**")
-                .addResourceLocations("file:" + profileImageAbsolutePath + "/");
+                // Serve profile images from the profile-images directory via
+                // /uploads/profile-images/** URL
+                Path profileImagePath = Paths.get(profileImageDir);
+                String profileImageAbsolutePath = profileImagePath.toFile().getAbsolutePath();
+                registry.addResourceHandler("/uploads/profile-images/**")
+                                .addResourceLocations("file:" + profileImageAbsolutePath + "/");
 
-        Path resourcePath = Paths.get(resourceDir);
-        String resourceAbsolutePath = resourcePath.toFile().getAbsolutePath();
-        registry.addResourceHandler("/uploads/resources/**")
-                .addResourceLocations("file:" + resourceAbsolutePath + "/");
-    }
+                Path resourcePath = Paths.get(resourceDir);
+                String resourceAbsolutePath = resourcePath.toFile().getAbsolutePath();
+                registry.addResourceHandler("/uploads/resources/**")
+                                .addResourceLocations("file:" + resourceAbsolutePath + "/");
+
+                // Serve universal uploads folder
+                Path baseUploadPath = Paths.get("uploads");
+                registry.addResourceHandler("/uploads/**")
+                                .addResourceLocations("file:" + baseUploadPath.toFile().getAbsolutePath() + "/");
+        }
 }

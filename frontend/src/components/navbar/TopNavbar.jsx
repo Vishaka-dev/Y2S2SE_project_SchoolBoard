@@ -1,15 +1,23 @@
-import { Bell, MessageSquare, ChevronDown, Home, BookOpenText } from 'lucide-react';
+import { Bell, MessageSquare, ChevronDown, Home, BookOpenText, Calendar, Users, User, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import learnlinkLogo from '../../../logos/learnlink_logo-transparent.png';
 import UserSearchDropdown from './UserSearchDropdown';
 
 const TopNavbar = () => {
   const { user, getUserInitials, getRoleDisplay, getAvatarUrl, logout } = useAuth();
+  const { hasUnread } = useNotifications();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const getNavButtonClass = (isActive) =>
+    `relative p-2.5 rounded-xl transition group ${
+      isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-100'
+    }`;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -38,26 +46,27 @@ const TopNavbar = () => {
   };
 
   return (
-    <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
-      <div 
-        onClick={() => navigate(user ? '/feed' : '/')} 
-        className="flex items-center gap-3 cursor-pointer select-none"
-      >
-        <img src={learnlinkLogo} alt="LearnLink" className="h-8 w-auto" />
-        <h1 className="text-xl font-bold text-gray-900 hidden sm:block">LearnLink</h1>
-      </div>
-      
-      {/* Search Bar */}
-      <div className="flex-1 flex justify-center px-4 sm:px-8">
-        <UserSearchDropdown />
-      </div>
+    <div className="h-16 bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+      <div className="h-full mx-auto px-6 flex items-center justify-between">
+        <div 
+          onClick={() => navigate(user ? '/feed' : '/')} 
+          className="flex items-center gap-3 cursor-pointer select-none"
+        >
+          <img src={learnlinkLogo} alt="LearnLink" className="h-8 w-auto" />
+          <h1 className="text-xl font-bold text-gray-900 hidden sm:block">LearnLink</h1>
+        </div>
+        
+        {/* Search Bar */}
+        <div className="flex-1 flex justify-center px-4 sm:px-8">
+          <UserSearchDropdown />
+        </div>
 
-      {/* Right Side - Icons & Profile */}
-      <div className="flex items-center gap-3 ml-6">
+        {/* Right Side - Icons & Profile */}
+        <div className="flex items-center gap-3 ml-6">
         {/* Home */}
         <button
           onClick={() => navigate('/feed')}
-          className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
+          className={getNavButtonClass(location.pathname === '/feed')}
           title="Home"
         >
           <Home className="h-5 w-5 group-hover:text-blue-600 transition" />
@@ -66,26 +75,46 @@ const TopNavbar = () => {
         {/* Resource Hub */}
         <button
           onClick={() => navigate('/resource-hub')}
-          className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
+          className={getNavButtonClass(location.pathname.startsWith('/resource-hub'))}
           title="Resource Hub"
         >
           <BookOpenText className="h-5 w-5 group-hover:text-blue-600 transition" />
+        </button>
+        
+        {/* Events Board */}
+        <button
+          onClick={() => navigate('/events')}
+          className={getNavButtonClass(location.pathname === '/events')}
+          title="Events Board"
+        >
+          <Calendar className="h-5 w-5 group-hover:text-blue-600 transition" />
+        </button>
+
+        {/* Groups */}
+        <button
+          onClick={() => navigate('/groups')}
+          className={getNavButtonClass(location.pathname.startsWith('/groups'))}
+          title="Groups"
+        >
+          <Users className="h-5 w-5 group-hover:text-blue-600 transition" />
         </button>
 
         {/* Notification Bell */}
         <button
           onClick={() => navigate('/notifications')}
-          className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
+          className={getNavButtonClass(location.pathname.startsWith('/notifications'))}
           title="Notifications"
         >
           <Bell className="h-5 w-5 group-hover:text-blue-600 transition" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+          {hasUnread && (
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+          )}
         </button>
 
         {/* Messages */}
         <button
           onClick={() => navigate('/messages')}
-          className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition group"
+          className={getNavButtonClass(location.pathname.startsWith('/messages'))}
           title="Messages"
         >
           <MessageSquare className="h-5 w-5 group-hover:text-blue-600 transition" />
@@ -146,7 +175,7 @@ const TopNavbar = () => {
                     onClick={handleProfileClick}
                     className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-3"
                   >
-                    <span className="text-lg">👤</span>
+                    <User className="w-4 h-4 text-gray-500" />
                     <span className="font-medium">View Profile</span>
                   </button>
 
@@ -154,7 +183,7 @@ const TopNavbar = () => {
                     onClick={handleSettingsClick}
                     className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-3"
                   >
-                    <span className="text-lg">⚙️</span>
+                    <Settings className="w-4 h-4 text-gray-500" />
                     <span className="font-medium">Edit Profile</span>
                   </button>
                 </div>
@@ -165,7 +194,7 @@ const TopNavbar = () => {
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition flex items-center gap-3 font-medium"
                   >
-                    <span className="text-lg">🚪</span>
+                    <LogOut className="w-4 h-4" />
                     <span>Sign Out</span>
                   </button>
                 </div>
@@ -173,6 +202,7 @@ const TopNavbar = () => {
             )}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

@@ -62,6 +62,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex,
             HttpServletRequest request) {
+        log.error("===== ILLEGAL ARGUMENT ERROR =====");
+        log.error("Endpoint: {}", request.getRequestURI());
+        log.error("Error message: {}", ex.getMessage());
+        log.error("Exception: ", ex);
         return buildResponse(ex, HttpStatus.BAD_REQUEST, request);
     }
 
@@ -89,6 +93,11 @@ public class GlobalExceptionHandler {
             String errorMessage = error.getDefaultMessage();
             validationErrors.put(fieldName, errorMessage);
         });
+
+        log.error("===== VALIDATION ERROR =====");
+        log.error("Endpoint: {}", request.getRequestURI());
+        log.error("Validation errors: {}", validationErrors);
+        log.error("Full exception: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),

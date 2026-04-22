@@ -5,6 +5,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.util.SerializationUtils;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -57,13 +59,21 @@ public class CookieUtils {
     }
 
     public static <T> T deserialize(Cookie cookie, Class<T> cls) {
+        String value = cookie.getValue();
         try {
-            byte[] bytes = Base64.getUrlDecoder().decode(cookie.getValue());
+            // URL decode just in case the cookie value is double-encoded
+            value = URLDecoder.decode(value, StandardCharsets.UTF_8);
+            byte[] bytes = Base64.getUrlDecoder().decode(value);
             return cls.cast(SerializationUtils.deserialize(bytes));
-        } catch (IllegalArgumentException e) {
-            // Fallback to standard Base64 if URL decoder fails
-            byte[] bytes = Base64.getDecoder().decode(cookie.getValue());
-            return cls.cast(SerializationUtils.deserialize(bytes));
+        } catch (Exception e) {
+            System.err.println("URL Decoder failed for cookie value: " + value + ". Error: " + e.getMessage());
+            try {
+                byte[] bytes = Base64.getDecoder().decode(value);
+                return cls.cast(SerializationUtils.deserialize(bytes));
+            } catch (IllegalArgumentException e2) {
+                System.err.println("Standard Decoder also failed for cookie value: " + value + ". Error: " + e2.getMessage());
+                throw e2;
+            }
         }
     }
 }

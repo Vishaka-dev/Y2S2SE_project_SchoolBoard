@@ -3,6 +3,7 @@ import { useState } from 'react';
 import TopNavbar from '../navbar/TopNavbar';
 import RightSidebar from '../sidebar/RightSidebar';
 import FeedLeftRail from '../sidebar/FeedLeftRail';
+import Footer from './Footer';
 import { useAuth } from '../../context/AuthContext';
 import { Loader } from 'lucide-react';
 import CreatePostModal from '../CreatePostModal';
@@ -14,7 +15,11 @@ const DashboardLayout = () => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [toast, setToast] = useState(null);
   const isResourceHubRoute = location.pathname === '/resource-hub';
-  const showSocialSidebars = !isResourceHubRoute;
+  const isEventsRoute = location.pathname === '/events';
+  const isMessagesRoute = location.pathname === '/messages';
+  const isGroupsRoute = location.pathname.includes('/groups') || location.pathname === '/my-groups';
+  const isNotificationRoute = location.pathname.startsWith('/notifications');
+  const showSocialSidebars = location.pathname.startsWith('/feed') || isNotificationRoute;
   const showCreatePost = location.pathname === '/feed';
 
   const showToast = (message, type = 'success') => {
@@ -23,7 +28,7 @@ const DashboardLayout = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading your dashboard...</p>
@@ -34,7 +39,7 @@ const DashboardLayout = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-sm p-8 max-w-md">
           <div className="text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -57,16 +62,23 @@ const DashboardLayout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col overflow-hidden">
+    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       <TopNavbar />
 
       <div className="flex-1 overflow-hidden">
-        <div className={`h-full ${showSocialSidebars ? 'max-w-[1600px] mx-auto px-4 lg:px-6 py-6' : 'w-full px-4 lg:px-8 py-6'}`}>
+        <div className={`h-full ${showSocialSidebars ? 'max-w-[1600px] mx-auto px-4 lg:px-6' : 'w-full px-4 lg:px-8'}`}>
           <div className={showSocialSidebars ? 'h-full grid grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)_320px] gap-6' : 'h-full'}>
-            {showSocialSidebars && <FeedLeftRail />}
+            
+            {/* Left Sidebar - Stationary */}
+            {showSocialSidebars && (
+              <aside className="hidden xl:block h-full pt-6 pb-6">
+                <FeedLeftRail />
+              </aside>
+            )}
 
-            <main className="min-w-0 h-full overflow-y-auto">
-              <div className={isResourceHubRoute ? 'max-w-7xl mx-auto pb-8' : 'max-w-3xl mx-auto pb-8'}>
+            {/* Main Feed - Scroll bar in the middle (main feed area) */}
+            <main className="min-w-0 h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pt-6 pb-6">
+              <div className={isResourceHubRoute || isEventsRoute || isMessagesRoute || isGroupsRoute ? 'max-w-7xl mx-auto pb-4' : 'max-w-3xl mx-auto pb-8'}>
                 {showCreatePost && (
                   <div className="bg-white rounded-[24px] md:rounded-[32px] shadow-sm p-4 md:p-6 mb-8 border border-gray-100 flex gap-4 items-center">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
@@ -101,11 +113,16 @@ const DashboardLayout = () => {
                   </div>
                 )}
 
-                <Outlet />
+                <Outlet context={{ showToast }} />
               </div>
             </main>
 
-            {showSocialSidebars && <RightSidebar />}
+            {/* Right Sidebar - Stationary */}
+            {showSocialSidebars && (
+              <aside className="hidden xl:block h-full pt-6 pb-6">
+                <RightSidebar />
+              </aside>
+            )}
           </div>
         </div>
       </div>

@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useState } from 'react';
-import learnlinkLogo from '../../../logos/learnlink_logo.png';
+import learnlinkLogo from '../../../logos/learnlink_logo-transparent.png';
 
 const Sidebar = () => {
   const location = useLocation();

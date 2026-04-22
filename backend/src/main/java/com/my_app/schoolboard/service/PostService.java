@@ -7,9 +7,11 @@ import org.springframework.web.multipart.MultipartFile;
 import com.my_app.schoolboard.dto.PostResponseDTO;
 
 public interface PostService {
-    PostResponseDTO createPost(String content, MultipartFile image, String username);
+    PostResponseDTO createPost(String content, MultipartFile image, String username, Long groupId);
 
     List<PostResponseDTO> getAllPosts(int page, int size);
+
+    List<PostResponseDTO> getPostsByGroupId(Long groupId, int page, int size);
 
     PostResponseDTO updatePost(Long id, String content, MultipartFile image, String username);
 
