@@ -23,6 +23,7 @@ const Events = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [filter, setFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
 
   const loadEvents = async () => {
     setIsLoading(true);
@@ -56,7 +57,14 @@ const Events = () => {
     const matchesFilter = filter === 'ALL' || event.category === filter;
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           event.location.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesFilter && matchesSearch;
+    
+    let matchesDate = true;
+    if (dateFilter) {
+      const eventDate = new Date(event.eventDate).toISOString().split('T')[0];
+      matchesDate = eventDate === dateFilter;
+    }
+    
+    return matchesFilter && matchesSearch && matchesDate;
   });
 
   const formatDate = (dateString) => {
@@ -70,52 +78,93 @@ const Events = () => {
   };
 
   return (
-    <div className="w-full px-4 py-8">
+    <div className="w-full">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-        <div>
-          <h1 className="text-4xl font-black text-gray-900 font-manrope tracking-tight mb-2">
-            Event <span className="text-blue-600">Board</span>
-          </h1>
-          <p className="text-gray-500 font-medium font-dm-sans">Stay updated with the latest happenings in our community.</p>
+      <section className="bg-white rounded-lg shadow-md border border-gray-100 p-4 md:p-6 mb-10">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl md:text-4xl font-bold font-manrope text-gray-900">Event Board</h1>
+            <p className="text-sm md:text-base text-gray-600 mt-2 font-dm-sans max-w-2xl">
+              Stay updated with the latest happenings in our community.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 font-medium rounded-lg shadow-sm transition-colors duration-200 px-4 py-2.5 text-sm inline-flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Schedule Event
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-600 text-white rounded-2xl font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 transition transform hover:-translate-y-0.5 active:translate-y-0"
-        >
-          <Plus className="w-5 h-5" /> Schedule Event
-        </button>
-      </div>
+      </section>
 
       {/* Filters & Search */}
-      <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 p-4 mb-8 flex flex-col lg:flex-row gap-4">
-        <div className="flex-1 relative flex items-center">
-          <Search className="absolute left-4 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search events by title or location..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition font-dm-sans"
-          />
+      <section className="bg-white rounded-lg shadow-md border border-gray-100 p-4 md:p-6 mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="w-5 h-5 text-blue-600" />
+          <h2 className="text-lg md:text-xl font-semibold font-manrope text-gray-900">Search & Filters</h2>
         </div>
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
-          <Filter className="w-4 h-4 text-gray-400 ml-2 flex-shrink-0" />
-          {['ALL', ...Object.keys(CATEGORY_COLORS)].map(cat => (
-            <button
-              key={cat}
-              onClick={() => setFilter(cat)}
-              className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
-                filter === cat 
-                ? 'bg-blue-600 text-white shadow-md' 
-                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-              }`}
+
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_auto_auto] gap-3 items-end">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Search by title or location</label>
+            <div className="relative">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by title or location"
+                className="w-full bg-white border border-gray-300 rounded-md py-2.5 pl-9 pr-3 text-sm md:text-base text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="w-full bg-white border border-gray-300 rounded-md py-2.5 px-3 text-sm md:text-base text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              {cat.charAt(0) + cat.slice(1).toLowerCase()}
+              <option value="ALL">All categories</option>
+              {Object.keys(CATEGORY_COLORS).map((category) => (
+                <option key={category} value={category}>
+                  {category.charAt(0) + category.slice(1).toLowerCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Event Date</label>
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="w-full bg-white border border-gray-300 rounded-md py-2.5 px-3 text-sm md:text-base text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setFilter('ALL');
+                setSearchTerm('');
+                setDateFilter('');
+              }}
+              className="bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-medium rounded-lg shadow-sm transition-colors duration-200 px-4 py-2.5 text-sm"
+            >
+              Reset
             </button>
-          ))}
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* Events Board */}
       {isLoading ? (
@@ -138,16 +187,16 @@ const Events = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {filteredEvents.map(event => {
             const dateInfo = formatDate(event.eventDate);
             return (
               <div 
                 key={event.id}
-                className="group bg-white rounded-[32px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative flex flex-col"
+                className="group bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 relative flex flex-col"
               >
                 {/* Banner Image */}
-                <div className="h-48 w-full bg-gray-100 relative overflow-hidden">
+                <div className="h-32 w-full bg-gray-100 relative overflow-hidden">
                   {event.bannerImageUrl ? (
                     <img 
                       src={event.bannerImageUrl} 
@@ -160,70 +209,70 @@ const Events = () => {
                     </div>
                   )}
                   {/* Category Badge */}
-                  <div className={`absolute top-4 left-4 px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase border ${CATEGORY_COLORS[event.category]}`}>
+                  <div className={`absolute top-2 left-2 px-2 py-1 rounded-full text-[7px] font-bold tracking-widest uppercase border ${CATEGORY_COLORS[event.category]}`}>
                     {event.category}
                   </div>
                   
                   {/* Date Overlay */}
-                  <div className="absolute -bottom-6 right-6 w-16 h-20 bg-white rounded-2xl shadow-xl flex flex-col items-center justify-center border border-gray-50">
-                    <span className="text-[10px] font-black text-blue-600">{dateInfo.month}</span>
-                    <span className="text-2xl font-black text-gray-900">{dateInfo.day}</span>
+                  <div className="absolute -bottom-4 right-3 w-14 h-16 bg-white rounded-lg shadow-lg flex flex-col items-center justify-center border border-gray-50">
+                    <span className="text-[8px] font-bold text-blue-600">{dateInfo.month}</span>
+                    <span className="text-lg font-bold text-gray-900">{dateInfo.day}</span>
                   </div>
                 </div>
 
                 {/* Content */}
-                <div className="p-6 pt-10 flex-1 flex flex-col">
-                  <h3 className="text-xl font-extrabold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors font-manrope leading-tight">
+                <div className="p-3 pt-8 flex-1 flex flex-col">
+                  <h3 className="text-sm font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors font-manrope leading-tight">
                     {event.title}
                   </h3>
                   
-                  <div className="space-y-4 mb-6">
-                    <div className="flex items-center gap-3 text-sm text-gray-500 font-bold">
-                      <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-blue-600">
-                        <Clock className="w-4 h-4" />
+                  <div className="space-y-2 mb-3">
+                    <div className="flex items-center gap-3 text-xs text-gray-500 font-semibold">
+                      <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center text-blue-600">
+                        <Clock className="w-3 h-3" />
                       </div>
                       {dateInfo.time}
                     </div>
-                    <div className="flex items-center gap-3 text-sm text-gray-500 font-bold">
-                      <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-blue-600">
-                        <MapPin className="w-4 h-4" />
+                    <div className="flex items-center gap-3 text-xs text-gray-500 font-semibold">
+                      <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center text-blue-600">
+                        <MapPin className="w-3 h-3" />
                       </div>
                       <span className="truncate">{event.location}</span>
                     </div>
                   </div>
 
                   {event.description && (
-                    <p className="text-gray-500 text-sm font-medium leading-relaxed mb-6 line-clamp-2">
+                    <p className="text-gray-500 text-xs font-medium leading-tight mb-3 line-clamp-1">
                       {event.description}
                     </p>
                   )}
 
-                  <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between">
+                  <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-[10px] font-bold ring-2 ring-white">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-[8px] font-bold ring-1 ring-white">
                         {event.author?.name?.[0] || 'U'}
                       </div>
-                      <span className="text-xs font-bold text-gray-600">{event.author?.name}</span>
+                      <span className="text-xs font-semibold text-gray-600 truncate">{event.author?.name}</span>
                     </div>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       {(user?.username === event.author?.username || user?.role === 'ADMIN') && (
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDelete(event.id);
                           }}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
+                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                           title="Delete Event"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       )}
                       <button 
                         onClick={() => setSelectedEvent(event)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition"
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                       >
-                        <ChevronRight className="w-5 h-5" />
+                        <ChevronRight className="w-4 h-4" />
                       </button>
                     </div>
                   </div>

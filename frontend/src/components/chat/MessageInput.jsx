@@ -44,7 +44,7 @@ const MessageInput = ({
     }
     
     console.log('✅ Form submitted with content:', { trimmedValue, attachmentCount: attachments.length });
-    onSend(attachments);
+    onSend(trimmedValue, attachments);
     setAttachments([]);
     setShowFileUpload(false);
   };
@@ -82,7 +82,7 @@ const MessageInput = ({
     <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200 bg-white">
       <div className="space-y-2">
         {/* Character Counter */}
-        {characterCount > 0 && (
+        {/* {characterCount > 0 && (
           <div
             className={`text-xs text-right ${
               isNearLimit ? 'text-orange-600 font-semibold' : 'text-gray-500'
@@ -90,7 +90,7 @@ const MessageInput = ({
           >
             {characterCount} / {maxLength}
           </div>
-        )}
+        )} */}
 
         {/* Attachment Preview */}
         {attachments.length > 0 && (

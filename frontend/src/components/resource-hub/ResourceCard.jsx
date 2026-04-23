@@ -1,4 +1,4 @@
-import { Download, ExternalLink, Trash2 } from 'lucide-react';
+import { Download, ExternalLink, Trash2, MoreVertical, Share2 } from 'lucide-react';
 
 const ResourceCard = ({
   resource,
@@ -8,6 +8,7 @@ const ResourceCard = ({
   prettyLabel,
   normalizeRoleLabel,
   formatDate,
+  onShare,
 }) => {
   const isOwner = user?.id && resource.uploadedBy?.id === user.id;
 
@@ -19,19 +20,28 @@ const ResourceCard = ({
         </h3>
 
         {isOwner && (
-          <button
-            type="button"
-            onClick={() => onDelete(resource.id)}
-            disabled={deleteTarget === resource.id}
-            className="shrink-0 bg-red-600 text-white border border-red-600 hover:bg-red-700 font-medium rounded-md shadow-sm transition-colors duration-200 px-2.5 py-1.5 text-xs disabled:opacity-50"
-          >
-            {deleteTarget === resource.id ? 'Deleting...' : (
-              <span className="inline-flex items-center gap-1.5">
-                <Trash2 className="w-3.5 h-3.5" />
-                Delete
-              </span>
-            )}
-          </button>
+          <div className="relative group/menu">
+            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+              <MoreVertical className="w-5 h-5" />
+            </button>
+            <div className="absolute right-0 top-full mt-1 hidden group-hover/menu:block z-20">
+              <div className="bg-white border border-gray-100 shadow-xl rounded-xl min-w-[140px] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => onDelete(resource.id)}
+                  disabled={deleteTarget === resource.id}
+                  className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+                >
+                  {deleteTarget === resource.id ? '...' : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
@@ -77,10 +87,10 @@ const ResourceCard = ({
             href={resource.fileUrl}
             target="_blank"
             rel="noreferrer"
-            className="bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-medium rounded-lg shadow-sm transition-colors duration-200 px-3 py-2 text-xs inline-flex items-center gap-1.5"
+            className="flex-1 bg-blue-600 text-white hover:bg-blue-700 font-bold rounded-xl shadow-sm transition-all duration-200 px-4 py-2 text-xs inline-flex items-center justify-center gap-2 group/btn"
           >
-            <Download className="w-3.5 h-3.5" />
-            Open File
+            <Download className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
+            Download
           </a>
         )}
 
@@ -89,12 +99,20 @@ const ResourceCard = ({
             href={resource.externalUrl}
             target="_blank"
             rel="noreferrer"
-            className="bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-medium rounded-lg shadow-sm transition-colors duration-200 px-3 py-2 text-xs inline-flex items-center gap-1.5"
+            className="flex-1 bg-white text-blue-600 border border-blue-100 hover:bg-blue-50 font-bold rounded-xl shadow-sm transition-all duration-200 px-4 py-2 text-xs inline-flex items-center justify-center gap-2 group/btn"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
             Visit Link
           </a>
         )}
+
+        <button 
+          onClick={onShare}
+          className="flex-1 bg-white text-gray-600 border border-gray-100 hover:bg-gray-50 font-bold rounded-xl shadow-sm transition-all duration-200 px-4 py-2 text-xs inline-flex items-center justify-center gap-2 group/btn"
+        >
+          <Share2 className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
+          Share
+        </button>
       </div>
     </article>
   );

@@ -9,6 +9,7 @@ import com.my_app.schoolboard.model.*;
 import com.my_app.schoolboard.repository.ResourceRepository;
 import com.my_app.schoolboard.repository.TagRepository;
 import com.my_app.schoolboard.repository.UserRepository;
+import com.my_app.schoolboard.repository.StudyGroupRepository;
 import com.my_app.schoolboard.service.FileStorageService;
 import com.my_app.schoolboard.service.ResourceService;
 import com.my_app.schoolboard.specification.ResourceSpecification;
@@ -54,6 +55,7 @@ public class ResourceServiceImpl implements ResourceService {
     private final ResourceRepository resourceRepository;
     private final TagRepository tagRepository;
     private final UserRepository userRepository;
+    private final StudyGroupRepository studyGroupRepository;
     private final FileStorageService fileStorageService;
 
     @Override
@@ -73,6 +75,12 @@ public class ResourceServiceImpl implements ResourceService {
 
         Set<Tag> tags = resolveTags(request.getTags());
 
+        StudyGroup group = null;
+        if (request.getGroupId() != null) {
+            group = studyGroupRepository.findById(request.getGroupId())
+                .orElseThrow(() -> new ResourceNotFoundException("Group", "id", request.getGroupId()));
+        }
+
         Resource resource = Resource.builder()
                 .title(request.getTitle().trim())
                 .description(request.getDescription())
@@ -81,6 +89,7 @@ public class ResourceServiceImpl implements ResourceService {
                 .fileUrl(fileUrl)
                 .externalUrl(cleanNullable(request.getExternalUrl()))
                 .uploadedBy(uploader)
+                .group(group)
                 .tags(tags)
                 .build();
 
@@ -91,7 +100,7 @@ public class ResourceServiceImpl implements ResourceService {
     @Override
     @Transactional(readOnly = true)
     public ResourcePageDTO getResources(int page, int size, ResourceCategory category, ResourceType type, String search,
-            Role role) {
+            Role role, Long groupId) {
         int normalizedPage = Math.max(page, 0);
         int normalizedSize = Math.min(Math.max(size, 1), 100);
 
@@ -102,6 +111,12 @@ public class ResourceServiceImpl implements ResourceService {
                 .and(ResourceSpecification.hasType(type))
                 .and(ResourceSpecification.titleContains(search))
                 .and(ResourceSpecification.uploaderHasRole(role));
+
+        if (groupId != null) {
+            specification = specification.and(ResourceSpecification.hasGroupId(groupId));
+        } else {
+            specification = specification.and(ResourceSpecification.groupIsNull());
+        }
 
         Page<Resource> resourcePage = resourceRepository.findAll(specification, pageable);
 

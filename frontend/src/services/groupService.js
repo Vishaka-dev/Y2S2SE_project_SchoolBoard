@@ -1,18 +1,21 @@
 import apiClient from '../api/apiClient';
 
+/**
+ * apiClient defaults to `Content-Type: application/json`.
+ * For FormData, we must not keep that default; Axios needs to set
+ * `multipart/form-data` with a boundary automatically.
+ */
+const FORM_DATA_CONFIG = {
+  headers: { 'Content-Type': undefined },
+};
+
 const groupService = {
   /**
    * @param {FormData} groupData multipart: name, groupType, … optional profilePicture, coverPicture
    */
   createGroup: async (groupData) => {
     try {
-      // apiClient defaults to Content-Type: application/json; override for FormData
-      // (same pattern as accountService.uploadProfilePhoto).
-      const response = await apiClient.post('/groups', groupData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await apiClient.post('/groups', groupData, FORM_DATA_CONFIG);
       return response.data;
     } catch (error) {
       throw error.response?.data || new Error('Failed to create group');
@@ -91,7 +94,7 @@ const groupService = {
    */
   updateGroup: async (groupId, formData) => {
     try {
-      const response = await apiClient.put(`/groups/${groupId}`, formData);
+      const response = await apiClient.put(`/groups/${groupId}`, formData, FORM_DATA_CONFIG);
       return response.data;
     } catch (error) {
       throw error.response?.data || new Error('Failed to update group');
