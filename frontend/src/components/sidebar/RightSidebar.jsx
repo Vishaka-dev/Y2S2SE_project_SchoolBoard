@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Users, Calendar as CalendarIcon, UserPlus, ChevronLeft, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
+import { Users, Calendar as CalendarIcon, UserPlus, ChevronLeft, ChevronRight, Loader2, RefreshCw, Clock, MapPin, X, Calendar } from 'lucide-react';
 import { getSuggestedConnections } from '../../services/suggestionService';
+import { eventService } from '../../services/eventService';
 import FollowButton from '../FollowButton';
 
 const RightSidebar = () => {
@@ -11,6 +12,11 @@ const RightSidebar = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(true);
   const [suggestionError, setSuggestionError] = useState(null);
+
+  // Events state
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   const fetchSuggestions = useCallback(async () => {
     setIsLoadingSuggestions(true);
@@ -26,9 +32,22 @@ const RightSidebar = () => {
     }
   }, []);
 
+  const fetchUpcomingEvents = useCallback(async () => {
+    setIsLoadingEvents(true);
+    try {
+      const data = await eventService.getUpcomingEvents();
+      setUpcomingEvents(data.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate)));
+    } catch (err) {
+      console.error('Failed to load upcoming events:', err);
+    } finally {
+      setIsLoadingEvents(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchSuggestions();
-  }, [fetchSuggestions]);
+    fetchUpcomingEvents();
+  }, [fetchSuggestions, fetchUpcomingEvents]);
 
   // Handle follow/unfollow events to refresh suggestions if a user is followed
   useEffect(() => {
@@ -46,27 +65,15 @@ const RightSidebar = () => {
     return () => window.removeEventListener('followChanged', handleFollowChanged);
   }, []);
 
-  // Mock data - Keep for events until real service is available
-  const upcomingEvents = [
-    {
-      id: 1,
-      title: 'Math Workshop',
-      date: 'Mar 5',
-      time: '2:00 PM'
-    },
-    {
-      id: 2,
-      title: 'Career Fair 2026',
-      date: 'Mar 8',
-      time: '10:00 AM'
-    },
-    {
-      id: 3,
-      title: 'Science Symposium',
-      date: 'Mar 12',
-      time: '9:00 AM'
-    }
-  ];
+  const formatEventDate = (dateString) => {
+    const date = new Date(dateString);
+    return {
+      month: date.toLocaleString('default', { month: 'short' }),
+      day: date.getDate(),
+      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      full: date.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })
+    };
+  };
 
   const getInitials = (name) => {
     return name
@@ -187,24 +194,39 @@ const RightSidebar = () => {
             Upcoming Events
           </h3>
           <div className="space-y-4">
-            {upcomingEvents.map((event) => (
-              <div key={event.id} className="flex gap-3">
-                <div className="flex-shrink-0 w-12 h-12 bg-blue-50 rounded-lg flex flex-col items-center justify-center">
-                  <span className="text-xs font-semibold text-blue-600">
-                    {event.date.split(' ')[0]}
-                  </span>
-                  <span className="text-lg font-bold text-blue-600">
-                    {event.date.split(' ')[1]}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {event.title}
-                  </p>
-                  <p className="text-xs text-gray-500">{event.time}</p>
-                </div>
+            {isLoadingEvents ? (
+              <div className="py-4 flex justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
               </div>
-            ))}
+            ) : upcomingEvents.length > 0 ? (
+              upcomingEvents.slice(0, 3).map((event) => {
+                const { month, day, time } = formatEventDate(event.eventDate);
+                return (
+                  <div 
+                    key={event.id} 
+                    className="flex gap-3 group cursor-pointer hover:bg-gray-50 p-2 -m-2 rounded-xl transition"
+                    onClick={() => setSelectedEvent(event)}
+                  >
+                    <div className="flex-shrink-0 w-12 h-12 bg-blue-50 rounded-lg flex flex-col items-center justify-center group-hover:bg-blue-100 transition">
+                      <span className="text-[10px] font-black text-blue-600 uppercase">
+                        {month}
+                      </span>
+                      <span className="text-lg font-black text-blue-600 leading-none">
+                        {day}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate group-hover:text-blue-600 transition">
+                        {event.title}
+                      </p>
+                      <p className="text-[11px] font-medium text-gray-500">{time}</p>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-xs text-gray-500 italic text-center py-2">No upcoming events.</p>
+            )}
           </div>
           
           <button 
@@ -244,24 +266,19 @@ const RightSidebar = () => {
                 ))}
                 {Array.from({ length: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
                   const day = i + 1;
-                  const monthName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][currentDate.getMonth()];
-                  const eventForDay = upcomingEvents.find(event => event.date === `${monthName} ${day}`);
-                  const isToday = new Date().getDate() === day && new Date().getMonth() === currentDate.getMonth() && new Date().getFullYear() === currentDate.getFullYear();
+                  const isToday = new Date().getDate() === day && 
+                                  new Date().getMonth() === currentDate.getMonth() && 
+                                  new Date().getFullYear() === currentDate.getFullYear();
                   
                   return (
                     <div 
                       key={day} 
                       className={`
-                        h-8 w-8 mx-auto flex flex-col items-center justify-center rounded-full text-sm relative transition
-                        ${eventForDay ? 'bg-blue-50 text-blue-700 font-semibold cursor-pointer hover:bg-blue-100' : 'text-gray-700 hover:bg-gray-50 cursor-pointer'}
-                        ${isToday && !eventForDay ? 'ring-2 ring-blue-500' : ''}
+                        h-8 w-8 mx-auto flex flex-col items-center justify-center rounded-full text-sm relative transition cursor-pointer
+                        ${isToday ? 'ring-2 ring-blue-500 font-bold text-blue-600' : 'text-gray-700 hover:bg-gray-50'}
                       `}
-                      title={eventForDay ? eventForDay.title : undefined}
                     >
-                      <span className="z-10">{day}</span>
-                      {eventForDay && (
-                        <span className="absolute bottom-1 w-1 h-1 bg-blue-600 rounded-full"></span>
-                      )}
+                      <span className="relative z-10">{day}</span>
                     </div>
                   );
                 })}
@@ -284,6 +301,95 @@ const RightSidebar = () => {
           <p className="pt-2">© 2026 LearnLink</p>
         </div>
       </div>
+
+      {/* Event Details Modal */}
+      {selectedEvent && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+          onClick={() => setSelectedEvent(null)}
+        >
+          <div 
+            className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              onClick={() => setSelectedEvent(null)}
+              className="absolute top-4 right-4 z-20 p-2 bg-white/80 backdrop-blur-md hover:bg-white rounded-full transition-colors text-gray-900 shadow-sm"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Banner Image Section */}
+            <div className="h-48 w-full bg-gray-100 relative">
+              {selectedEvent.bannerImageUrl ? (
+                <img 
+                  src={selectedEvent.bannerImageUrl} 
+                  alt={selectedEvent.title} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500/10 to-indigo-500/10 text-blue-600/20">
+                  <Calendar className="w-16 h-16" />
+                </div>
+              )}
+              {/* Category Badge overlay on image */}
+              <div className="absolute bottom-4 left-4 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-[10px] font-black text-blue-600 uppercase tracking-widest border border-white/20 shadow-sm">
+                {selectedEvent.category || 'EVENT'}
+              </div>
+            </div>
+
+            <div className="p-8">
+              <div className="mb-6">
+                <div className="text-blue-600 font-black text-xs tracking-widest uppercase mb-2">
+                  {formatEventDate(selectedEvent.eventDate).full}
+                </div>
+                <h2 className="text-2xl font-black text-gray-900 font-manrope leading-tight">
+                  {selectedEvent.title}
+                </h2>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Time</p>
+                    <p className="text-sm font-bold text-gray-700">{formatEventDate(selectedEvent.eventDate).time}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Location</p>
+                    <p className="text-sm font-bold text-gray-700">{selectedEvent.location}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-8">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter mb-2">Event Description</p>
+                <p className="text-sm text-gray-600 leading-relaxed font-dm-sans whitespace-pre-wrap max-h-48 overflow-y-auto pr-2">
+                  {selectedEvent.description || "No additional description provided for this event."}
+                </p>
+              </div>
+
+              <div className="pt-6 border-t border-gray-50 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white shadow-sm">
+                  {selectedEvent.author?.name?.[0] || 'U'}
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Organized by</p>
+                  <p className="text-sm font-bold text-gray-700">{selectedEvent.author?.name}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 };
