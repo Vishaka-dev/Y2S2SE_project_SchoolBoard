@@ -266,6 +266,15 @@ const RightSidebar = () => {
                 ))}
                 {Array.from({ length: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
                   const day = i + 1;
+                  
+                  // Re-implemented event matching for calendar highlighting
+                  const eventForDay = upcomingEvents.find(event => {
+                    const eDate = new Date(event.eventDate);
+                    return eDate.getDate() === day && 
+                           eDate.getMonth() === currentDate.getMonth() && 
+                           eDate.getFullYear() === currentDate.getFullYear();
+                  });
+
                   const isToday = new Date().getDate() === day && 
                                   new Date().getMonth() === currentDate.getMonth() && 
                                   new Date().getFullYear() === currentDate.getFullYear();
@@ -273,12 +282,18 @@ const RightSidebar = () => {
                   return (
                     <div 
                       key={day} 
+                      onClick={() => eventForDay && setSelectedEvent(eventForDay)}
                       className={`
-                        h-8 w-8 mx-auto flex flex-col items-center justify-center rounded-full text-sm relative transition cursor-pointer
-                        ${isToday ? 'ring-2 ring-blue-500 font-bold text-blue-600' : 'text-gray-700 hover:bg-gray-50'}
+                        h-8 w-8 mx-auto flex flex-col items-center justify-center rounded-full text-sm relative transition
+                        ${eventForDay ? 'bg-blue-50 text-blue-700 font-bold cursor-pointer hover:bg-blue-100 ring-1 ring-blue-100 shadow-sm' : 'text-gray-700 hover:bg-gray-50 cursor-pointer'}
+                        ${isToday && !eventForDay ? 'ring-2 ring-blue-500 font-bold text-blue-600' : ''}
                       `}
+                      title={eventForDay ? `${eventForDay.title} (${new Date(eventForDay.eventDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})` : undefined}
                     >
                       <span className="relative z-10">{day}</span>
+                      {eventForDay && (
+                        <span className="absolute bottom-1 w-1 h-1 bg-blue-600 rounded-full"></span>
+                      )}
                     </div>
                   );
                 })}
