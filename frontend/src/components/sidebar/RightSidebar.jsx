@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Users, Calendar as CalendarIcon, UserPlus, ChevronLeft, ChevronRight, Loader2, RefreshCw, Clock, MapPin, X, Calendar } from 'lucide-react';
 import { getSuggestedConnections } from '../../services/suggestionService';
 import { eventService } from '../../services/eventService';
@@ -17,6 +18,7 @@ const RightSidebar = () => {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const navigate = useNavigate();
 
   const fetchSuggestions = useCallback(async () => {
     setIsLoadingSuggestions(true);
@@ -34,11 +36,21 @@ const RightSidebar = () => {
 
   const fetchUpcomingEvents = useCallback(async () => {
     setIsLoadingEvents(true);
+    console.log('Fetching upcoming events...');
     try {
       const data = await eventService.getUpcomingEvents();
-      setUpcomingEvents(data.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate)));
+      console.log('Events received:', data);
+      
+      if (data && Array.isArray(data)) {
+        const sortedData = [...data].sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
+        setUpcomingEvents(sortedData);
+      } else {
+        console.warn('Received malformed event data:', data);
+        setUpcomingEvents([]);
+      }
     } catch (err) {
       console.error('Failed to load upcoming events:', err);
+      setUpcomingEvents([]);
     } finally {
       setIsLoadingEvents(false);
     }
@@ -120,7 +132,7 @@ const RightSidebar = () => {
             </div>
           ) : suggestions.length > 0 ? (
             suggestions.map((connection) => (
-              <div key={connection.userId} className="flex items-start gap-3 group">
+              <div key={connection.userId} className="flex items-start gap-3 group animate-in opacity-100 fade-in slide-in-from-right-2 duration-500">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 shadow-sm overflow-hidden">
                   {connection.profileImageUrl ? (
                     <img 
@@ -202,7 +214,7 @@ const RightSidebar = () => {
               return (
                 <div 
                   key={event.id} 
-                  className="flex gap-3 group cursor-pointer hover:bg-gray-50 p-2 -m-2 rounded-xl transition animate-in opacity-0 fade-in slide-in-from-right-2 duration-300 [animation-fill-mode:forwards]"
+                  className="flex gap-3 group cursor-pointer hover:bg-gray-50 p-2 -m-2 rounded-xl transition animate-in opacity-100 fade-in slide-in-from-right-2 duration-300 [animation-fill-mode:forwards]"
                   onClick={() => setSelectedEvent(event)}
                 >
                   <div className="flex-shrink-0 w-12 h-12 bg-blue-50 rounded-lg flex flex-col items-center justify-center border border-blue-100 group-hover:bg-blue-100 transition">
@@ -230,6 +242,16 @@ const RightSidebar = () => {
               <CalendarIcon className="w-8 h-8 text-gray-300 mx-auto mb-2 opacity-50" />
               <p className="text-xs text-gray-400 font-medium">No upcoming events found</p>
             </div>
+          )}
+
+          {upcomingEvents.length > 3 && (
+            <button 
+              onClick={() => navigate('/events')}
+              className="w-full mt-4 flex items-center justify-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700 transition uppercase tracking-tighter"
+            >
+              See all events on board
+              <ChevronRight className="w-3 h-3" />
+            </button>
           )}
         </div>
         
@@ -318,7 +340,7 @@ const RightSidebar = () => {
         <p className="pt-2">© 2026 LearnLink</p>
       </div>
 
-      {/* Event Details Modal */}
+      {/* Event Details Modal - Appearing on the same page */}
       {selectedEvent && (
         <div 
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
@@ -345,7 +367,7 @@ const RightSidebar = () => {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500/10 to-indigo-500/10 text-blue-600/20">
-                  <Calendar className="w-16 h-16" />
+                  <CalendarIcon className="w-16 h-16" />
                 </div>
               )}
               <div className="absolute bottom-4 left-4 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-[10px] font-black text-blue-600 uppercase tracking-widest border border-white/20 shadow-sm">
@@ -409,6 +431,7 @@ const RightSidebar = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };

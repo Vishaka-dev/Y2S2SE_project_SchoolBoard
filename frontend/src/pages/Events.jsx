@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Calendar, MapPin, Tag, Plus, Filter, Search, Clock, ChevronRight, Trash2, X } from 'lucide-react';
 import { eventService } from '../services/eventService';
 import { useAuth } from '../context/AuthContext';
@@ -24,6 +25,7 @@ const Events = () => {
   const [filter, setFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const loadEvents = async () => {
     setIsLoading(true);
@@ -42,6 +44,17 @@ const Events = () => {
     window.addEventListener('eventCreated', loadEvents);
     return () => window.removeEventListener('eventCreated', loadEvents);
   }, []);
+
+  // Handle URL parameter for direct event selection
+  useEffect(() => {
+    const eventId = searchParams.get('id');
+    if (eventId && events.length > 0) {
+      const event = events.find(e => e.id.toString() === eventId);
+      if (event) {
+        setSelectedEvent(event);
+      }
+    }
+  }, [searchParams, events]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this event?')) return;
@@ -300,7 +313,10 @@ const Events = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <button 
-              onClick={() => setSelectedEvent(null)}
+              onClick={() => {
+                setSelectedEvent(null);
+                setSearchParams({}, { replace: true });
+              }}
               className="absolute top-4 right-4 z-10 p-2 bg-white/80 backdrop-blur-md hover:bg-white rounded-full transition-colors text-gray-900 shadow-sm"
             >
               <X className="w-5 h-5" />

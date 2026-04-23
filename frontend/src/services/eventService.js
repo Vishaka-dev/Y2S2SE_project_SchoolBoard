@@ -7,8 +7,15 @@ export const eventService = {
   },
 
   getUpcomingEvents: async () => {
-    const response = await apiClient.get('/events/upcoming');
-    return response.data;
+    console.log('Sending request to /events/upcoming...');
+    try {
+      const response = await apiClient.get('/events/upcoming');
+      console.log('API Response received for upcoming events:', response.status);
+      return response.data;
+    } catch (error) {
+      console.error('API Error fetching upcoming events:', error.response || error);
+      throw error;
+    }
   },
 
   createEvent: async (formData) => {
