@@ -18,10 +18,10 @@ import java.util.function.Function;
 @Slf4j
 public class JwtService {
 
-    @Value("${jwt.secret-key}")
+    @Value("${jwt.secret-key:my-ultra-secret-and-very-long-key-for-jwt-signing-which-is-at-least-256-bits-long}")
     private String secretKey;
 
-    @Value("${jwt.expiration-ms}")
+    @Value("${jwt.expiration-ms:86400000}")
     private long jwtExpirationMs;
 
     /**
