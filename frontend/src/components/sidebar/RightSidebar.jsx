@@ -1,14 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Users, Calendar as CalendarIcon, UserPlus, Loader2, Clock, RefreshCw } from 'lucide-react';
+import { Users, Calendar as CalendarIcon, Loader2, Clock, RefreshCw, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { getSuggestedConnections } from '../../services/suggestionService';
 import { eventService } from '../../services/eventService';
 import FollowButton from '../FollowButton';
 
 const RightSidebar = () => {
+  const navigate = useNavigate();
+
   // Suggested connections state
   const [suggestions, setSuggestions] = useState([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(true);
   const [suggestionError, setSuggestionError] = useState(null);
+  const [showAllSuggestionsModal, setShowAllSuggestionsModal] = useState(false);
+  const [allSuggestions, setAllSuggestions] = useState([]);
+  const [isLoadingAllSuggestions, setIsLoadingAllSuggestions] = useState(false);
 
   // Upcoming events state
   const [upcomingEvents, setUpcomingEvents] = useState([]);
@@ -28,6 +34,32 @@ const RightSidebar = () => {
     }
   }, []);
 
+  const fetchAllSuggestions = useCallback(async () => {
+    setIsLoadingAllSuggestions(true);
+    try {
+      const data = await getSuggestedConnections(100);
+      setAllSuggestions(data?.suggestions || (Array.isArray(data) ? data : []));
+    } catch (err) {
+      console.error('Failed to load all suggestions:', err);
+      setAllSuggestions([]);
+    } finally {
+      setIsLoadingAllSuggestions(false);
+    }
+  }, []);
+
+  const getSuggestionUserId = (suggestion) => suggestion?.userId ?? suggestion?.id;
+
+  const handleOpenAllSuggestions = async () => {
+    setShowAllSuggestionsModal(true);
+    await fetchAllSuggestions();
+  };
+
+  const handleSuggestionClick = (connection) => {
+    const userId = getSuggestionUserId(connection);
+    if (!userId) return;
+    navigate(`/profile/${userId}`);
+  };
+
   const fetchEvents = useCallback(async () => {
     setIsLoadingEvents(true);
     try {
@@ -45,22 +77,6 @@ const RightSidebar = () => {
     fetchSuggestions();
     fetchEvents();
   }, [fetchSuggestions, fetchEvents]);
-
-  // Handle follow/unfollow events to refresh suggestions if a user is followed
-  useEffect(() => {
-    const handleFollowChanged = (event) => {
-      const { isFollowing, targetUserId } = event.detail;
-      // If we followed someone in the suggestion list, we might want to refresh 
-      // the list eventually because they should no longer be a suggestion.
-      // For immediate UX, we can just remove them from the current list.
-      if (isFollowing) {
-        setSuggestions(prev => prev.filter(s => s.userId !== targetUserId));
-      }
-    };
-
-    window.addEventListener('followChanged', handleFollowChanged);
-    return () => window.removeEventListener('followChanged', handleFollowChanged);
-  }, []);
 
   const formatEventDate = (dateString) => {
     if (!dateString) return { month: 'N/A', day: '--' };
@@ -122,8 +138,14 @@ const RightSidebar = () => {
                 </button>
               </div>
             ) : suggestions.length > 0 ? (
-              suggestions.map((connection) => (
-                <div key={connection.userId} className="flex items-start gap-3 group">
+              suggestions.map((connection) => {
+                const targetUserId = getSuggestionUserId(connection);
+                return (
+                <div
+                  key={targetUserId || connection.username}
+                  className="flex items-start gap-3 group cursor-pointer"
+                  onClick={() => handleSuggestionClick(connection)}
+                >
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 shadow-sm">
                     {connection.profileImageUrl ? (
                       <img 
@@ -156,21 +178,16 @@ const RightSidebar = () => {
                     </div>
                   </div>
                   <div className="flex-shrink-0">
-                    <FollowButton 
-                      targetUserId={connection.userId}
+                    <div onClick={(event) => event.stopPropagation()}>
+                    <FollowButton
+                      targetUserId={targetUserId}
+                      initialIsFollowing={Boolean(connection.isFollowing)}
                       size="sm"
-                      onFollowChange={(nextState) => {
-                        if (nextState) {
-                          // Allow some time for animation before removal
-                          setTimeout(() => {
-                            setSuggestions(prev => prev.filter(s => s.userId !== connection.userId));
-                          }, 1000);
-                        }
-                      }}
                     />
+                    </div>
                   </div>
                 </div>
-              ))
+              )})
             ) : (
               <div className="py-6 text-center text-gray-500">
                 <p className="text-xs italic">No suggestions available at the moment.</p>
@@ -180,7 +197,7 @@ const RightSidebar = () => {
           
           {suggestions.length > 0 && (
             <button 
-              onClick={() => window.location.href = '/people'}
+              onClick={handleOpenAllSuggestions}
               className="w-full mt-5 text-sm text-blue-600 hover:text-blue-700 font-medium border-t pt-3 border-gray-50 hover:bg-gray-50 rounded-b-xl transition"
             >
               View more people →
@@ -234,6 +251,79 @@ const RightSidebar = () => {
             )}
           </div>
         </div>
+
+      {showAllSuggestionsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-2xl max-h-[80vh] bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900">All Suggested Connections</h3>
+              <button
+                onClick={() => setShowAllSuggestionsModal(false)}
+                className="p-2 rounded-full hover:bg-gray-100 text-gray-500"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-72px)] space-y-4">
+              {isLoadingAllSuggestions ? (
+                <div className="py-10 flex flex-col items-center text-gray-400">
+                  <Loader2 className="w-6 h-6 animate-spin mb-2" />
+                  <p className="text-sm">Loading people...</p>
+                </div>
+              ) : allSuggestions.length === 0 ? (
+                <div className="py-10 text-center text-gray-500">
+                  <p className="text-sm">No more suggested users right now.</p>
+                </div>
+              ) : (
+                allSuggestions.map((connection) => {
+                  const targetUserId = getSuggestionUserId(connection);
+                  return (
+                    <div
+                      key={targetUserId || connection.username}
+                      className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer"
+                      onClick={() => handleSuggestionClick(connection)}
+                    >
+                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 shadow-sm">
+                        {connection.profileImageUrl ? (
+                          <img
+                            src={connection.profileImageUrl}
+                            alt={connection.displayName || connection.username}
+                            className="w-full h-full rounded-full object-cover border border-gray-100"
+                          />
+                        ) : (
+                          getInitials(connection.displayName || connection.username)
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {connection.displayName || connection.username}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">{connection.role}</p>
+                        {connection.matchReason && (
+                          <span className="inline-flex mt-1 items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600">
+                            {connection.matchReason}
+                          </span>
+                        )}
+                      </div>
+
+                      <div onClick={(event) => event.stopPropagation()}>
+                        <FollowButton
+                          targetUserId={targetUserId}
+                          initialIsFollowing={Boolean(connection.isFollowing)}
+                          size="sm"
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       </div>
   );
 };

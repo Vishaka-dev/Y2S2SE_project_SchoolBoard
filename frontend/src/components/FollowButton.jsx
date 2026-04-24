@@ -29,6 +29,12 @@ const FollowButton = ({
       return;
     }
 
+    if (!targetUserId) {
+      setError('Unable to follow this user right now.');
+      setToast({ message: 'Invalid user selected', type: 'error' });
+      return;
+    }
+
     setError('');
     const nextState = !isFollowing;
     setIsFollowing(nextState);
