@@ -4,7 +4,7 @@ import { X, Search, Users, Loader2, Share2, CheckCircle2 } from 'lucide-react';
 import groupService from '../services/groupService';
 import { postService } from '../services/postService';
 
-const ShareModal = ({ isOpen, onClose, content, contentType = 'POST' }) => {
+const ShareModal = ({ isOpen, onClose, content, contentType = 'POST', onShared }) => {
   const [groups, setGroups] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,6 +51,10 @@ const ShareModal = ({ isOpen, onClose, content, contentType = 'POST' }) => {
         content: shareText,
         groupId: groupId
       });
+
+      if (typeof onShared === 'function' && contentType === 'POST' && content?.id) {
+        onShared(content.id);
+      }
       
       setSharedGroups(prev => new Set([...prev, groupId]));
     } catch (err) {

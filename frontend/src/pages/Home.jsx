@@ -41,6 +41,20 @@ const Home = () => {
     setIsShareModalOpen(true);
   };
 
+  const handleShareSuccess = (postId) => {
+    setPosts(prevPosts => prevPosts.map(post => {
+      if (post.id === postId) {
+        return { ...post, shareCount: (post.shareCount || 0) + 1 };
+      }
+      return post;
+    }));
+
+    setSinglePost(prev => {
+      if (!prev || prev.id !== postId) return prev;
+      return { ...prev, shareCount: (prev.shareCount || 0) + 1 };
+    });
+  };
+
   const POSTS_PER_PAGE = 10;
 
   const loadPosts = async (pageToLoad, isInitial = false) => {
@@ -381,6 +395,19 @@ const Home = () => {
         }
         return p;
       }));
+
+      setSinglePost(prev => {
+        if (!prev || prev.id !== postId) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          reactionCounts: summary.reactionCounts,
+          totalReactions: summary.totalReactions,
+          currentUserReaction: summary.currentUserReaction
+        };
+      });
     } catch (error) {
       console.error('Failed to react to post:', error);
     }
@@ -522,24 +549,48 @@ const Home = () => {
                 </div>
               )}
               <div className="flex items-center gap-4 text-[13px] text-gray-500 pb-3 mb-3 border-b border-gray-50 font-medium">
-                <span className="hover:text-blue-600 cursor-pointer">0 likes</span>
-                <span className="hover:text-blue-600 cursor-pointer">0 comments</span>
-                <span className="hover:text-blue-600 cursor-pointer">0 shares</span>
+                {singlePost.totalReactions > 0 ? (
+                  <span className="hover:text-blue-600 cursor-pointer flex items-center gap-1">
+                    <span className="text-base">👍</span> {singlePost.totalReactions}
+                  </span>
+                ) : (
+                  <span className="hover:text-blue-600 cursor-pointer">0 reactions</span>
+                )}
+                <span
+                  className="hover:text-blue-600 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleComments(singlePost.id);
+                  }}
+                >
+                  {singlePost.commentCount || 0} comments
+                </span>
+                <span className="hover:text-blue-600 cursor-pointer">{singlePost.shareCount || 0} shares</span>
               </div>
               <div className="flex items-center gap-2 h-11">
-                <button className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
-                  <ThumbsUp className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
-                  <span className="text-sm font-bold">Like</span>
-                </button>
-                <button className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+                <ReactionButton
+                  currentUserReaction={singlePost.currentUserReaction}
+                  onReact={(reactionType) => handleReact(singlePost.id, reactionType)}
+                />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleComments(singlePost.id);
+                  }}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn"
+                >
                   <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                   <span className="text-sm font-bold">Comment</span>
                 </button>
-                <button className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+                <button
+                  onClick={(e) => handleShareClick(e, singlePost)}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn"
+                >
                   <Share2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                   <span className="text-sm font-bold">Share</span>
                 </button>
               </div>
+              {renderCommentsSection(singlePost)}
             </div>
           )
         ) : (
@@ -681,8 +732,16 @@ const Home = () => {
                       ) : (
                         <span className="hover:text-blue-600 cursor-pointer">0 reactions</span>
                       )}
-                      <span className="hover:text-blue-600 cursor-pointer">0 comments</span>
-                      <span className="hover:text-blue-600 cursor-pointer">0 shares</span>
+                      <span
+                        className="hover:text-blue-600 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleComments(post.id);
+                        }}
+                      >
+                        {post.commentCount || 0} comments
+                      </span>
+                      <span className="hover:text-blue-600 cursor-pointer">{post.shareCount || 0} shares</span>
                     </div>
 
                     {/* Action Buttons */}
@@ -691,7 +750,13 @@ const Home = () => {
                         currentUserReaction={post.currentUserReaction} 
                         onReact={(reactionType) => handleReact(post.id, reactionType)} 
                       />
-                      <button className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleComments(post.id);
+                        }}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition group/btn"
+                      >
                         <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                         <span className="text-sm font-bold">Comment</span>
                       </button>
@@ -703,6 +768,7 @@ const Home = () => {
                         <span className="text-sm font-bold">Share</span>
                       </button>
                     </div>
+                    {renderCommentsSection(post)}
                   </div>
                 ))}
 
@@ -756,6 +822,7 @@ const Home = () => {
         onClose={() => setIsShareModalOpen(false)}
         content={shareContent}
         contentType="POST"
+        onShared={handleShareSuccess}
       />
     </div>
   );
