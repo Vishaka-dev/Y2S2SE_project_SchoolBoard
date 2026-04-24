@@ -38,30 +38,32 @@ public class MessageServiceImpl implements MessageService {
             throw new IllegalArgumentException("Message content cannot be empty");
         }
         if (content.length() > MAX_MESSAGE_LENGTH) {
-            throw new IllegalArgumentException("Message exceeds maximum length of " + MAX_MESSAGE_LENGTH + " characters");
+            throw new IllegalArgumentException(
+                    "Message exceeds maximum length of " + MAX_MESSAGE_LENGTH + " characters");
         }
 
         // Verify conversation exists
         Conversation conversation = conversationRepository.findById(conversationId)
-            .orElseThrow(() -> new ResourceNotFoundException("Conversation not found with id: " + conversationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found with id: " + conversationId));
 
         // Verify sender is part of the conversation
         if (!conversation.containsUser(senderId)) {
-            log.warn("User {} attempted to send message in conversation {} they don't belong to", senderId, conversationId);
+            log.warn("User {} attempted to send message in conversation {} they don't belong to", senderId,
+                    conversationId);
             throw new IllegalArgumentException("You are not part of this conversation");
         }
 
         // Verify sender exists
         User sender = userRepository.findById(senderId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + senderId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + senderId));
 
         // Create and save message
         Message message = Message.builder()
-            .conversation(conversation)
-            .sender(sender)
-            .content(content.trim())
-            .isRead(false)
-            .build();
+                .conversation(conversation)
+                .sender(sender)
+                .content(content.trim())
+                .isRead(false)
+                .build();
 
         message = messageRepository.save(message);
 
@@ -69,8 +71,8 @@ public class MessageServiceImpl implements MessageService {
         conversation.setLastMessage(message);
         conversationRepository.save(conversation);
 
-        log.info("Message sent successfully. ID: {}, ConversationID: {}, SenderID: {}", 
-            message.getId(), conversationId, senderId);
+        log.info("Message sent successfully. ID: {}, ConversationID: {}, SenderID: {}",
+                message.getId(), conversationId, senderId);
 
         return MessageResponseDTO.fromMessage(message);
     }
@@ -81,11 +83,12 @@ public class MessageServiceImpl implements MessageService {
 
         // Verify conversation exists
         Conversation conversation = conversationRepository.findById(conversationId)
-            .orElseThrow(() -> new ResourceNotFoundException("Conversation not found with id: " + conversationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found with id: " + conversationId));
 
         // Verify user is part of conversation
         if (!conversation.containsUser(userId)) {
-            log.warn("User {} attempted to access messages in conversation {} they don't belong to", userId, conversationId);
+            log.warn("User {} attempted to access messages in conversation {} they don't belong to", userId,
+                    conversationId);
             throw new IllegalArgumentException("Access denied");
         }
 
@@ -98,7 +101,7 @@ public class MessageServiceImpl implements MessageService {
         log.debug("Fetching message with ID: {}", messageId);
 
         Message message = messageRepository.findById(messageId)
-            .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + messageId));
+                .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + messageId));
 
         return MessageResponseDTO.fromMessage(message);
     }
@@ -109,7 +112,7 @@ public class MessageServiceImpl implements MessageService {
         log.debug("Marking message {} as read by user {}", messageId, userId);
 
         Message message = messageRepository.findById(messageId)
-            .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + messageId));
+                .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + messageId));
 
         // Verify user is not the sender (can't mark own message as read)
         if (message.getSender().getId().equals(userId)) {
@@ -132,7 +135,7 @@ public class MessageServiceImpl implements MessageService {
         log.debug("Marking all messages in conversation {} as read for user {}", conversationId, userId);
 
         Conversation conversation = conversationRepository.findById(conversationId)
-            .orElseThrow(() -> new ResourceNotFoundException("Conversation not found with id: " + conversationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found with id: " + conversationId));
 
         if (!conversation.containsUser(userId)) {
             throw new IllegalArgumentException("Access denied");
@@ -148,12 +151,21 @@ public class MessageServiceImpl implements MessageService {
         log.debug("Deleting message {} requested by user {}", messageId, userId);
 
         Message message = messageRepository.findById(messageId)
-            .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + messageId));
+                .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + messageId));
 
         // Verify user is the sender
         if (!message.getSender().getId().equals(userId)) {
             log.warn("User {} attempted to delete message {} they don't own", userId, messageId);
             throw new IllegalArgumentException("You can only delete your own messages");
+        }
+
+        Conversation conversation = message.getConversation();
+        if (conversation.getLastMessage() != null && conversation.getLastMessage().getId().equals(messageId)) {
+            Message replacement = messageRepository
+                    .findTopByConversationIdAndIdNotOrderByCreatedAtDesc(conversation.getId(), messageId)
+                    .orElse(null);
+            conversation.setLastMessage(replacement);
+            conversationRepository.save(conversation);
         }
 
         messageRepository.delete(message);
@@ -170,11 +182,12 @@ public class MessageServiceImpl implements MessageService {
             throw new IllegalArgumentException("Message content cannot be empty");
         }
         if (newContent.length() > MAX_MESSAGE_LENGTH) {
-            throw new IllegalArgumentException("Message exceeds maximum length of " + MAX_MESSAGE_LENGTH + " characters");
+            throw new IllegalArgumentException(
+                    "Message exceeds maximum length of " + MAX_MESSAGE_LENGTH + " characters");
         }
 
         Message message = messageRepository.findById(messageId)
-            .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + messageId));
+                .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + messageId));
 
         // Verify user is the sender
         if (!message.getSender().getId().equals(userId)) {
@@ -190,12 +203,13 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public Page<MessageResponseDTO> searchMessages(Long conversationId, Long userId, String keyword, Pageable pageable) {
+    public Page<MessageResponseDTO> searchMessages(Long conversationId, Long userId, String keyword,
+            Pageable pageable) {
         log.debug("Searching messages in conversation {} for keyword: {} by user {}", conversationId, keyword, userId);
 
         // Verify conversation exists and user is part of it
         Conversation conversation = conversationRepository.findById(conversationId)
-            .orElseThrow(() -> new ResourceNotFoundException("Conversation not found with id: " + conversationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found with id: " + conversationId));
 
         if (!conversation.containsUser(userId)) {
             throw new IllegalArgumentException("Access denied");
