@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { MessageProvider } from './context/MessageContext';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -231,7 +232,9 @@ function App() {
     <Router>
       <AuthProvider>
         <NotificationProvider>
-          <AppRoutes />
+          <MessageProvider>
+            <AppRoutes />
+          </MessageProvider>
         </NotificationProvider>
       </AuthProvider>
     </Router>

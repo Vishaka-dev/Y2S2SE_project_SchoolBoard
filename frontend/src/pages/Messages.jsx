@@ -24,6 +24,8 @@ const Messages = () => {
   const { user } = useAuth();
   const location = useLocation();
   const selectedGroupIdFromNav = location.state?.selectedGroupId;
+  const selectedUserIdFromQuery = new URLSearchParams(location.search).get('userId');
+  const autoOpenedUserChatRef = useRef(null);
   
   // Combined chat list
   const [allChats, setAllChats] = useState([]);
@@ -34,6 +36,7 @@ const Messages = () => {
 
   // 1-to-1 chat states
   const [messages, setMessages] = useState([]);
+  const [messageInput, setMessageInput] = useState('');
   const [sending, setSending] = useState(false);
   const [typingUsers, setTypingUsers] = useState(new Set());
   const messagesEndRef = useRef(null);
@@ -150,6 +153,70 @@ const Messages = () => {
     }
   }, [selectedGroupIdFromNav, allChats]);
 
+  // Auto-open 1-to-1 chat when navigated with ?userId=<id>
+  useEffect(() => {
+    if (!user || selectedGroupIdFromNav) return;
+
+    const targetUserId = Number(selectedUserIdFromQuery);
+    if (!Number.isInteger(targetUserId) || targetUserId <= 0) return;
+    if (targetUserId === user.id) return;
+
+    const targetKey = String(targetUserId);
+    if (autoOpenedUserChatRef.current === targetKey) return;
+
+    const existingChat = allChats.find(
+      (chat) => chat.type === 'conversation' && Number(chat.otherUser?.id) === targetUserId
+    );
+
+    if (existingChat) {
+      setSelectedChat(existingChat);
+      autoOpenedUserChatRef.current = targetKey;
+      return;
+    }
+
+    let isCancelled = false;
+
+    const ensureConversationAndSelect = async () => {
+      try {
+        const conversation = await conversationAPI.createOrGetConversation(targetUserId);
+        if (isCancelled || !conversation?.id) return;
+
+        const otherUser = conversation.otherUser ||
+          (conversation.user1?.id === user.id ? conversation.user2 : conversation.user1);
+
+        const conversationChat = {
+          ...conversation,
+          type: 'conversation',
+          otherUser,
+          displayName: otherUser?.username || conversation.displayName || 'Direct Message'
+        };
+
+        setAllChats((prev) => {
+          const withoutDuplicate = prev.filter(
+            (chat) => !(chat.type === 'conversation' && chat.id === conversationChat.id)
+          );
+          return [conversationChat, ...withoutDuplicate].sort((a, b) => {
+            const aTime = new Date(a.updatedAt || a.lastMessageTime || 0).getTime();
+            const bTime = new Date(b.updatedAt || b.lastMessageTime || 0).getTime();
+            return bTime - aTime;
+          });
+        });
+
+        setSelectedChat(conversationChat);
+        autoOpenedUserChatRef.current = targetKey;
+      } catch (err) {
+        console.error('Failed to auto-open direct chat:', err);
+        setError('Failed to open chat');
+      }
+    };
+
+    ensureConversationAndSelect();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user, selectedGroupIdFromNav, selectedUserIdFromQuery, allChats]);
+
   // Load messages based on selected chat type
   useEffect(() => {
     if (!selectedChat) {
@@ -172,6 +239,7 @@ const Messages = () => {
           }
         } else {
           // Load 1-to-1 messages
+          setMessageInput('');
           const msgData = await messageAPI.fetchMessages(selectedChat.id, 0, 30);
           setMessages((msgData.content || msgData || []).reverse());
           // Mark as read
@@ -196,6 +264,7 @@ const Messages = () => {
       setSending(true);
       const response = await messageAPI.sendMessage(selectedChat.id, content, attachments);
       setMessages(prev => [...prev, response]);
+      setMessageInput('');
     } catch (err) {
       console.error('Failed to send message:', err);
       setError('Failed to send message');
@@ -304,7 +373,7 @@ const Messages = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search chats..."
+                placeholder="Search users..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500"
@@ -423,8 +492,8 @@ const Messages = () => {
               />
               <div className="flex-shrink-0 border-t border-gray-200">
                 <MessageInput
-                  value=""
-                  onChange={() => {}}
+                  value={messageInput}
+                  onChange={setMessageInput}
                   onSend={handleSendMessage}
                   sending={sending}
                   onTyping={() => {}}
