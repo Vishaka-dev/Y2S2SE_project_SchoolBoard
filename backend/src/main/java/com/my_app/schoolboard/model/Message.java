@@ -9,14 +9,15 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "messages", indexes = {
-    @Index(name = "idx_message_conversation", columnList = "conversation_id"),
-    @Index(name = "idx_message_sender", columnList = "sender_id"),
-    @Index(name = "idx_message_created_at", columnList = "created_at DESC"),
-    @Index(name = "idx_message_unread", columnList = "conversation_id, is_read")
+        @Index(name = "idx_message_conversation", columnList = "conversation_id"),
+        @Index(name = "idx_message_sender", columnList = "sender_id"),
+        @Index(name = "idx_message_created_at", columnList = "created_at DESC"),
+        @Index(name = "idx_message_unread", columnList = "conversation_id, is_read")
 })
 @Data
 @NoArgsConstructor
@@ -56,7 +57,7 @@ public class Message {
 
     @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Attachment> attachments = List.of();
+    private List<Attachment> attachments = new ArrayList<>();
 
     /**
      * Mark this message as read by the recipient

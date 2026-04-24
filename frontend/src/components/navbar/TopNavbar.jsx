@@ -1,6 +1,7 @@
 import { Bell, MessageSquare, ChevronDown, Home, BookOpenText, Calendar, Users, User, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
+import { useMessages } from '../../context/MessageContext';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import learnlinkLogo from '../../../logos/learnlink_logo-transparent.png';
@@ -8,7 +9,8 @@ import UserSearchDropdown from './UserSearchDropdown';
 
 const TopNavbar = () => {
   const { user, getUserInitials, getRoleDisplay, getAvatarUrl, logout } = useAuth();
-  const { hasUnread } = useNotifications();
+  const { hasUnread: hasNotifications } = useNotifications();
+  const { hasUnread: hasMessages } = useMessages();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -106,7 +108,7 @@ const TopNavbar = () => {
           title="Notifications"
         >
           <Bell className="h-5 w-5 group-hover:text-blue-600 transition" />
-          {hasUnread && (
+          {hasNotifications && (
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
           )}
         </button>
@@ -118,6 +120,9 @@ const TopNavbar = () => {
           title="Messages"
         >
           <MessageSquare className="h-5 w-5 group-hover:text-blue-600 transition" />
+          {hasMessages && (
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full border-2 border-white"></span>
+          )}
         </button>
 
         {/* Divider */}

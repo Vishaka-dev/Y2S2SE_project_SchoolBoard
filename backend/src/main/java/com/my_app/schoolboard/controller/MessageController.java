@@ -4,6 +4,7 @@ import com.my_app.schoolboard.dto.MessageRequestDTO;
 import com.my_app.schoolboard.dto.MessageResponseDTO;
 import com.my_app.schoolboard.dto.UpdateMessageRequestDTO;
 import com.my_app.schoolboard.dto.AttachmentDTO;
+import com.my_app.schoolboard.exception.FileStorageException;
 import com.my_app.schoolboard.model.User;
 import com.my_app.schoolboard.repository.UserRepository;
 import com.my_app.schoolboard.exception.ResourceNotFoundException;
@@ -46,22 +47,21 @@ public class MessageController {
     public ResponseEntity<MessageResponseDTO> sendMessage(
             @Valid @RequestBody MessageRequestDTO request,
             Authentication authentication) {
-        
+
         log.info("===== MESSAGE SEND REQUEST =====");
-        log.info("Request received - ConversationId: {}, Content length: {}", 
-            request.getConversationId(), 
-            request.getContent() != null ? request.getContent().length() : 0);
+        log.info("Request received - ConversationId: {}, Content length: {}",
+                request.getConversationId(),
+                request.getContent() != null ? request.getContent().length() : 0);
         log.info("Request body: {}", request);
         log.info("Authentication: {}", authentication);
-        
+
         Long userId = getCurrentAuthenticatedUserId(authentication);
         log.info("User: {} sending message in conversation: {}", userId, request.getConversationId());
 
         MessageResponseDTO message = messageService.sendMessage(
-            request.getConversationId(),
-            userId,
-            request.getContent()
-        );
+                request.getConversationId(),
+                userId,
+                request.getContent());
 
         log.info("Message sent successfully - ID: {}", message.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(message);
@@ -78,16 +78,15 @@ public class MessageController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             Authentication authentication) {
-        
+
         Long userId = getCurrentAuthenticatedUserId(authentication);
-        log.info("User: {} fetching messages from conversation: {}, page: {}, size: {}", 
-            userId, conversationId, page, size);
+        log.info("User: {} fetching messages from conversation: {}, page: {}, size: {}",
+                userId, conversationId, page, size);
 
         Page<MessageResponseDTO> messages = messageService.getMessages(
-            conversationId,
-            userId,
-            PageRequest.of(page, size)
-        );
+                conversationId,
+                userId,
+                PageRequest.of(page, size));
 
         return ResponseEntity.ok(messages);
     }
@@ -101,7 +100,7 @@ public class MessageController {
     public ResponseEntity<MessageResponseDTO> getMessage(
             @PathVariable Long id,
             Authentication authentication) {
-        
+
         Long userId = getCurrentAuthenticatedUserId(authentication);
         log.info("User: {} fetching message: {}", userId, id);
 
@@ -120,15 +119,14 @@ public class MessageController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateMessageRequestDTO request,
             Authentication authentication) {
-        
+
         Long userId = getCurrentAuthenticatedUserId(authentication);
         log.info("User: {} editing message: {}", userId, id);
 
         MessageResponseDTO message = messageService.editMessage(
-            id,
-            userId,
-            request.getContent()
-        );
+                id,
+                userId,
+                request.getContent());
 
         return ResponseEntity.ok(message);
     }
@@ -142,7 +140,7 @@ public class MessageController {
     public ResponseEntity<Map<String, String>> deleteMessage(
             @PathVariable Long id,
             Authentication authentication) {
-        
+
         Long userId = getCurrentAuthenticatedUserId(authentication);
         log.info("User: {} deleting message: {}", userId, id);
 
@@ -160,7 +158,7 @@ public class MessageController {
     public ResponseEntity<Map<String, String>> markMessageAsRead(
             @PathVariable Long id,
             Authentication authentication) {
-        
+
         Long userId = getCurrentAuthenticatedUserId(authentication);
         log.info("User: {} marking message: {} as read", userId, id);
 
@@ -178,7 +176,7 @@ public class MessageController {
     public ResponseEntity<Map<String, String>> markConversationMessagesAsRead(
             @PathVariable Long conversationId,
             Authentication authentication) {
-        
+
         Long userId = getCurrentAuthenticatedUserId(authentication);
         log.info("User: {} marking all messages in conversation: {} as read", userId, conversationId);
 
@@ -199,17 +197,16 @@ public class MessageController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             Authentication authentication) {
-        
+
         Long userId = getCurrentAuthenticatedUserId(authentication);
-        log.info("User: {} searching messages in conversation: {} with keyword: {}", 
-            userId, conversationId, keyword);
+        log.info("User: {} searching messages in conversation: {} with keyword: {}",
+                userId, conversationId, keyword);
 
         Page<MessageResponseDTO> results = messageService.searchMessages(
-            conversationId,
-            userId,
-            keyword,
-            PageRequest.of(page, size)
-        );
+                conversationId,
+                userId,
+                keyword,
+                PageRequest.of(page, size));
 
         return ResponseEntity.ok(results);
     }
@@ -224,33 +221,30 @@ public class MessageController {
             @PathVariable Long messageId,
             @RequestParam("files") List<MultipartFile> files,
             Authentication authentication) {
-        
+
         Long userId = getCurrentAuthenticatedUserId(authentication);
-        
+
         log.info("===== ATTACHMENT UPLOAD START =====");
         log.info("MessageId: {}, FileCount: {}, UserId: {}", messageId, files.size(), userId);
-        
+
         for (int i = 0; i < files.size(); i++) {
             MultipartFile file = files.get(i);
-            log.info("File[{}]: name={}, size={}, contentType={}", 
-                i, file.getOriginalFilename(), file.getSize(), file.getContentType());
+            log.info("File[{}]: name={}, size={}, contentType={}",
+                    i, file.getOriginalFilename(), file.getSize(), file.getContentType());
         }
-        
+
+        if (files == null || files.isEmpty()) {
+            log.warn("No files provided for attachment upload");
+            return ResponseEntity.ok(List.of());
+        }
+
         try {
-            if (files == null || files.isEmpty()) {
-                log.warn("No files provided for attachment upload");
-                return ResponseEntity.ok(List.of());
-            }
-            
             List<AttachmentDTO> attachments = attachmentService.uploadAttachments(messageId, files, userId);
             log.info("✅ Attachment upload successful - Created {} attachments", attachments.size());
             return ResponseEntity.status(HttpStatus.CREATED).body(attachments);
         } catch (IOException e) {
             log.error("❌ IOException during attachment upload:", e);
-            throw new RuntimeException("Failed to upload attachments: " + e.getMessage(), e);
-        } catch (Exception e) {
-            log.error("❌ Unexpected error during attachment upload:", e);
-            throw new RuntimeException("Unexpected error: " + e.getMessage(), e);
+            throw new FileStorageException("Failed to upload attachments", e);
         }
     }
 
@@ -263,10 +257,10 @@ public class MessageController {
     public ResponseEntity<List<AttachmentDTO>> getMessageAttachments(
             @PathVariable Long messageId,
             Authentication authentication) {
-        
+
         Long userId = getCurrentAuthenticatedUserId(authentication);
         log.info("User: {} fetching attachments for message: {}", userId, messageId);
-        
+
         List<AttachmentDTO> attachments = attachmentService.getAttachmentsByMessage(messageId);
         return ResponseEntity.ok(attachments);
     }
@@ -280,18 +274,19 @@ public class MessageController {
     public ResponseEntity<byte[]> downloadAttachment(
             @PathVariable Long id,
             Authentication authentication) {
-        
+
         Long userId = getCurrentAuthenticatedUserId(authentication);
         log.info("User: {} downloading attachment: {}", userId, id);
-        
+
         try {
             AttachmentDTO attachment = attachmentService.getAttachment(id);
             byte[] fileContent = attachmentService.downloadAttachment(id);
-            
+
             return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getFileName() + "\"")
-                .header(HttpHeaders.CONTENT_TYPE, attachment.getFileType())
-                .body(fileContent);
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + attachment.getFileName() + "\"")
+                    .header(HttpHeaders.CONTENT_TYPE, attachment.getFileType())
+                    .body(fileContent);
         } catch (IOException | ResourceNotFoundException e) {
             log.error("Failed to download attachment", e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -307,17 +302,17 @@ public class MessageController {
     public ResponseEntity<Map<String, String>> deleteAttachment(
             @PathVariable Long id,
             Authentication authentication) {
-        
+
         Long userId = getCurrentAuthenticatedUserId(authentication);
         log.info("User: {} deleting attachment: {}", userId, id);
-        
+
         try {
             attachmentService.deleteAttachment(id, userId);
             return ResponseEntity.ok(Map.of("message", "Attachment deleted successfully"));
         } catch (ResourceNotFoundException e) {
             log.error("Attachment not found", e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", "Attachment not found"));
+                    .body(Map.of("error", "Attachment not found"));
         }
     }
 
@@ -325,14 +320,14 @@ public class MessageController {
      * Extract current authenticated user ID from Authentication object
      */
     private Long getCurrentAuthenticatedUserId(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated() 
+        if (authentication == null || !authentication.isAuthenticated()
                 || "anonymousUser".equals(authentication.getName())) {
             throw new IllegalArgumentException("User is not authenticated");
         }
 
         String username = authentication.getName();
         User user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
 
         return user.getId();
     }
