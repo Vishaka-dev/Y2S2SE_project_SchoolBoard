@@ -21,6 +21,7 @@ import com.my_app.schoolboard.model.User;
 import com.my_app.schoolboard.repository.FollowRepository;
 import com.my_app.schoolboard.repository.InstituteProfileRepository;
 import com.my_app.schoolboard.repository.PostRepository;
+import com.my_app.schoolboard.repository.CommentRepository;
 import com.my_app.schoolboard.repository.StudentProfileRepository;
 import com.my_app.schoolboard.repository.TeacherProfileRepository;
 import com.my_app.schoolboard.repository.UserRepository;
@@ -41,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final StudentProfileRepository studentProfileRepository;
     private final TeacherProfileRepository teacherProfileRepository;
@@ -329,6 +331,7 @@ public class PostServiceImpl implements PostService {
                 .author(authorDTO)
                 .hashtags(post.getHashtags())
                 .createdAt(post.getCreatedAt())
+            .commentCount(commentRepository.countByPostId(post.getId()))
                 .reactionCounts(reactionSummary != null && reactionSummary.getReactionCounts() != null
                         ? reactionSummary.getReactionCounts()
                         : java.util.Collections.emptyMap())
