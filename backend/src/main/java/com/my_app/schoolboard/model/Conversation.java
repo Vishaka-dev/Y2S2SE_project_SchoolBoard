@@ -9,15 +9,16 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "conversations", indexes = {
-    @Index(name = "idx_conversation_user1", columnList = "user1_id"),
-    @Index(name = "idx_conversation_user2", columnList = "user2_id"),
-    @Index(name = "idx_conversation_updated_at", columnList = "updated_at DESC")
+        @Index(name = "idx_conversation_user1", columnList = "user1_id"),
+        @Index(name = "idx_conversation_user2", columnList = "user2_id"),
+        @Index(name = "idx_conversation_updated_at", columnList = "updated_at DESC")
 }, uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"user1_id", "user2_id"})
+        @UniqueConstraint(columnNames = { "user1_id", "user2_id" })
 })
 @Data
 @NoArgsConstructor
@@ -43,7 +44,7 @@ public class Conversation {
 
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Message> messages = List.of();
+    private List<Message> messages = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
