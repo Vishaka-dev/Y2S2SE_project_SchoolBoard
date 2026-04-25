@@ -194,6 +194,34 @@ export const postService = {
             console.error('Error fetching post reactions:', error);
             throw error.response?.data || new Error('Network error fetching post reactions');
         }
+    },
+
+    /**
+     * Like a post
+     * @param {number|string} postId Post ID
+     */
+    likePost: async (postId) => {
+        try {
+            const response = await apiClient.post(`/posts/${postId}/like`);
+            return response.data;
+        } catch (error) {
+            console.error('Error liking post:', error);
+            throw error.response?.data || new Error('Network error liking post');
+        }
+    },
+
+    /**
+     * Unlike a post
+     * @param {number|string} postId Post ID
+     */
+    unlikePost: async (postId) => {
+        try {
+            const response = await apiClient.post(`/posts/${postId}/unlike`);
+            return response.data;
+        } catch (error) {
+            console.error('Error unliking post:', error);
+            throw error.response?.data || new Error('Network error unliking post');
+        }
     }
 };
 

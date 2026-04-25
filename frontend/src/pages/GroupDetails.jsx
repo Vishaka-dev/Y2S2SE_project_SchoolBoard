@@ -53,7 +53,7 @@ const GroupDetails = () => {
   const [shareContent, setShareContent] = useState(null);
 
   const handleShareClick = (e, item) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     setShareContent(item);
     setIsShareModalOpen(true);
   };

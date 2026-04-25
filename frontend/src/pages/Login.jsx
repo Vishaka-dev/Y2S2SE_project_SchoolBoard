@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import authService from '../services/authService';
-import logo from '../../logos/learnlink_logo-transparent.png';
+import logo from '../../logos/logo.webp';
 import loginImage from '../../photos/login.jpg';
 
 const Login = () => {
@@ -33,16 +33,16 @@ const Login = () => {
     try {
       const response = await authService.login(formData.email, formData.password);
       authService.setToken(response.token);
-      
+
       // Refresh user data in AuthContext
       await refreshUser();
-      
+
       // Navigate to feed
       navigate('/feed');
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.error || 
-                          'Login failed. Please check your credentials.';
+      const errorMessage = err.response?.data?.message ||
+        err.response?.data?.error ||
+        'Login failed. Please check your credentials.';
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -84,9 +84,9 @@ const Login = () => {
 
             <div className="relative inline-block opacity-0 animate-slideInUp" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
               <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-white p-2 transform rotate-1 hover:rotate-0 transition-transform duration-500 max-w-sm xl:max-w-md mx-auto">
-                <img 
-                  src="/images/login/3.webp" 
-                  alt="Students learning together" 
+                <img
+                  src="/images/login/3.webp"
+                  alt="Students learning together"
                   className="w-full h-56 xl:h-64 rounded-2xl object-cover"
                 />
               </div>
@@ -94,7 +94,7 @@ const Login = () => {
               <div className="absolute -top-10 -left-10 w-32 h-32 bg-blue-400/10 rounded-full blur-3xl -z-10"></div>
               <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl -z-10"></div>
             </div>
-            
+
             <p className="max-w-sm mx-auto text-lg text-gray-600 leading-relaxed font-medium opacity-0 animate-slideInLeft" style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}>
               Connect and share with the students in your community on LearnLink.
             </p>

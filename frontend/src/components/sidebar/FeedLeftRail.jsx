@@ -128,6 +128,21 @@ const FeedLeftRail = () => {
           Browse Groups
         </button>
       </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-blue-600" />
+          Resources
+        </h3>
+        <p className="text-sm text-gray-600 mb-4">Explore study materials and shared documents.</p>
+        <button
+          type="button"
+          onClick={() => navigate('/resources')}
+          className="w-full rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 py-2 text-sm font-medium hover:bg-indigo-100 transition"
+        >
+          Browse Resources
+        </button>
+      </div>
     </div>
   );
 };

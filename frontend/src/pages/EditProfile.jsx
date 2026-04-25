@@ -7,6 +7,7 @@ import DangerZone from '../components/DangerZone';
 import TopNavbar from '../components/navbar/TopNavbar';
 import { useAuth } from '../context/AuthContext';
 import Toast from '../components/toasts/Toast';
+import Footer from '../components/layout/Footer';
 import { PROVINCES } from '../constants/provinces';
 
 const normalizeInterests = (value) => {
@@ -674,9 +675,10 @@ const EditProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-dm-sans">
+    <div className="min-h-screen bg-gray-50 font-dm-sans flex flex-col">
       <TopNavbar />
-      <main className="max-w-6xl mx-auto p-6 lg:p-8">
+      <main className="flex-1">
+        <div className="max-w-6xl mx-auto p-6 lg:p-8">
         {/* Header */}
         <div className="mb-8">
           <button
@@ -777,7 +779,9 @@ const EditProfile = () => {
           <SecuritySection accountData={accountData} />
           <DangerZone />
         </div>
+        </div>
       </main>
+      <Footer />
     </div>
   );
 };
