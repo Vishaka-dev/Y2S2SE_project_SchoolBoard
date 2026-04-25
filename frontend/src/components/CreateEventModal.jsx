@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, MapPin, Tag, Image as ImageIcon, ChevronRight, ChevronLeft, Send, Loader2 } from 'lucide-react';
+import { X, Calendar, MapPin, Tag, Image as ImageIcon, ChevronRight, ChevronLeft, Send, Loader2, Clock } from 'lucide-react';
 import { eventService } from '../services/eventService';
 
 const CATEGORIES = [
@@ -14,7 +14,8 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    eventDate: '',
+    date: '',
+    time: '',
     location: '',
     category: 'ACADEMIC'
   });
@@ -48,9 +49,12 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated }) => {
       const data = new FormData();
       data.append('title', formData.title);
       data.append('description', formData.description || '');
-      data.append('eventDate', formData.eventDate); // The backend expects a LocalDateTime string, HTML datetime-local format is usually compatible or needs minor tweak.
-      // HTML format: YYYY-MM-DDTHH:mm. LocalDateTime parse expects YYYY-MM-DDTHH:mm[:ss[.SSS]].
-      // Most browsers send exactly YYYY-MM-DDTHH:mm.
+      
+      // Combine date and time into a single string for the backend
+      // Backend expects YYYY-MM-DDTHH:mm:ss
+      const combinedDateTime = `${formData.date}T${formData.time}:00`;
+      data.append('eventDate', combinedDateTime); 
+      
       data.append('location', formData.location);
       data.append('category', formData.category);
       if (selectedFile) {
@@ -64,7 +68,8 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated }) => {
       setFormData({
         title: '',
         description: '',
-        eventDate: '',
+        date: '',
+        time: '',
         location: '',
         category: 'ACADEMIC'
       });
@@ -126,22 +131,39 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated }) => {
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-gray-400 font-dm-sans"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">Event Date & Time</label>
-                <input
-                  type="datetime-local"
-                  name="eventDate"
-                  required
-                  value={formData.eventDate}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-dm-sans"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-blue-600" /> Date
+                  </label>
+                  <input
+                    type="date"
+                    name="date"
+                    required
+                    value={formData.date}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-dm-sans"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-blue-600" /> Time
+                  </label>
+                  <input
+                    type="time"
+                    name="time"
+                    required
+                    value={formData.time}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-dm-sans"
+                  />
+                </div>
               </div>
               <div className="pt-2">
                 <button
                   type="button"
                   onClick={nextStep}
-                  disabled={!formData.title || !formData.eventDate}
+                  disabled={!formData.title || !formData.date || !formData.time}
                   className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-200"
                 >
                   Continue <ChevronRight className="w-4 h-4" />

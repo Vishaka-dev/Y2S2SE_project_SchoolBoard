@@ -9,9 +9,6 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:808
  */
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 /**
@@ -23,6 +20,18 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Let the browser set multipart boundaries for FormData.
+    if (config.data instanceof FormData) {
+      if (typeof config.headers?.delete === 'function') {
+        config.headers.delete('Content-Type');
+      } else if (config.headers) {
+        delete config.headers['Content-Type'];
+      }
+    } else if (config.data !== undefined && config.headers && !config.headers['Content-Type']) {
+      config.headers['Content-Type'] = 'application/json';
+    }
+
     return config;
   },
   (error) => {

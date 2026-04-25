@@ -22,7 +22,7 @@ export const sendMessage = async (conversationId, content, attachments = []) => 
       throw err;
     }
 
-    const trimmedContent = String(content).trim();
+    const trimmedContent = String(content ?? '').trim();
     
     if (trimmedContent.length === 0 && attachments.length === 0) {
       const err = new Error('Content and attachments cannot both be empty');
@@ -36,48 +36,47 @@ export const sendMessage = async (conversationId, content, attachments = []) => 
       throw err;
     }
 
-    let response;
+    // Backend contract:
+    // 1) POST /messages (JSON only) to create message
+    // 2) POST /messages/{messageId}/attachments (multipart) to upload files
+    const messageContent = trimmedContent || (attachments.length > 0 ? '[Attachment]' : '');
 
-    if (attachments.length > 0) {
-      // Send with files using FormData
+    const payload = {
+      conversationId,
+      content: messageContent
+    };
+
+    console.log('📤 messageAPI.sendMessage - Creating message:', {
+      conversationId,
+      contentLength: messageContent.length,
+      contentPreview: messageContent.substring(0, 50),
+      fileCount: attachments.length
+    });
+
+    const response = await apiClient.post('/messages', payload);
+    const createdMessage = response.data;
+
+    if (attachments.length > 0 && createdMessage?.id) {
       const formData = new FormData();
-      formData.append('conversationId', conversationId);
-      formData.append('content', trimmedContent || '');
-      
       attachments.forEach((attachment) => {
         formData.append('files', attachment.file);
       });
 
-      console.log('📤 messageAPI.sendMessage - Sending with files:', {
-        conversationId,
-        contentLength: trimmedContent.length,
-        fileCount: attachments.length
-      });
+      const attachmentResponse = await apiClient.post(
+        `/messages/${createdMessage.id}/attachments`,
+        formData
+      );
 
-      // Don't set Content-Type header - let axios/browser set it with proper boundary
-      response = await apiClient.post('/messages', formData);
-    } else {
-      // Send text-only message as JSON
-      const payload = {
-        conversationId,
-        content: trimmedContent
-      };
-
-      console.log('📤 messageAPI.sendMessage - Sending:', {
-        conversationId,
-        contentLength: trimmedContent.length,
-        contentPreview: trimmedContent.substring(0, 50)
-      });
-
-      response = await apiClient.post('/messages', payload);
+      createdMessage.attachments = attachmentResponse.data || [];
     }
     
     console.log('✅ messageAPI.sendMessage - Success:', {
-      messageId: response.data?.id,
-      contentLength: response.data?.content?.length
+      messageId: createdMessage?.id,
+      contentLength: createdMessage?.content?.length,
+      attachmentCount: createdMessage?.attachments?.length || 0
     });
     
-    return response.data;
+    return createdMessage;
   } catch (error) {
     console.error('❌ messageAPI.sendMessage - Error:', {
       message: error.message,
