@@ -31,7 +31,7 @@ const authService = {
   },
 
   completeProfile: async (profileData) => {
-    const response = await apiClient.patch('/users/complete-profile', profileData);
+    const response = await apiClient.post('/users/complete-profile', profileData);
     return response.data;
   },
 

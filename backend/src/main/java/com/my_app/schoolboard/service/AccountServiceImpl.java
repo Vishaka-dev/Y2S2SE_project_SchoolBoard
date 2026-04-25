@@ -215,6 +215,7 @@ public class AccountServiceImpl implements AccountService {
                 .createdAt(user.getCreatedAt())
                 .imageUrl(displayImageUrl)
                 .profileViews(user.getProfileViews())
+                .profileCompleted(user.getProfileCompleted())
                 .profile(profileDTO)
                 .build();
 
