@@ -46,7 +46,7 @@ const Register = () => {
     resetForm();
     setRole(selectedRole);
     setFormData({ ...formData, role: selectedRole });
-    
+
     if (selectedRole === 'STUDENT') {
       setStep(2); // Go to education level selection
     } else {
@@ -268,7 +268,7 @@ const Register = () => {
 
       // Call the register service and get the response with token
       const response = await authService.register(registrationData);
-      
+
       // For INSTITUTE role, redirect to login with verification message
       if (role === 'INSTITUTE') {
         navigate('/login', {
@@ -282,15 +282,15 @@ const Register = () => {
       // For STUDENT and TEACHER roles, auto-login with the returned token
       // Save token to localStorage
       authService.setToken(response.token);
-      
+
       // Refresh user data in AuthContext
       await refreshUser();
-      
+
       // Navigate to feed
       navigate('/feed');
     } catch (error) {
       console.error('Registration error:', error);
-      
+
       if (error.response) {
         // Server responded with error
         if (error.response.data && error.response.data.message) {
@@ -341,7 +341,7 @@ const Register = () => {
           </svg>
           Back to Home
         </Link>
-        
+
         {/* Header */}
         <div className="text-center mb-8 opacity-0 animate-fadeIn" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Create Your Account</h1>

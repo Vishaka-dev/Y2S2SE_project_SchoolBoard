@@ -26,7 +26,7 @@ const Messages = () => {
   const selectedGroupIdFromNav = location.state?.selectedGroupId;
   const selectedUserIdFromQuery = new URLSearchParams(location.search).get('userId');
   const autoOpenedUserChatRef = useRef(null);
-  
+
   // Combined chat list
   const [allChats, setAllChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
@@ -51,13 +51,15 @@ const Messages = () => {
   const loadAllChats = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // Fetch 1-to-1 conversations
       const convData = await conversationAPI.fetchConversations(0, 50);
       const conversations = (convData.content || convData || []).map(conv => ({
         ...conv,
         type: 'conversation',
         displayName: conv.otherUser?.username,
+        hasUnread: conv.unreadCount > 0 || (conv.lastMessage && !conv.lastMessage.read && conv.lastMessage.senderId !== user?.id),
+        lastMessagePreview: conv.lastMessage?.content || conv.lastMessagePreview
       }));
 
       // Fetch group chats - handle errors gracefully
@@ -67,7 +69,7 @@ const Messages = () => {
         const groupsWithMessages = await Promise.all(
           (groupData.data || []).map(async (group) => {
             let lastMessagePreview = group.lastMessagePreview;
-            
+
             // If no last message preview, fetch the latest message
             if (!lastMessagePreview) {
               try {
@@ -84,7 +86,7 @@ const Messages = () => {
                 console.warn('Failed to fetch last message for group:', group.id, err);
               }
             }
-            
+
             return {
               ...group,
               type: 'group',
@@ -231,7 +233,7 @@ const Messages = () => {
           // Load group messages
           const convResponse = await groupChatService.getOrCreateGroupConversation(selectedChat.id);
           const conversationId = convResponse.data?.id || convResponse.data?.conversationId;
-          
+
           if (conversationId) {
             setGroupConversationMap(prev => ({ ...prev, [selectedChat.id]: conversationId }));
             const msgResponse = await groupChatService.getGroupMessages(conversationId, 0, 50);
@@ -243,7 +245,7 @@ const Messages = () => {
           const msgData = await messageAPI.fetchMessages(selectedChat.id, 0, 30);
           setMessages((msgData.content || msgData || []).reverse());
           // Mark as read
-          conversationAPI.markConversationAsRead(selectedChat.id).catch(err => 
+          conversationAPI.markConversationAsRead(selectedChat.id).catch(err =>
             console.error('Failed to mark as read:', err)
           );
         }
@@ -280,7 +282,7 @@ const Messages = () => {
     try {
       setSending(true);
       const conversationId = groupConversationMap[selectedChat.id];
-      
+
       if (!conversationId) {
         console.error('GroupConversation ID not found for group:', selectedChat.id);
         setError('Group conversation not initialized. Please refresh and try again.');
@@ -291,9 +293,9 @@ const Messages = () => {
       const response = await groupChatService.sendMessage(conversationId, content, attachments);
       console.log('Message sent successfully:', response.data);
       setGroupMessages(prev => [...prev, response.data]);
-      
+
       // Update chat list with the new last message preview
-      setAllChats(prev => prev.map(chat => 
+      setAllChats(prev => prev.map(chat =>
         chat.type === 'group' && chat.id === selectedChat.id
           ? { ...chat, lastMessagePreview: content || `${attachments.length} file${attachments.length !== 1 ? 's' : ''}` }
           : chat
@@ -358,7 +360,7 @@ const Messages = () => {
 
   // Filter chats
   const filteredChats = allChats.filter(chat =>
-    !searchQuery || 
+    !searchQuery ||
     chat.displayName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -496,7 +498,7 @@ const Messages = () => {
                   onChange={setMessageInput}
                   onSend={handleSendMessage}
                   sending={sending}
-                  onTyping={() => {}}
+                  onTyping={() => { }}
                 />
               </div>
             </>

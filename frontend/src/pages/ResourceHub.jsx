@@ -514,9 +514,7 @@ const ResourceHub = () => {
                   )}
                 </button>
               </div>
-            ) : (
-              <div className="text-center text-xs md:text-sm text-gray-500 py-2">You have reached the end of resources.</div>
-            )}
+            ) : null}
           </>
         )}
       </section>

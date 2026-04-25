@@ -55,7 +55,7 @@ const ChatWindow = ({
   };
 
   // Handle both ConversationDTO (with user1/user2) and ConversationListItemDTO (with otherUser)
-  const otherUser = selectedChat.otherUser || 
+  const otherUser = selectedChat.otherUser ||
     (selectedChat.user1?.id === currentUserId ? selectedChat.user2 : selectedChat.user1);
 
   return (

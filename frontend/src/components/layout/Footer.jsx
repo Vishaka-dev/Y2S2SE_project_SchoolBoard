@@ -1,13 +1,13 @@
 import React from 'react';
 import { Mail, Globe, Github, Twitter, Linkedin, Heart } from 'lucide-react';
-import learnlinkLogo from '../../../logos/learnlink_logo-transparent.png';
+import learnlinkLogo from '../../../logos/logo.webp';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
     <footer className="bg-white border-t border-gray-100 pt-12 pb-8 mt-auto">
-      <div className="max-w-[1600px] mx-auto px-6">
+      <div className="mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Brand Column */}
           <div className="space-y-4">

@@ -40,7 +40,7 @@ const RightSidebar = () => {
     try {
       const data = await eventService.getUpcomingEvents();
       console.log('Events received:', data);
-      
+
       if (data && Array.isArray(data)) {
         const sortedData = [...data].sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
         setUpcomingEvents(sortedData);
@@ -66,7 +66,7 @@ const RightSidebar = () => {
     const handleFollowChanged = (event) => {
       const { isFollowing, targetUserId } = event.detail;
       if (isFollowing) {
-        setSuggestions(prev => prev.filter(s => s.userId !== targetUserId));
+        setSuggestions(prev => prev.filter(s => s.id !== targetUserId));
       }
     };
 
@@ -78,7 +78,7 @@ const RightSidebar = () => {
     if (!dateString) return { month: 'N/A', day: '--', time: 'TBA', full: 'Date TBA' };
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return { month: 'N/A', day: '--', time: 'TBA', full: 'Date TBA' };
-    
+
     return {
       month: date.toLocaleString('default', { month: 'short' }),
       day: date.getDate(),
@@ -100,7 +100,7 @@ const RightSidebar = () => {
     <div className="h-full flex flex-col pt-2 pb-6">
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto pr-2 space-y-6 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-        
+
         {/* Suggested Connections */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="flex items-center justify-between mb-4">
@@ -108,7 +108,7 @@ const RightSidebar = () => {
               <Users className="w-4 h-4 text-blue-600" />
               Suggested Connections
             </h3>
-            <button 
+            <button
               onClick={fetchSuggestions}
               title="Refresh suggestions"
               className="p-1 hover:bg-gray-100 rounded-full transition text-gray-400 hover:text-blue-600"
@@ -126,7 +126,7 @@ const RightSidebar = () => {
             ) : suggestionError ? (
               <div className="py-4 text-center">
                 <p className="text-xs text-red-500 mb-2">{suggestionError}</p>
-                <button 
+                <button
                   onClick={fetchSuggestions}
                   className="text-xs text-blue-600 font-medium hover:underline"
                 >
@@ -135,11 +135,11 @@ const RightSidebar = () => {
               </div>
             ) : suggestions.length > 0 ? (
               suggestions.map((connection) => (
-                <div key={connection.userId} className="flex items-start gap-3 group animate-in opacity-100 fade-in slide-in-from-right-2 duration-500">
+                <div key={connection.id} className="flex items-start gap-3 group animate-in opacity-100 fade-in slide-in-from-right-2 duration-500">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 shadow-sm overflow-hidden">
                     {connection.profileImageUrl ? (
-                      <img 
-                        src={connection.profileImageUrl} 
+                      <img
+                        src={connection.profileImageUrl}
                         alt={connection.displayName || connection.username}
                         className="w-full h-full object-cover border border-gray-100"
                       />
@@ -156,13 +156,13 @@ const RightSidebar = () => {
                     </p>
                   </div>
                   <div className="flex-shrink-0">
-                    <FollowButton 
-                      targetUserId={connection.userId}
+                    <FollowButton
+                      targetUserId={connection.id}
                       size="sm"
                       onFollowChange={(nextState) => {
                         if (nextState) {
                           setTimeout(() => {
-                            setSuggestions(prev => prev.filter(s => s.userId !== connection.userId));
+                            setSuggestions(prev => prev.filter(s => s.id !== connection.id));
                           }, 1000);
                         }
                       }}
@@ -176,9 +176,9 @@ const RightSidebar = () => {
               </div>
             )}
           </div>
-          
+
           {suggestions.length > 0 && (
-            <button 
+            <button
               onClick={() => window.location.href = '/people'}
               className="w-full mt-5 text-sm text-blue-600 hover:text-blue-700 font-medium border-t pt-3 border-gray-50 hover:bg-gray-50 rounded-b-xl transition"
             >
@@ -203,8 +203,8 @@ const RightSidebar = () => {
               upcomingEvents.slice(0, 3).map((event) => {
                 const { month, day, time } = formatEventDate(event.eventDate);
                 return (
-                  <div 
-                    key={event.id} 
+                  <div
+                    key={event.id}
                     className="flex gap-3 group cursor-pointer hover:bg-gray-50 p-2 -m-2 rounded-xl transition animate-in opacity-100 fade-in slide-in-from-right-2 duration-300 [animation-fill-mode:forwards]"
                     onClick={() => setSelectedEvent(event)}
                   >
@@ -232,7 +232,7 @@ const RightSidebar = () => {
             )}
 
             {upcomingEvents.length > 3 && (
-              <button 
+              <button
                 onClick={() => navigate('/events')}
                 className="w-full mt-4 flex items-center justify-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700 transition uppercase tracking-tighter"
               >
@@ -241,62 +241,48 @@ const RightSidebar = () => {
               </button>
             )}
           </div>
-          
-          <button 
+
+          <button
             onClick={() => setShowCalendar(true)}
             className="w-full mt-5 text-xs text-blue-600 hover:text-blue-700 font-bold border-t pt-3 border-gray-50 transition uppercase tracking-wider"
           >
             View calendar →
           </button>
         </div>
-
-        {/* Footer Links */}
-        <div className="text-center text-[10px] text-gray-400 space-y-1 pb-10">
-          <div className="flex flex-wrap justify-center gap-x-2">
-            <a href="#" className="hover:text-blue-600 transition">About</a>
-            <span>•</span>
-            <a href="#" className="hover:text-blue-600 transition">Help</a>
-            <span>•</span>
-            <a href="#" className="hover:text-blue-600 transition">Privacy</a>
-            <span>•</span>
-            <a href="#" className="hover:text-blue-600 transition">Terms</a>
-          </div>
-          <p>© 2026 LearnLink</p>
-        </div>
       </div>
 
       {/* Calendar Popup Modal */}
       {showCalendar && (
-        <div 
+        <div
           className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
           onClick={() => setShowCalendar(false)}
         >
-          <div 
+          <div
             className="bg-white w-full max-w-sm rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 relative"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 border-b border-gray-50 relative flex items-center justify-center">
-              <button 
-                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} 
+              <button
+                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
                 className="absolute left-6 p-2 hover:bg-gray-100 rounded-full transition text-gray-600"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              
+
               <div className="text-center">
                 <h3 className="text-lg font-black text-gray-900">{currentDate.toLocaleString('default', { month: 'long' })}</h3>
                 <p className="text-xs font-bold text-blue-600 tracking-widest">{currentDate.getFullYear()}</p>
               </div>
-              
-              <button 
-                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} 
+
+              <button
+                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
                 className="absolute right-16 md:right-20 p-2 hover:bg-gray-100 rounded-full transition text-gray-600"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
-              
-              <button 
-                onClick={() => setShowCalendar(false)} 
+
+              <button
+                onClick={() => setShowCalendar(false)}
                 className="absolute right-4 p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-900"
               >
                 <X className="w-5 h-5" />
@@ -304,10 +290,10 @@ const RightSidebar = () => {
             </div>
             <div className="p-6">
               <div className="grid grid-cols-7 gap-1 text-center mb-4">
-                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => ( <div key={day} className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">{day}</div> ))}
+                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (<div key={day} className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">{day}</div>))}
               </div>
               <div className="grid grid-cols-7 gap-2 text-center">
-                {Array.from({ length: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() }).map((_, i) => ( <div key={`pad-${i}`} className="h-9 w-9"></div> ))}
+                {Array.from({ length: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() }).map((_, i) => (<div key={`pad-${i}`} className="h-9 w-9"></div>))}
                 {Array.from({ length: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
                   const day = i + 1;
                   const eventForDay = upcomingEvents.find(event => {
@@ -316,8 +302,8 @@ const RightSidebar = () => {
                   });
                   const isToday = new Date().getDate() === day && new Date().getMonth() === currentDate.getMonth() && new Date().getFullYear() === currentDate.getFullYear();
                   return (
-                    <div 
-                      key={day} 
+                    <div
+                      key={day}
                       onClick={() => eventForDay && setSelectedEvent(eventForDay)}
                       className={`h-9 w-9 mx-auto flex flex-col items-center justify-center rounded-2xl text-sm relative transition ${eventForDay ? 'bg-blue-600 text-white font-black cursor-pointer' : 'text-gray-700 hover:bg-gray-50'}`}
                     >
@@ -334,11 +320,11 @@ const RightSidebar = () => {
 
       {/* Event Details Modal */}
       {selectedEvent && (
-        <div 
+        <div
           className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
           onClick={() => setSelectedEvent(null)}
         >
-          <div 
+          <div
             className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 relative"
             onClick={(e) => e.stopPropagation()}
           >

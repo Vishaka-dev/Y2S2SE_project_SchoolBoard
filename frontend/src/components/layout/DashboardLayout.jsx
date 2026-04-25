@@ -65,19 +65,19 @@ const DashboardLayout = () => {
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       <TopNavbar />
 
-      <div className="flex-1 overflow-hidden">
-        <div className={`h-full ${showSocialSidebars ? 'max-w-[1600px] mx-auto px-4 lg:px-6' : 'w-full px-4 lg:px-8'}`}>
-          <div className={showSocialSidebars ? 'h-full grid grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)_320px] gap-6' : 'h-full'}>
-            
-            {/* Left Sidebar - Stationary */}
+      <div className="flex-1 overflow-y-auto">
+        <div className={`mx-auto ${showSocialSidebars ? 'max-w-[1600px] px-4 lg:px-6' : 'w-full px-4 lg:px-8'}`}>
+          <div className={showSocialSidebars ? 'grid grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)_320px] gap-6' : ''}>
+
+            {/* Left Sidebar - Sticky */}
             {showSocialSidebars && (
-              <aside className="hidden xl:block h-full pt-6 pb-6">
+              <aside className="hidden xl:block h-[calc(100vh-64px)] sticky top-0 pt-6 pb-6 overflow-y-auto">
                 <FeedLeftRail />
               </aside>
             )}
 
-            {/* Main Feed - Scroll bar in the middle (main feed area) */}
-            <main className="min-w-0 h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pt-6 pb-6">
+            {/* Main Content */}
+            <main className="min-w-0 pt-6 pb-6">
               <div className={isResourceHubRoute || isEventsRoute || isMessagesRoute || isGroupsRoute ? 'max-w-7xl mx-auto pb-4' : 'max-w-3xl mx-auto pb-8'}>
                 {showCreatePost && (
                   <div className="bg-white rounded-[24px] md:rounded-[32px] shadow-sm p-4 md:p-6 mb-8 border border-gray-100 flex gap-4 items-center">
@@ -117,14 +117,15 @@ const DashboardLayout = () => {
               </div>
             </main>
 
-            {/* Right Sidebar - Stationary */}
+            {/* Right Sidebar - Sticky */}
             {showSocialSidebars && (
-              <aside className="hidden xl:block h-full pt-6 pb-6">
+              <aside className="hidden xl:block h-[calc(100vh-64px)] sticky top-0 pt-6 pb-6 overflow-y-auto">
                 <RightSidebar />
               </aside>
             )}
           </div>
         </div>
+        {!isMessagesRoute && <Footer />}
       </div>
 
       {/* Modals & Toasts */}
