@@ -11,8 +11,10 @@ const RightSidebar = () => {
 
   // Suggested connections state
   const [suggestions, setSuggestions] = useState([]);
+  const [currentPage, setCurrentPage] = useState(0);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(true);
   const [suggestionError, setSuggestionError] = useState(null);
+  const suggestionsPerPage = 3;
 
   // Events state
   const [upcomingEvents, setUpcomingEvents] = useState([]);
@@ -23,8 +25,9 @@ const RightSidebar = () => {
   const fetchSuggestions = useCallback(async () => {
     setIsLoadingSuggestions(true);
     setSuggestionError(null);
+    setCurrentPage(0);
     try {
-      const data = await getSuggestedConnections(3);
+      const data = await getSuggestedConnections(15); // Fetch more for pagination
       setSuggestions(data?.suggestions || (Array.isArray(data) ? data : []));
     } catch (err) {
       console.error('Failed to load suggestions:', err);
@@ -66,13 +69,21 @@ const RightSidebar = () => {
     const handleFollowChanged = (event) => {
       const { isFollowing, targetUserId } = event.detail;
       if (isFollowing) {
-        setSuggestions(prev => prev.filter(s => s.id !== targetUserId));
+        setSuggestions(prev => {
+          const newSuggestions = prev.filter(s => s.id !== targetUserId);
+          // Adjust current page if current page becomes empty
+          const newTotalPages = Math.ceil(newSuggestions.length / suggestionsPerPage);
+          if (currentPage >= newTotalPages && newTotalPages > 0) {
+            setCurrentPage(newTotalPages - 1);
+          }
+          return newSuggestions;
+        });
       }
     };
 
     window.addEventListener('followChanged', handleFollowChanged);
     return () => window.removeEventListener('followChanged', handleFollowChanged);
-  }, []);
+  }, [currentPage]);
 
   const formatEventDate = (dateString) => {
     if (!dateString) return { month: 'N/A', day: '--', time: 'TBA', full: 'Date TBA' };
@@ -96,6 +107,17 @@ const RightSidebar = () => {
       .substring(0, 2);
   };
 
+  const totalPages = Math.ceil(suggestions.length / suggestionsPerPage);
+  const currentSuggestions = suggestions.slice(currentPage * suggestionsPerPage, (currentPage + 1) * suggestionsPerPage);
+
+  const prevPage = () => {
+    setCurrentPage(prev => Math.max(0, prev - 1));
+  };
+
+  const nextPage = () => {
+    setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
+  };
+
   return (
     <div className="h-full flex flex-col pt-2 pb-6">
       {/* Scrollable Content Area */}
@@ -108,13 +130,26 @@ const RightSidebar = () => {
               <Users className="w-4 h-4 text-blue-600" />
               Suggested Connections
             </h3>
-            <button
-              onClick={fetchSuggestions}
-              title="Refresh suggestions"
-              className="p-1 hover:bg-gray-100 rounded-full transition text-gray-400 hover:text-blue-600"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSuggestions ? 'animate-spin text-blue-600' : ''}`} />
-            </button>
+            <div className="flex items-center gap-1">
+              {totalPages > 1 && (
+                <>
+                  <button onClick={prevPage} disabled={currentPage === 0} className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-blue-600 disabled:opacity-30">
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="text-[10px] text-gray-400 font-medium">{currentPage + 1} / {totalPages}</span>
+                  <button onClick={nextPage} disabled={currentPage === totalPages - 1} className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-blue-600 disabled:opacity-30">
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+              <button
+                onClick={fetchSuggestions}
+                title="Refresh suggestions"
+                className="p-1 hover:bg-gray-100 rounded-full transition text-gray-400 hover:text-blue-600 ml-1"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSuggestions ? 'animate-spin text-blue-600' : ''}`} />
+              </button>
+            </div>
           </div>
 
           <div className="space-y-5">
@@ -133,10 +168,13 @@ const RightSidebar = () => {
                   Try again
                 </button>
               </div>
-            ) : suggestions.length > 0 ? (
-              suggestions.map((connection) => (
+            ) : currentSuggestions.length > 0 ? (
+              currentSuggestions.map((connection) => (
                 <div key={connection.id} className="flex items-start gap-3 group animate-in opacity-100 fade-in slide-in-from-right-2 duration-500">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 shadow-sm overflow-hidden">
+                  <div 
+                    className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 shadow-sm overflow-hidden cursor-pointer"
+                    onClick={() => navigate(`/profile/${connection.id}`)}
+                  >
                     {connection.profileImageUrl ? (
                       <img
                         src={connection.profileImageUrl}
@@ -147,8 +185,11 @@ const RightSidebar = () => {
                       getInitials(connection.displayName || connection.username)
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate hover:text-blue-600 cursor-pointer transition">
+                  <div 
+                    className="flex-1 min-w-0 cursor-pointer"
+                    onClick={() => navigate(`/profile/${connection.id}`)}
+                  >
+                    <p className="text-sm font-semibold text-gray-900 truncate hover:text-blue-600 transition">
                       {connection.displayName || connection.username}
                     </p>
                     <p className="text-xs text-gray-500 truncate leading-tight">
@@ -162,7 +203,14 @@ const RightSidebar = () => {
                       onFollowChange={(nextState) => {
                         if (nextState) {
                           setTimeout(() => {
-                            setSuggestions(prev => prev.filter(s => s.id !== connection.id));
+                            setSuggestions(prev => {
+                              const newS = prev.filter(s => s.id !== connection.id);
+                              const targetPage = Math.ceil(newS.length / suggestionsPerPage);
+                              if (currentPage >= targetPage && targetPage > 0) {
+                                setCurrentPage(targetPage - 1);
+                              }
+                              return newS;
+                            });
                           }, 1000);
                         }
                       }}
@@ -179,7 +227,7 @@ const RightSidebar = () => {
 
           {suggestions.length > 0 && (
             <button
-              onClick={() => window.location.href = '/people'}
+              onClick={() => navigate('/connections?tab=suggestions')}
               className="w-full mt-5 text-sm text-blue-600 hover:text-blue-700 font-medium border-t pt-3 border-gray-50 hover:bg-gray-50 rounded-b-xl transition"
             >
               View more people →

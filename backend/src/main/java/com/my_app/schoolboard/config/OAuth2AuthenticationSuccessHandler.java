@@ -49,13 +49,46 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         CustomOAuth2User oAuth2User = (CustomOAuth2User) authentication.getPrincipal();
         log.info("Authenticated user: {} ({})", oAuth2User.getUsername(), oAuth2User.getEmail());
 
-        // Generate JWT token for the OAuth2 user
+        // Check for delete intent
+        String intendedEmail = null;
+        jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (jakarta.servlet.http.Cookie cookie : cookies) {
+                if ("oauth2_delete_intent".equals(cookie.getName())) {
+                    intendedEmail = cookie.getValue();
+                    jakarta.servlet.http.Cookie deleteCookie = new jakarta.servlet.http.Cookie("oauth2_delete_intent", null);
+                    deleteCookie.setMaxAge(0);
+                    deleteCookie.setPath("/");
+                    response.addCookie(deleteCookie);
+                    break;
+                }
+            }
+        }
+
+        if (intendedEmail != null) {
+            log.info("Processing OAuth2 callback for DELETE_ACCOUNT intent for email: {}", intendedEmail);
+            if (!intendedEmail.equals(oAuth2User.getEmail())) {
+                log.warn("Email mismatch during delete intent! Expected {}, got {}", intendedEmail, oAuth2User.getEmail());
+                String errorUrl = frontendUrl + "/login?error=delete_account_mismatch";
+                getRedirectStrategy().sendRedirect(request, response, errorUrl);
+                return;
+            }
+            
+            String deleteToken = jwtService.generateDeleteAccountToken(oAuth2User.getUser());
+            String targetUrl = frontendUrl + "/confirm-delete?token=" + deleteToken;
+            log.info("Redirecting to confirmation page: {}", targetUrl);
+            getRedirectStrategy().sendRedirect(request, response, targetUrl);
+            return;
+        }
+
+        // Generate JWT token for the standard OAuth2 login
         String token = jwtService.generateToken(oAuth2User.getUser());
         log.info("JWT token generated (length: {})", token.length());
 
         // Redirect to frontend with JWT token (stateless)
         String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth2/success")
                 .queryParam("token", token)
+                .queryParam("profileCompleted", oAuth2User.getUser().getProfileCompleted())
                 .build()
                 .toUriString();
 

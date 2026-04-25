@@ -7,6 +7,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import OAuth2Redirect from './pages/OAuth2Redirect';
 import EditProfile from './pages/EditProfile';
+import ConfirmDelete from './pages/ConfirmDelete';
+import CompleteProfile from './pages/CompleteProfile';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Connections from './pages/Connections';
@@ -230,6 +232,20 @@ function AppRoutes() {
             <EditProfile />
           </ProtectedRoute>
         }
+      />
+
+      <Route
+        path="/complete-profile"
+        element={
+          <ProtectedRoute>
+            <CompleteProfile />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/confirm-delete"
+        element={<ConfirmDelete />}
       />
       
       {/* Fallback */}

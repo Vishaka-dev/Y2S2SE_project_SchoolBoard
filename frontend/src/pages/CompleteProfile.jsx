@@ -299,21 +299,8 @@ const CompleteProfile = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-blue-50 py-12 px-4">
-      {/* Diagonal Stripes Background */}
-      <div className="absolute inset-0 pointer-events-none z-0" style={{ transform: 'skewX(-15deg)', transformOrigin: 'top left', marginLeft: '-10%' }}>
-        <div className="w-full h-full flex">
-          <div className="flex-1 bg-blue-100"></div>
-          <div className="flex-1 bg-blue-200"></div>
-          <div className="flex-1 bg-blue-300"></div>
-          <div className="flex-1 bg-blue-400"></div>
-          <div className="flex-1 bg-blue-500"></div>
-          <div className="flex-1 bg-blue-600"></div>
-          <div className="flex-1 bg-blue-700"></div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto relative z-10">
+    <div className="min-h-screen bg-white py-12 px-4">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Complete Your Profile</h1>

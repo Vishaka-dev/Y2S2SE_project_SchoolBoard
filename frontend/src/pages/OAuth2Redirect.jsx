@@ -26,9 +26,15 @@ const OAuth2Redirect = () => {
         
         try {
           // Refresh user data in AuthContext
-          await refreshUser();
-          console.log('Redirecting to feed');
-          navigate('/feed');
+          const userData = await refreshUser();
+          
+          if (userData && userData.profileCompleted === false) {
+            console.log('Profile incomplete, redirecting to complete-profile');
+            navigate('/complete-profile');
+          } else {
+            console.log('Redirecting to feed');
+            navigate('/feed');
+          }
         } catch (err) {
           console.error('Failed to fetch user after OAuth:', err);
           setError('Failed to load user data. Please try logging in again.');

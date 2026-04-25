@@ -91,6 +91,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .provider(AuthProvider.GOOGLE)
                 .providerId(oAuth2UserInfo.getId())
                 .imageUrl(oAuth2UserInfo.getImageUrl())
+                .profileCompleted(false)
                 .role(Role.SCHOOL_STUDENT) // Default role for OAuth2 users
                 .build();
 

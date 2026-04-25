@@ -33,6 +33,7 @@ public class AccountServiceImpl implements AccountService {
     private final PasswordEncoder passwordEncoder;
     private final FileStorageService fileStorageService;
     private final ProfileViewRepository profileViewRepository;
+    private final JwtService jwtService;
 
     @Override
     @Transactional(readOnly = true)
@@ -165,6 +166,27 @@ public class AccountServiceImpl implements AccountService {
         log.info("Account soft deleted successfully for user: {} at {}", user.getEmail(), user.getDeletedAt());
     }
 
+    @Override
+    public void confirmDelete(String token) {
+        log.info("Processing confirm delete with token");
+        if (!jwtService.isDeleteAccountToken(token)) {
+            throw new UnauthorizedOperationException("Invalid or expired delete token");
+        }
+        
+        String username = jwtService.extractUsername(token);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
+                
+        if (user.isDeleted()) {
+            throw new AccountDeletedException();
+        }
+
+        user.softDelete();
+        userRepository.save(user);
+
+        log.info("Google Account soft deleted successfully for user: {}", user.getEmail());
+    }
+
     /**
      * Get the currently authenticated user from SecurityContext
      */
@@ -215,6 +237,7 @@ public class AccountServiceImpl implements AccountService {
                 .createdAt(user.getCreatedAt())
                 .imageUrl(displayImageUrl)
                 .profileViews(user.getProfileViews())
+                .profileCompleted(user.getProfileCompleted())
                 .profile(profileDTO)
                 .build();
 

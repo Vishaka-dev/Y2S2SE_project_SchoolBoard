@@ -7,7 +7,6 @@ import DangerZone from '../components/DangerZone';
 import TopNavbar from '../components/navbar/TopNavbar';
 import { useAuth } from '../context/AuthContext';
 import Toast from '../components/toasts/Toast';
-import Footer from '../components/layout/Footer';
 import { PROVINCES } from '../constants/provinces';
 
 const normalizeInterests = (value) => {
@@ -781,7 +780,6 @@ const EditProfile = () => {
         </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 };

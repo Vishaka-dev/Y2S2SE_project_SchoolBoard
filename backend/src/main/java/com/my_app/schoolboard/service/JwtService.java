@@ -31,6 +31,7 @@ public class JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", user.getEmail());
         claims.put("role", user.getRole().name());
+        claims.put("profileCompleted", user.getProfileCompleted());
 
         return createToken(claims, user.getUsername());
     }
@@ -52,6 +53,43 @@ public class JwtService {
 
         log.debug("Generated JWT token for user: {}", subject);
         return token;
+    }
+
+    /**
+     * Generate a short-lived token specifically for confirming account deletion
+     */
+    public String generateDeleteAccountToken(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("email", user.getEmail());
+        claims.put("purpose", "DELETE_ACCOUNT");
+        
+        Date now = new Date();
+        // 10 minutes validity for delete token
+        Date expiryDate = new Date(now.getTime() + 600000);
+
+        String token = Jwts.builder()
+                .claims(claims)
+                .subject(user.getUsername())
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
+
+        log.debug("Generated Delete Account token for user: {}", user.getUsername());
+        return token;
+    }
+
+    /**
+     * Check if token is specifically a delete account token
+     */
+    public boolean isDeleteAccountToken(String token) {
+        try {
+            String purpose = extractClaim(token, claims -> claims.get("purpose", String.class));
+            return "DELETE_ACCOUNT".equals(purpose) && !isTokenExpired(token);
+        } catch (Exception e) {
+            log.warn("Failed to validate delete account token: {}", e.getMessage());
+            return false;
+        }
     }
 
     /**

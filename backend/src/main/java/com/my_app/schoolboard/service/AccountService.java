@@ -57,6 +57,13 @@ public interface AccountService {
     void deleteAccount(DeleteAccountRequestDTO request);
 
     /**
+     * Confirm account deletion via token
+     * 
+     * @param token the deletion confirmation token
+     */
+    void confirmDelete(String token);
+
+    /**
      * Update profile image for the current user
      * Validates file type and size, replaces old image if exists
      * 

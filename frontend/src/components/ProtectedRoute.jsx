@@ -15,6 +15,12 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
+  // If authenticated but profile is incomplete, redirect to profile completion
+  // unless they are already on the complete-profile page
+  if (user.profileCompleted === false && window.location.pathname !== '/complete-profile') {
+    return <Navigate to="/complete-profile" replace />;
+  }
+
   // User is authenticated, render children
   return children;
 };

@@ -1,14 +1,33 @@
 import { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import DeleteAccountModal from './DeleteAccountModal';
 import accountService from '../services/accountService';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const DangerZone = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleDeleteClick = async () => {
+    if (user?.provider === 'GOOGLE') {
+      try {
+        setIsDeleting(true);
+        setError('');
+        const res = await accountService.initiateGoogleDelete();
+        const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
+        window.location.href = baseUrl + res.redirectUrl;
+      } catch (err) {
+        setError(err.message || 'Failed to initiate deletion flow.');
+        setIsDeleting(false);
+      }
+    } else {
+      setIsModalOpen(true);
+    }
+  };
 
   const handleDeleteAccount = async (deleteData) => {
     setIsDeleting(true);
@@ -64,11 +83,11 @@ const DangerZone = () => {
               </p>
             </div>
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={handleDeleteClick}
               disabled={isDeleting}
               className="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium whitespace-nowrap flex items-center gap-2 shadow-sm hover:shadow"
             >
-              <AlertTriangle className="w-4 h-4" />
+              {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertTriangle className="w-4 h-4" />}
               Delete Account
             </button>
           </div>

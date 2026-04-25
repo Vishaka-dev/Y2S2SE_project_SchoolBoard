@@ -27,6 +27,7 @@ public class AccountResponseDTO {
     private LocalDateTime createdAt;
     private String imageUrl;
     private Integer profileViews;
+    private Boolean profileCompleted;
 
     // Profile data - only populated based on role
     private Object profile;

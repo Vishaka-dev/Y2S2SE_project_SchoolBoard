@@ -31,7 +31,7 @@ const authService = {
   },
 
   completeProfile: async (profileData) => {
-    const response = await apiClient.patch('/users/complete-profile', profileData);
+    const response = await apiClient.post('/users/complete-profile', profileData);
     return response.data;
   },
 
@@ -52,7 +52,8 @@ const authService = {
   },
 
   getGoogleAuthUrl: () => {
-    return `${API_BASE_URL}/oauth2/authorization/google`;
+    const rootUrl = API_BASE_URL.replace(/\/api$/, '');
+    return `${rootUrl}/oauth2/authorization/google`;
   },
 
   getAuthStatus: async () => {
