@@ -10,7 +10,6 @@ import FollowButton from '../components/FollowButton';
 import FollowListModal from '../components/FollowListModal';
 import CreatePostModal from '../components/CreatePostModal';
 import Toast from '../components/toasts/Toast';
-import Footer from '../components/layout/Footer';
 
 const Profile = () => {
   const { user: currentUser, getUserInitials, getRoleDisplay, getAvatarUrl, refreshUser } = useAuth();
@@ -727,7 +726,6 @@ const Profile = () => {
             </div>
           </div>
         </div>
-        <Footer />
       </main>
 
       <FollowListModal

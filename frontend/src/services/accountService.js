@@ -75,11 +75,6 @@ const accountService = {
     }
   },
 
-  /**
-   * Upload profile photo
-   * @param {File} file - The image file to upload
-   * @returns {Promise<Object>} Upload response with imageUrl
-   */
   uploadProfilePhoto: async (file) => {
     try {
       const formData = new FormData();
@@ -89,6 +84,30 @@ const accountService = {
           'Content-Type': 'multipart/form-data',
         },
       });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  /**
+   * Initiate Google Account Deletion
+   */
+  initiateGoogleDelete: async () => {
+    try {
+      const response = await apiClient.get('/account/delete/initiate');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  /**
+   * Confirm Google Account Deletion
+   */
+  confirmGoogleDelete: async (token) => {
+    try {
+      const response = await apiClient.post('/account/delete/confirm', { token });
       return response.data;
     } catch (error) {
       throw error.response?.data || error;

@@ -111,6 +111,43 @@ public class AccountController {
     }
 
     /**
+     * GET /api/account/delete/initiate
+     * Initiates Google account deletion 
+     */
+    @GetMapping("/delete/initiate")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, String>> initiateGoogleDelete(jakarta.servlet.http.HttpServletResponse response) {
+        log.info("GET /api/account/delete/initiate - Initiating Google deletion");
+        AccountResponseDTO account = accountService.getCurrentUserAccount();
+        
+        if (account.getProvider() != com.my_app.schoolboard.model.AuthProvider.GOOGLE) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Only Google accounts can initiate OAuth2 deletion"));
+        }
+        
+        jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("oauth2_delete_intent", account.getEmail());
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(300); // 5 minutes
+        response.addCookie(cookie);
+        
+        return ResponseEntity.ok(Map.of("redirectUrl", "/oauth2/authorization/google"));
+    }
+
+    /**
+     * POST /api/account/delete/confirm
+     * Confirms deletion for a Google account using the delete token
+     */
+    @PostMapping("/delete/confirm")
+    public ResponseEntity<Map<String, String>> confirmGoogleDelete(
+            @Valid @RequestBody ConfirmDeleteRequestDTO request) {
+        log.info("POST /api/account/delete/confirm - Confirming account deletion");
+        accountService.confirmDelete(request.getToken());
+        return ResponseEntity.ok(Map.of(
+                "message", "Account deleted successfully",
+                "status", "success"));
+    }
+
+    /**
      * POST /api/account/profile-photo
      * Uploads or updates profile photo for authenticated user
      * Accepts multipart/form-data
