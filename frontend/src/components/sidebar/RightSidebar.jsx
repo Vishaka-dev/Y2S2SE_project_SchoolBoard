@@ -25,7 +25,8 @@ const RightSidebar = () => {
     setSuggestionError(null);
     try {
       const data = await getSuggestedConnections(3);
-      setSuggestions(data?.suggestions || (Array.isArray(data) ? data : []));
+      const suggestionsList = data?.suggestions || (Array.isArray(data) ? data : []);
+      setSuggestions(suggestionsList.slice(0, 3));
     } catch (err) {
       console.error('Failed to load suggestions:', err);
       setSuggestionError('Unable to load suggestions');
@@ -66,7 +67,7 @@ const RightSidebar = () => {
     const handleFollowChanged = (event) => {
       const { isFollowing, targetUserId } = event.detail;
       if (isFollowing) {
-        setSuggestions(prev => prev.filter(s => s.userId !== targetUserId));
+        setSuggestions(prev => prev.filter(s => s.id !== targetUserId));
       }
     };
 
@@ -99,7 +100,7 @@ const RightSidebar = () => {
   return (
     <div className="h-full flex flex-col pt-2 pb-6">
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto pr-2 space-y-6 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+      <div className="flex-1 overflow-y-auto pr-4 space-y-6 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
         
         {/* Suggested Connections */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
@@ -135,8 +136,11 @@ const RightSidebar = () => {
               </div>
             ) : suggestions.length > 0 ? (
               suggestions.map((connection) => (
-                <div key={connection.userId} className="flex items-start gap-3 group animate-in opacity-100 fade-in slide-in-from-right-2 duration-500">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 shadow-sm overflow-hidden">
+                <div key={connection.id} className="flex items-start gap-3 group animate-in opacity-100 fade-in slide-in-from-right-2 duration-500">
+                  <div 
+                    className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 shadow-sm overflow-hidden cursor-pointer"
+                    onClick={() => navigate(`/profile/${connection.id}`)}
+                  >
                     {connection.profileImageUrl ? (
                       <img 
                         src={connection.profileImageUrl} 
@@ -147,8 +151,11 @@ const RightSidebar = () => {
                       getInitials(connection.displayName || connection.username)
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate hover:text-blue-600 cursor-pointer transition">
+                  <div 
+                    className="flex-1 min-w-0 cursor-pointer"
+                    onClick={() => navigate(`/profile/${connection.id}`)}
+                  >
+                    <p className="text-sm font-semibold text-gray-900 truncate hover:text-blue-600 transition">
                       {connection.displayName || connection.username}
                     </p>
                     <p className="text-xs text-gray-500 truncate leading-tight">
@@ -157,12 +164,12 @@ const RightSidebar = () => {
                   </div>
                   <div className="flex-shrink-0">
                     <FollowButton 
-                      targetUserId={connection.userId}
+                      targetUserId={connection.id}
                       size="sm"
                       onFollowChange={(nextState) => {
                         if (nextState) {
                           setTimeout(() => {
-                            setSuggestions(prev => prev.filter(s => s.userId !== connection.userId));
+                            setSuggestions(prev => prev.filter(s => s.id !== connection.id));
                           }, 1000);
                         }
                       }}
@@ -179,7 +186,7 @@ const RightSidebar = () => {
           
           {suggestions.length > 0 && (
             <button 
-              onClick={() => window.location.href = '/people'}
+              onClick={() => navigate('/connections')}
               className="w-full mt-5 text-sm text-blue-600 hover:text-blue-700 font-medium border-t pt-3 border-gray-50 hover:bg-gray-50 rounded-b-xl transition"
             >
               View more people →
