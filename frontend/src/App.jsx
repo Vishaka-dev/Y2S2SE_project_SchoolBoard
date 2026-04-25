@@ -32,7 +32,18 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={<Landing />} />
+      <Route 
+        path="/" 
+        element={
+          loading ? (
+            <LoadingSpinner />
+          ) : user ? (
+            <Navigate to="/feed" replace />
+          ) : (
+            <Landing />
+          )
+        } 
+      />
       
       {/* Login Route - Check if user is already authenticated */}
       <Route 

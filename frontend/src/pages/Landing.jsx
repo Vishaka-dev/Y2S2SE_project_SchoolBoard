@@ -2,9 +2,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import authService from '../services/authService';
-import logo from '../../logos/learnlink_logo-transparent.png';
+import logo from '../../logos/logo.webp';
 import uniStudents from '../../photos/uni_students.webp';
 import school from '../../photos/school.webp';
+import Footer from '../components/layout/Footer';
 
 const phrases = [
   { title: 'Collaborative Learning', subtitle: 'Connect, Share, Excel Together' },
@@ -25,6 +26,13 @@ const Landing = () => {
     }, 3000);
     return () => clearInterval(timer);
   }, []);
+
+  // Redirect to feed if already authenticated
+  useEffect(() => {
+    if (user || authService.isAuthenticated()) {
+      navigate('/feed', { replace: true });
+    }
+  }, [user, navigate]);
 
   const isAuthenticated = !!user || authService.isAuthenticated();
   const logoPath = isAuthenticated ? '/feed' : '/';
@@ -199,8 +207,8 @@ const Landing = () => {
                 >
                   Join Now
                 </button>
-                <a 
-                  href="#resources" 
+                <a
+                  href="#resources"
                   className="bg-white text-blue-600 px-8 py-3 rounded-lg border-2 border-blue-600 hover:bg-blue-50 transition-colors text-center font-medium flex items-center justify-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -230,9 +238,9 @@ const Landing = () => {
             </div>
             <div className="relative group/hero">
               <div className="relative rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 hover:scale-[1.01] hover:-translate-y-1">
-                <img 
-                  src={uniStudents} 
-                  alt="University students collaborating" 
+                <img
+                  src={uniStudents}
+                  alt="University students collaborating"
                   className="w-full h-auto object-cover rounded-2xl transition-transform duration-500 group-hover/hero:scale-105"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-6">
@@ -241,17 +249,16 @@ const Landing = () => {
                       {phrases.map((phrase, idx) => {
                         const isPrev = (currentPhrase - 1 + phrases.length) % phrases.length === idx;
                         const isCurrent = currentPhrase === idx;
-                        
+
                         return (
                           <div
                             key={idx}
-                            className={`transition-all duration-700 absolute inset-0 flex flex-col items-center justify-center w-full ${
-                              isCurrent 
-                                ? 'opacity-100 translate-x-0' 
-                                : isPrev
-                                  ? 'opacity-0 -translate-x-full pointer-events-none'
-                                  : 'opacity-0 translate-x-full pointer-events-none'
-                            }`}
+                            className={`transition-all duration-700 absolute inset-0 flex flex-col items-center justify-center w-full ${isCurrent
+                              ? 'opacity-100 translate-x-0'
+                              : isPrev
+                                ? 'opacity-0 -translate-x-full pointer-events-none'
+                                : 'opacity-0 translate-x-full pointer-events-none'
+                              }`}
                           >
                             <p className="text-sm font-extrabold text-blue-600 uppercase tracking-widest">{phrase.title}</p>
                             <p className="text-[10px] text-gray-500 mt-0.5 font-semibold">{phrase.subtitle}</p>
@@ -282,8 +289,8 @@ const Landing = () => {
 
           <div className="grid md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="bg-white rounded-xl p-8 hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 border border-blue-100 cursor-default"
               >
                 <div className="bg-gradient-to-br from-blue-100 to-blue-200 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
@@ -302,9 +309,9 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative rounded-2xl overflow-hidden shadow-xl">
-              <img 
-                src={school} 
-                alt="School students learning" 
+              <img
+                src={school}
+                alt="School students learning"
                 className="w-full h-auto object-cover"
               />
             </div>
@@ -369,16 +376,16 @@ const Landing = () => {
 
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="bg-white rounded-xl p-8 shadow-md hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 cursor-default border border-transparent hover:border-blue-100"
               >
                 <div className="flex items-center mb-6">
                   <div className="w-16 h-16 rounded-full overflow-hidden mr-4 border-2 border-blue-100 shadow-sm">
-                    <img 
-                      src={testimonial.image} 
+                    <img
+                      src={testimonial.image}
                       alt={testimonial.name}
-                      className="w-full h-full object-cover" 
+                      className="w-full h-full object-cover"
                     />
                   </div>
                   <div>
@@ -410,8 +417,8 @@ const Landing = () => {
             >
               Get Started Free
             </button>
-            <a 
-              href="#resources" 
+            <a
+              href="#resources"
               className="bg-transparent text-white px-8 py-3 rounded-lg border-2 border-white hover:bg-white hover:text-blue-600 transition-colors font-medium"
             >
               View Resources
@@ -421,78 +428,7 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer id="about" className="bg-gray-900 text-gray-300 py-12 px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            {/* Brand */}
-            <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center space-x-2 mb-4">
-                <img src={logo} alt="LearnLink Logo" className="h-8 w-auto" />
-                <span className="text-lg font-bold text-white">LearnLink</span>
-              </div>
-              <p className="text-sm text-gray-400 leading-relaxed">
-                Empowering the next generation of Sri Lanka with accessible education resources and a supportive community.
-              </p>
-            </div>
-
-            {/* Platform */}
-            <div>
-              <h3 className="text-white font-semibold mb-4">Platform</h3>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#resources" className="hover:text-white transition-colors">Resources</a></li>
-                <li><a href="#articles" className="hover:text-white transition-colors">Articles</a></li>
-                <li><a href="#community" className="hover:text-white transition-colors">Forums</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Membership</a></li>
-              </ul>
-            </div>
-
-            {/* Company */}
-            <div>
-              <h3 className="text-white font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#about" className="hover:text-white transition-colors">About Us</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Partners</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-              </ul>
-            </div>
-
-            {/* Legal */}
-            <div>
-              <h3 className="text-white font-semibold mb-4">Legal</h3>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Cookie Policy</a></li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Social Links */}
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm text-gray-400 mb-4 md:mb-0">
-              © 2026 LearnLink SL. All rights reserved.
-            </p>
-            <div className="flex space-x-4">
-              <a href="#" className="hover:text-white transition-colors">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                </svg>
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                </svg>
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z"/>
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

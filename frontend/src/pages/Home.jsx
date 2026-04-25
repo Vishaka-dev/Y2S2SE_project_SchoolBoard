@@ -750,7 +750,7 @@ const Home = () => {
                         currentUserReaction={post.currentUserReaction} 
                         onReact={(reactionType) => handleReact(post.id, reactionType)} 
                       />
-                      <button
+                      <button 
                         onClick={(e) => {
                           e.stopPropagation();
                           handleToggleComments(post.id);
