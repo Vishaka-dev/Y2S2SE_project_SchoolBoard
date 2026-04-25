@@ -63,6 +63,7 @@ public class AuthServiceImpl implements AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
                 .provider(AuthProvider.LOCAL)
+                .profileCompleted(true)
                 .build();
 
         // Save user first

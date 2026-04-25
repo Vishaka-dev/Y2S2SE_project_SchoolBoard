@@ -52,7 +52,8 @@ const authService = {
   },
 
   getGoogleAuthUrl: () => {
-    return `${API_BASE_URL}/oauth2/authorization/google`;
+    const rootUrl = API_BASE_URL.replace(/\/api$/, '');
+    return `${rootUrl}/oauth2/authorization/google`;
   },
 
   getAuthStatus: async () => {

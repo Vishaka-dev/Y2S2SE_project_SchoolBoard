@@ -57,6 +57,10 @@ public class User {
     @Builder.Default
     private Integer profileViews = 0;
 
+    @Column(name = "profile_completed", columnDefinition = "boolean default true")
+    @Builder.Default
+    private Boolean profileCompleted = true;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -84,6 +88,9 @@ public class User {
         }
         if (this.profileViews == null) {
             this.profileViews = 0;
+        }
+        if (this.profileCompleted == null) {
+            this.profileCompleted = true;
         }
     }
 

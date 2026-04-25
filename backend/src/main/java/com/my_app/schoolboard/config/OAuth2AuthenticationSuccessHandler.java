@@ -56,6 +56,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         // Redirect to frontend with JWT token (stateless)
         String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth2/success")
                 .queryParam("token", token)
+                .queryParam("profileCompleted", oAuth2User.getUser().getProfileCompleted())
                 .build()
                 .toUriString();
 

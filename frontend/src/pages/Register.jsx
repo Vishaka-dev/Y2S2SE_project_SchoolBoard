@@ -335,7 +335,7 @@ const Register = () => {
     <div className="min-h-screen bg-white py-12 px-4 animate-fadeIn">
       <div className="max-w-4xl mx-auto">
         {/* Back to Home Link */}
-        <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-700 hover:bg-blue-50 mb-8 px-4 py-2 rounded-lg border-2 border-blue-600 transition group opacity-0 animate-slideInLeft" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
+        <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-700 hover:bg-blue-50 mb-8 px-4 py-2 rounded-lg transition group opacity-0 animate-slideInLeft" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
           <svg className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>

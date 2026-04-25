@@ -65,17 +65,26 @@ const DashboardLayout = () => {
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       <TopNavbar />
 
+<<<<<<< Updated upstream
       <div className="flex-1 overflow-y-auto">
         <div className={`mx-auto ${showSocialSidebars ? 'max-w-[1600px] px-4 lg:px-6' : 'w-full px-4 lg:px-8'}`}>
           <div className={showSocialSidebars ? 'grid grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)_320px] gap-6' : ''}>
 
             {/* Left Sidebar - Sticky */}
+=======
+      <div className="flex-1 overflow-hidden">
+        <div className={`h-full ${showSocialSidebars ? 'max-w-[1600px] mx-auto px-4 lg:px-6' : 'w-full'}`}>
+          <div className={showSocialSidebars ? 'h-full grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-6' : 'h-full'}>
+            
+            {/* Left Sidebar - Stationary */}
+>>>>>>> Stashed changes
             {showSocialSidebars && (
               <aside className="hidden xl:block h-[calc(100vh-64px)] sticky top-0 pt-6 pb-6 overflow-y-auto">
                 <FeedLeftRail />
               </aside>
             )}
 
+<<<<<<< Updated upstream
             {/* Main Content */}
             <main className="min-w-0 pt-6 pb-6">
               <div className={isResourceHubRoute || isEventsRoute || isMessagesRoute || isGroupsRoute ? 'max-w-7xl mx-auto pb-4' : 'max-w-3xl mx-auto pb-8'}>
@@ -110,6 +119,48 @@ const DashboardLayout = () => {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
                       <span className="text-sm">Post</span>
                     </button>
+=======
+            {/* Main Content Area (Feed + Right Sidebar) - Scrollable together */}
+            <div className={`h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pt-6 pb-6 ${showSocialSidebars ? '' : 'px-4 lg:px-8'}`}>
+              <div className={`grid grid-cols-1 ${showSocialSidebars ? 'lg:grid-cols-[1fr_320px]' : ''} gap-6`}>
+                <main className="min-w-0">
+                  <div className={isResourceHubRoute || isEventsRoute || isMessagesRoute || isGroupsRoute ? 'max-w-7xl mx-auto pb-4' : 'max-w-3xl mx-auto pb-8'}>
+                    {showCreatePost && (
+                      <div className="bg-white rounded-[24px] md:rounded-[32px] shadow-sm p-4 md:p-6 mb-8 border border-gray-100 flex gap-4 items-center">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
+                          {getAvatarUrl() ? (
+                            <img
+                              src={getAvatarUrl()}
+                              alt={user?.fullName}
+                              className="w-full h-full rounded-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <span className="text-sm">
+                              {getUserInitials?.()}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => setIsCreatePostOpen(true)}
+                          className="flex-1 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-500 rounded-full py-3 px-4 text-sm md:text-base text-left transition-colors font-medium border-dashed focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-text"
+                        >
+                          Share an academic update, ask a question, or start a discussion...
+                        </button>
+                        <button
+                          onClick={() => setIsCreatePostOpen(true)}
+                          className="hidden sm:flex px-4 py-2 bg-blue-600 text-white rounded-full font-medium shadow-sm transition-colors items-center gap-2 hover:bg-blue-700"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                          <span className="text-sm">Post</span>
+                        </button>
+                      </div>
+                    )}
+
+                    <Outlet context={{ showToast }} />
+>>>>>>> Stashed changes
                   </div>
                 )}
 
